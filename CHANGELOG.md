@@ -5,6 +5,21 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.5] - 2026-10-07
+
+### Added
+- `--branch-strategy main-only`: one `main` branch, with the repository at `<name>/` itself (no `local/` or `github/` folders). Private paths stay ignored and are never committed; with `--ai claude` the AI files are written but left uncommitted.
+
+### Changed
+- Branch strategies are defined in one place; the CLI choices and help, the default configuration, the branches `publish` pushes, and the adopt/migrate branch lists all come from it. The help, README and `docs/Branch-Strategies.md` list main-only first and group the others as the legacy branch model.
+- `adopt`/`migrate` with `gitflow` now include `release` and `hotfix`, and with `minimal` a `private` branch, matching what `create` makes.
+
+### Fixed
+- A branch strategy's own private branch is used unless `--private-branch` is given; the flag's default used to override every strategy.
+- `publish` no longer skips a branch that is both the private branch and one of the strategy's public branches.
+- A custom private branch name (`--private-branch scratch`) is treated as private by the generated pre-commit hook; `create` used to fail when the hook refused its own commit of private files on that branch.
+- The guardrails `pre-commit` and `post-checkout` hooks no longer crash with `UnicodeEncodeError` (blocking the commit) when their output is not a UTF-8 console.
+
 ## [0.4.4] - 2026-10-07
 
 ### Fixed

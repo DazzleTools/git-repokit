@@ -1,7 +1,7 @@
 # RepoKit
 
 [![GitHub Workflow Status](https://github.com/djdarcy/git-repokit/actions/workflows/main.yml/badge.svg)](https://github.com/djdarcy/git-repokit/actions)
-[![Version](https://img.shields.io/badge/version-0.4.4-blue)](https://github.com/djdarcy/git-repokit/releases)
+[![Version](https://img.shields.io/badge/version-0.4.5-blue)](https://github.com/djdarcy/git-repokit/releases)
 [![Python](https://img.shields.io/badge/python-%3E%3D3.7-darkgreen)](https://python.org/downloads)
 [![License](https://img.shields.io/badge/license-MIT-orange)](https://github.com/djdarcy/git-repokit/blob/main/LICENSE)
 [![GitHub Discussions](https://img.shields.io/badge/discussions-Welcome-lightgrey)](https://github.com/djdarcy/git-repokit/discussions)
@@ -22,7 +22,7 @@ RepoKit automates the creation of standardized Git repositories with professiona
 ### Core Capabilities
 - **Universal Bootstrap System**: Analyze and migrate ANY project to RepoKit structure
 - **Standardized Repository Structure**: Consistent directory layout with standard folders
-- **Multi-Branch Strategy**: Automatic setup of main, dev, staging, test, live, and private branches
+- **Branch Strategies**: a single `main` branch with private notes kept out of git, or the multi-branch model (main, dev, staging, test, live, and a local-only private branch)
 - **Worktree Management**: Git worktrees for efficient branch isolation and parallel development
 - **Private Content Protection**: Secure local-only content that never gets pushed
 - **GitHub/GitLab Integration**: Automated repository creation and deployment
@@ -143,9 +143,19 @@ repokit analyze /path/to/project
 
 ## 🌳 Branch Strategies
 
-RepoKit supports multiple branching strategies:
+RepoKit supports multiple branching strategies.
 
-### Standard (Default)
+### Main-only (recommended for new projects)
+```
+main
+```
+The repository is the project folder itself; `private/` is ignored by git. `repokit create my-project --branch-strategy main-only`
+
+### The legacy branch model
+
+These keep private work on a local-only `private` branch (repository in `<name>/local/`, `main` in `<name>/github/`). Existing projects use them and they keep working.
+
+### Standard (current default)
 ```
 private → dev → main → test → staging → live
 ```
@@ -234,17 +244,14 @@ my-project/
 RepoKit includes a comprehensive test framework:
 
 ```bash
-# Run all tests
-python tests/run_tests.py
+# Run the suite (isolated from your git config, home directory and tokens)
+python -m pytest
 
-# Run specific test categories
-python tests/run_tests.py --unit        # Fast unit tests
-python tests/run_tests.py --integration # CLI integration tests
-python tests/run_tests.py --github      # GitHub API tests (requires token)
-
-# Check test environment
-python tests/run_tests.py --check
+# Also run the live GitHub tests -- these create real repositories
+REPOKIT_LIVE_GITHUB=1 python -m pytest
 ```
+
+See `tests/README.md` for details.
 
 ## 📚 Documentation
 

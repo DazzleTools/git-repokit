@@ -6,6 +6,7 @@ Handles loading, validating, and merging configurations from
 multiple sources (defaults, config files, environment, CLI).
 """
 
+import copy
 import os
 import json
 import logging
@@ -15,9 +16,10 @@ from typing import Dict, Any, Optional, List, Union
 from .directory_profiles import DirectoryProfileManager
 from .defaults import (
     DEFAULT_PRIVATE_DIRS,
-    DEFAULT_SENSITIVE_FILES, 
+    DEFAULT_SENSITIVE_FILES,
     DEFAULT_SENSITIVE_PATTERNS,
-    BRANCH_SPECIFIC_EXCLUDES
+    BRANCH_SPECIFIC_EXCLUDES,
+    BRANCH_STRATEGIES,
 )
 
 
@@ -52,8 +54,10 @@ class ConfigManager:
             "description": "A new project repository",
             "language": "generic",
             "default_branch": "main",
-            "branches": ["main", "dev", "staging", "test", "live"],
-            "worktrees": ["main", "dev"],
+            # Base defaults match the default strategy; apply_branch_strategy
+            # replaces them with the chosen strategy's values
+            "branches": list(BRANCH_STRATEGIES["standard"]["branches"]),
+            "worktrees": list(BRANCH_STRATEGIES["standard"]["worktrees"]),
             "directories": [
                 "convos",
                 "docs",
@@ -98,33 +102,9 @@ class ConfigManager:
             },
             # Branch strategy templates
             "branch_strategy": "standard",  # Default strategy
-            "branch_strategies": {
-                "standard": {
-                    "branches": ["main", "dev", "staging", "test", "live"],
-                    "worktrees": ["main", "dev"],
-                    "private_branch": "private",
-                },
-                "simple": {
-                    "branches": ["main", "dev"],
-                    "worktrees": ["main"],
-                    "private_branch": "private",
-                },
-                "gitflow": {
-                    "branches": ["main", "develop", "release", "hotfix"],
-                    "worktrees": ["main", "develop"],
-                    "private_branch": "private",
-                },
-                "github-flow": {
-                    "branches": ["main"],
-                    "worktrees": ["main"],
-                    "private_branch": "private",
-                },
-                "minimal": {
-                    "branches": ["main"],
-                    "worktrees": [],
-                    "private_branch": "main",
-                },
-            },
+            # Defined once in defaults.BRANCH_STRATEGIES; copied so a config
+            # file can extend or override strategies without touching it.
+            "branch_strategies": copy.deepcopy(BRANCH_STRATEGIES),
         }
 
         # Load configurations
@@ -157,6 +137,8 @@ class ConfigManager:
             if "worktrees" not in self.cli_config:
                 self.config["worktrees"] = strategy.get("worktrees", ["main"])
 
+            # A strategy's private branch wins unless --private-branch was
+            # given; None means the strategy has no private branch at all.
             if "private_branch" not in self.cli_config:
                 self.config["private_branch"] = strategy.get(
                     "private_branch", "private"

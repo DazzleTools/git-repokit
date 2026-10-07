@@ -43,8 +43,21 @@ class RepoManager:
         self.verbose = verbose
         self.project_name = config.get("name")
         self.project_root = os.path.abspath(self.project_name)
-        self.repo_root = os.path.join(self.project_root, "local")
-        self.github_root = os.path.join(self.project_root, "github")
+
+        # The private branch, or None when the strategy has none (main-only).
+        # Only a missing key falls back to the legacy "private".
+        self.private_branch = config.get("private_branch", "private")
+
+        if self.private_branch is None and not config.get("worktrees"):
+            # Flat layout: the repository is <name>/ itself, one branch,
+            # no worktrees beside it.
+            self.repo_root = self.project_root
+            self.github_root = None
+        else:
+            # Legacy layout: <name>/local is the repository (on the private
+            # branch) and <name>/github holds the main worktree.
+            self.repo_root = os.path.join(self.project_root, "local")
+            self.github_root = os.path.join(self.project_root, "github")
 
         # Get logger for repokit
         self.logger = logging.getLogger("repokit")
@@ -167,8 +180,9 @@ class RepoManager:
         # Create local repository directory
         os.makedirs(self.repo_root, exist_ok=True)
 
-        # Create github directory for worktree
-        os.makedirs(self.github_root, exist_ok=True)
+        # Create github directory for worktree (legacy layout only)
+        if self.github_root:
+            os.makedirs(self.github_root, exist_ok=True)
 
         # Create standard subdirectories
         standard_dirs = self.config.get(
@@ -484,8 +498,12 @@ class RepoManager:
                 if branch != default_branch:  # Skip default branch which already exists
                     self.run_git(["branch", branch], cwd=self.repo_root)
 
+            # No private branch (main-only): stay on the default branch
+            if not self.private_branch:
+                return
+
             # Create private branch for personal work
-            private_branch = self.config.get("private_branch", "private")
+            private_branch = self.private_branch
             if private_branch not in branches:
                 self.run_git(["branch", private_branch], cwd=self.repo_root)
 
@@ -834,6 +852,11 @@ class RepoManager:
             self.logger.info("GitHub integration is disabled, skipping")
             return
 
+        # Flat layout: .github was generated in the repository itself and
+        # committed with everything else
+        if not self.github_root:
+            return
+
         # Only proceed if the GitHub worktree exists
         if not os.path.exists(self.github_root):
             self.logger.warning(
@@ -1160,12 +1183,18 @@ exit 0
             # If commit fails, log but continue (for adoptions)
             self.logger.debug(f"Initial commit skipped: {str(e)}")
 
+        # No private branch (main-only): the commit above is on main and
+        # private paths were never added (.gitignore), so there is nothing
+        # to cut public branches from.
+        if not self.private_branch:
+            return
+
         # Create public branches with safe content migration using safe-merge-dev
         # This prevents private content from reaching public branches
         branches = self.config.get(
             "branches", ["main", "dev", "staging", "test", "live"]
         )
-        private_branch = self.config.get("private_branch", "private")
+        private_branch = self.private_branch
 
         for branch in branches:
             if branch != private_branch:  # Skip private branch
@@ -1561,8 +1590,15 @@ exit 0
         Returns:
             Dictionary with branch and pattern configuration
         """
+        private_branches = list(self.config.get('private_branches', DEFAULT_PRIVATE_BRANCHES))
+        # This repository's own private branch (a strategy's, or
+        # --private-branch) must count as private, or the guard treats a
+        # custom name as public and refuses the private branch's own commits.
+        if self.private_branch and self.private_branch not in private_branches:
+            private_branches.append(self.private_branch)
+
         return {
-            'private_branches': self.config.get('private_branches', DEFAULT_PRIVATE_BRANCHES),
+            'private_branches': private_branches,
             'public_branches': self.config.get('public_branches', DEFAULT_PUBLIC_BRANCHES),
             'private_patterns': self.config.get('private_patterns', DEFAULT_PRIVATE_PATTERNS),
             'exclude_from_public': self.config.get('exclude_from_public', DEFAULT_EXCLUDE_FROM_PUBLIC)
@@ -1590,6 +1626,20 @@ exit 0
         """Print next steps for the user."""
         print("\n" + "=" * 80)
         print(f"Repository {self.project_name} has been set up successfully!")
+
+        if not self.private_branch:
+            # Flat layout (main-only)
+            print(f"\nRepository: {self.repo_root}  (branch: main)")
+            print("Private work goes in private/, which git ignores.")
+            print("\nNext steps:")
+            print("1. Set up a remote GitHub repository")
+            print("2. Add it as a remote and push:")
+            print(f"   cd {self.repo_root}")
+            print("   git remote add origin https://github.com/username/repo.git")
+            print("   git push -u origin main")
+            print("=" * 80)
+            return
+
         print("\nDirectory structure:")
         print(f"  {self.project_name}/")
 
@@ -1995,6 +2045,14 @@ exit 0
                     dest_path = os.path.join(instructions_dir, instruction_file)
                     shutil.copy2(src_path, dest_path)
                     self.logger.debug(f"Copied instruction file: {instruction_file}")
+
+            # With no private branch these files would be committed straight to
+            # main, the public branch: leave them on disk, uncommitted.
+            if not self.private_branch:
+                self.logger.info(
+                    "AI integration files written but not committed (no private branch)"
+                )
+                return
 
             # Add files to git (use -f for private directory since it's in .gitignore)
             self.run_git(["add", "CLAUDE.md"], cwd=self.repo_root)

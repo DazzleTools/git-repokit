@@ -4,14 +4,38 @@ This guide explains RepoKit's branch strategies and helps you choose the right o
 
 ## 📋 Table of Contents
 
-1. [Understanding Branch Strategies](#understanding-branch-strategies)
-2. [Simple Strategy (Recommended)](#simple-strategy-recommended)
-3. [GitFlow Strategy](#gitflow-strategy)
-4. [GitHub Flow Strategy](#github-flow-strategy)
-5. [Minimal Strategy](#minimal-strategy)
-6. [Custom Strategies](#custom-strategies)
-7. [When to Use Each Strategy](#when-to-use-each-strategy)
-8. [Working with Your Chosen Strategy](#working-with-your-chosen-strategy)
+1. [Main-Only Strategy (Recommended)](#main-only-strategy-recommended)
+2. [The Legacy Branch Model](#the-legacy-branch-model)
+3. [Understanding Branch Strategies](#understanding-branch-strategies)
+4. [Simple Strategy](#simple-strategy)
+5. [GitFlow Strategy](#gitflow-strategy)
+6. [GitHub Flow Strategy](#github-flow-strategy)
+7. [Minimal Strategy](#minimal-strategy)
+8. [Custom Strategies](#custom-strategies)
+9. [When to Use Each Strategy](#when-to-use-each-strategy)
+10. [Working with Your Chosen Strategy](#working-with-your-chosen-strategy)
+
+## Main-Only Strategy (Recommended)
+
+**Best for**: new projects.
+
+One branch, `main`, and the repository is the project folder itself:
+
+```
+my-project/          # the repository, on main
+  private/           # private notes -- ignored by git, never committed
+  docs/ scripts/ tests/ ...
+```
+
+There is no private branch and no worktree beside the repository. Private work lives in `private/`, which `.gitignore` excludes, so nothing private can reach `main` or GitHub. Feature branches are yours to create as you need them.
+
+```bash
+repokit create my-project --branch-strategy main-only
+```
+
+## The Legacy Branch Model
+
+The strategies below keep private work on a local-only `private` branch and cut public branches from it. The repository lives in `my-project/local/` (on `private`), with `main` checked out in `my-project/github/`. They still work and existing projects use them, but new projects should start with main-only.
 
 ## 🤔 Understanding Branch Strategies
 
@@ -23,7 +47,7 @@ A branch strategy defines how you organize your code development using Git branc
 
 Different strategies organize these branches differently based on project needs.
 
-## 🎯 Simple Strategy (Recommended)
+## 🎯 Simple Strategy
 
 **Best for**: Most projects, solo developers, small teams, beginners
 

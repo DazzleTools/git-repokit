@@ -39,8 +39,10 @@ if [ -z "$PYTHON_CMD" ]; then
     exit 1
 fi
 
-# Execute the Python script
-$PYTHON_CMD - << 'EOF'
+# Execute the Python script. Its messages contain emoji; when output is not a
+# UTF-8 console (Windows, or piped from a GUI client) Python would raise
+# UnicodeEncodeError and block the commit, so force UTF-8 output.
+PYTHONIOENCODING=utf-8 $PYTHON_CMD - << 'EOF'
 """
 RepoKit Pre-Commit Hook with Private Content Guardrails.
 

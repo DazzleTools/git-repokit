@@ -13,6 +13,7 @@ import requests
 from typing import Dict, Any, Optional, List, Union, Tuple
 
 from .auth_integration import AuthenticationHandler
+from .defaults import strategy_push_branches
 
 
 class RemoteIntegration:
@@ -566,30 +567,24 @@ class RemoteIntegration:
         # Push branches if requested
         if push_branches:
             # Determine which branches to push
+            branch_strategy = self.repo_manager.config.get("branch_strategy", "simple")
+            strategy_push = strategy_push_branches(branch_strategy)
+
             if include_branches:
                 # User explicitly specified branches to include
                 allowed_branches = include_branches
                 self.logger.info(f"Using user-specified branches to push: {allowed_branches}")
             else:
-                # Use branch strategy to determine default branches
-                branch_strategy = self.repo_manager.config.get("branch_strategy", "simple")
-                
-                # Define which branches should be pushed for each strategy
-                push_branches_map = {
-                    "simple": ["main", "dev"],
-                    "standard": ["main", "dev", "test", "staging", "live"],
-                    "gitflow": ["main", "develop"],
-                    "github-flow": ["main"],
-                    "minimal": ["main"]
-                }
-                
-                # Get allowed branches for this strategy
-                allowed_branches = push_branches_map.get(branch_strategy, ["main", "dev"])
+                allowed_branches = strategy_push or ["main", "dev"]
                 self.logger.info(f"Using {branch_strategy} strategy branches: {allowed_branches}")
-            
-            # Build exclude list: always exclude private branch + user-specified exclusions
+
+            # Build exclude list: the private branch + user-specified exclusions.
+            # A strategy whose "private" branch is one of its public branches
+            # (minimal: main) still pushes that branch.
             private_branch = self.repo_manager.config.get("private_branch", "private")
-            exclude_list = [private_branch]
+            exclude_list = []
+            if private_branch and private_branch not in strategy_push:
+                exclude_list.append(private_branch)
             if exclude_branches:
                 exclude_list.extend(exclude_branches)
                 self.logger.info(f"Additional excluded branches: {exclude_branches}")

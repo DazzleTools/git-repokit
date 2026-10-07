@@ -14,6 +14,7 @@ import subprocess
 from typing import Dict, Any, Optional
 
 from .config import ConfigManager
+from .defaults import BRANCH_STRATEGIES, LEGACY_BRANCH_STRATEGIES
 from .repo_manager import RepoManager
 from .template_engine import TemplateEngine
 from .directory_analyzer import (
@@ -106,7 +107,7 @@ Create a new Git repository with standardized structure, branches, and templates
 
 This command initializes a complete project structure including:
 - Directory hierarchy based on profiles or custom specification
-- Multi-branch Git setup with worktrees
+- Git setup for the chosen branch strategy
 - Template files for documentation, CI/CD, and language-specific needs
 - Pre-commit hooks for private content protection
 - Optional remote repository creation and pushing
@@ -117,11 +118,16 @@ Directory Profiles:
   complete  - Full structure including examples, assets, resources
 
 Branch Strategies:
-  standard     - private→dev→main→test→staging→live
-  simple       - main→develop→staging→production
-  gitflow      - main→develop (with feature/release/hotfix support)
-  github-flow  - main-only with feature branches
-  minimal      - main→dev
+  main-only    - one branch, main; the repository is <name>/ itself and
+                 private/ stays out of git
+
+  Legacy branch model (a local-only 'private' branch; repository in
+  <name>/local/, main checked out in <name>/github/):
+  standard     - private, main, dev, staging, test, live
+  simple       - private, main, dev
+  gitflow      - private, main, develop, release, hotfix
+  github-flow  - private, main
+  minimal      - private, main (no worktrees)
         """,
         epilog="""
 Examples:
@@ -233,19 +239,19 @@ Recipe: Microservice
     
     branch_group.add_argument(
         "--private-branch",
-        default="private",
-        help="Name of the private branch (default: private)"
+        default=None,
+        help="Name of the private branch (default: the strategy's; 'private' in the legacy strategies)"
     )
-    
+
     branch_group.add_argument(
         "--default-branch",
         help="Name of the default branch (default: main)"
     )
-    
+
     branch_group.add_argument(
         "--branch-strategy",
-        choices=["standard", "simple", "gitflow", "github-flow", "minimal"],
-        help="Predefined branch strategy to use"
+        choices=list(BRANCH_STRATEGIES),
+        help="Predefined branch strategy to use (main-only, or a legacy branch strategy)"
     )
     
     branch_group.add_argument(
@@ -681,18 +687,20 @@ For more detailed documentation, see: docs/Adoption-Guide.md
     
     adopt_branch_group.add_argument(
         "--private-branch",
-        default="private",
-        help="Name of the private branch (default: private)"
+        default=None,
+        help="Name of the private branch (default: the strategy's; 'private' in the legacy strategies)"
     )
-    
+
     adopt_branch_group.add_argument(
         "--default-branch",
         help="Name of the default branch (default: main)"
     )
-    
+
+    # Adoption builds the legacy branch model only; main-only adoption is not
+    # implemented yet.
     adopt_branch_group.add_argument(
         "--branch-strategy",
-        choices=["standard", "simple", "gitflow", "github-flow", "minimal"],
+        choices=LEGACY_BRANCH_STRATEGIES,
         help="Branch strategy to implement"
     )
     

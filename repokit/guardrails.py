@@ -191,8 +191,9 @@ if [ -z "$PYTHON_CMD" ]; then
     exit 0
 fi
 
-# Execute the Python script with all arguments
-$PYTHON_CMD - "$@" << 'EOF'
+# Execute the Python script with all arguments (UTF-8 output: its messages
+# contain emoji, which a non-UTF-8 console cannot encode)
+PYTHONIOENCODING=utf-8 $PYTHON_CMD - "$@" << 'EOF'
 """RepoKit post-checkout hook to update excludes and restore private files."""
 
 import sys
