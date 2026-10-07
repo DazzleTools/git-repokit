@@ -5,6 +5,18 @@ Comprehensive testing framework for RepoKit functionality including unit tests, 
 ## Quick Start
 
 ```bash
+# Run the suite (from the project root)
+python -m pytest
+
+# Also run the live GitHub tests -- these create real repositories
+REPOKIT_LIVE_GITHUB=1 python -m pytest
+```
+
+The suite is isolated from your own setup by `tests/conftest.py`: git never signs the commits tests make, `HOME`/`USERPROFILE` point at a temporary directory (so `~/.repokit/credentials.json` is never touched), and GitHub tokens are blanked. Tests marked `live` are skipped, and `.env.test` is not read, unless `REPOKIT_LIVE_GITHUB=1` is set.
+
+> **Note:** `tests/run_tests.py` and the commands below do not currently run: the test modules use package-relative imports, which the runner's top-level imports cannot load (`ImportError: attempted relative import with no known parent package`). Use `python -m pytest`.
+
+```bash
 # Run all tests
 python tests/run_tests.py
 
@@ -66,7 +78,7 @@ REPOKIT_TEST_CLEANUP=true  # Auto-cleanup test repos
 REPOKIT_TEST_PREFIX=repokit-test-  # Test repo prefix
 ```
 
-**Important**: The `.env.test` file is already in `.gitignore` and should NEVER be committed!
+**Important**: The `.env.test` file is already in `.gitignore` and should NEVER be committed! It is read only when `REPOKIT_LIVE_GITHUB=1` is set.
 
 ### 3. Get a GitHub Token
 

@@ -5,6 +5,20 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] - 2026-10-07
+
+### Fixed
+- `repokit analyze` no longer fails with `'Namespace' object has no attribute 'publish_to'` after printing its report.
+- `repokit setup-guardrails` installs its pre-commit hook on Windows; it was reading and writing the UTF-8 hook template with the system codepage and failing.
+
+### Changed
+- The test suite is isolated from the developer's machine: commits made by tests are never signed, the home directory is a temporary one (so `~/.repokit/credentials.json` is never written), and GitHub tokens are ignored. Tests that create real GitHub repositories run only with `REPOKIT_LIVE_GITHUB=1`, which is also the only time `.env.test` is read.
+- `python -m pytest` collects only `tests/` (not exploratory scripts or old generated test repositories).
+
+### Known issues
+- `repokit bootstrap` fails: its handler reads options its parser does not define, and it runs a script that is not part of the installed package. A test records the expected behaviour as a known failure.
+- `tests/run_tests.py` does not run (import error); use `python -m pytest`.
+
 ## [0.4.0] - 2025-06-06
 
 ### Added

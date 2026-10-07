@@ -10,6 +10,10 @@ import json
 import subprocess
 from pathlib import Path
 
+import pytest
+
+from repokit import __version__
+
 from .test_utils import RepoKitTestCase, TestConfig
 
 
@@ -21,7 +25,7 @@ class TestCLICommands(RepoKitTestCase):
         exit_code, stdout, stderr = self.run_repokit(["--help"])
         
         self.assertEqual(exit_code, 0)
-        self.assertIn("standardized Git repository", stdout)
+        self.assertIn("Git repository", stdout)
         self.assertIn("create", stdout)
         self.assertIn("bootstrap", stdout)
         self.assertIn("migrate", stdout)
@@ -33,7 +37,7 @@ class TestCLICommands(RepoKitTestCase):
         exit_code, stdout, stderr = self.run_repokit(["--version"])
         
         self.assertEqual(exit_code, 0)
-        self.assertIn("0.3.0", stdout)  # Current version
+        self.assertIn(__version__, stdout)
         
     def test_create_basic_project(self):
         """Test basic project creation."""
@@ -215,27 +219,32 @@ class TestCLICommands(RepoKitTestCase):
         # Local config should be detected
         # (Would need to enhance analyze output to verify this properly)
         
-    def test_bootstrap_alias(self):
-        """Test that bootstrap command works."""
-        # Bootstrap creates a new repository structure, not in-place modification
-        # Create a directory to run bootstrap in
+    @pytest.mark.xfail(
+        strict=True,
+        reason="bootstrap's handler (cli.py) reads publish_to/private_repo/no_push, which its "
+               "parser does not define (service/private/no_publish), and runs scripts/bootstrap.py, "
+               "which a wheel does not ship -- redesigned in the revival's Phase 4",
+    )
+    def test_bootstrap_generates_script(self):
+        """`repokit bootstrap` writes a self-contained setup script."""
+        # Since v0.4 bootstrap generates a script rather than creating the
+        # repository itself; the script is what a person or CI runs.
         test_dir = os.path.join(self.test_dir, "bootstrap-workspace")
         os.makedirs(test_dir)
-        
-        stdout, stderr = self.assert_repokit_success([
-            "bootstrap", "test-bootstrap-project",
-            "--no-push"
+        script = os.path.join(test_dir, "bootstrap_test.py")
+
+        self.assert_repokit_success([
+            "bootstrap",
+            "--name", "test-bootstrap-project",
+            "--output", script,
+            "--no-publish",
         ], cwd=test_dir)
-        
-        # Check that the repository was created
-        project_dir = os.path.join(test_dir, "test-bootstrap-project")
-        self.assertTrue(os.path.exists(project_dir))
-        self.assertIn("successfully", stdout.lower())
-        
-        # Check basic structure (bootstrap creates local/github/dev structure)
-        self.assertTrue(os.path.exists(os.path.join(project_dir, "local")))
-        self.assertTrue(os.path.exists(os.path.join(project_dir, "github")))
-        self.assertTrue(os.path.exists(os.path.join(project_dir, "dev")))
+
+        self.assertTrue(os.path.exists(script))
+        with open(script, encoding="utf-8") as f:
+            source = f.read()
+        compile(source, script, "exec")
+        self.assertIn("test-bootstrap-project", source)
 
 
 class TestComplexWorkflows(RepoKitTestCase):

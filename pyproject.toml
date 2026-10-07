@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "repokit"
-version = "0.4.3"
+version = "0.4.4"
 description = "A tool for creating standardized Git repositories with complex branching and worktree workflows"
 readme = "README.md"
 requires-python = ">=3.7"
@@ -19,6 +19,7 @@ repokit = "repokit.cli:main"
 # keep your formatter/tester/etc here
 dev = [
   "pytest>=7.0.0",
+  "python-dotenv>=1.0.0",
   "black>=23.0.0",
   "flake8>=6.0.0",
   "mypy>=1.0.0",
@@ -31,4 +32,10 @@ include = ["repokit", "repokit.*"]
 [tool.setuptools.package-data]
 # make sure your `templates/` directory ends up in the wheel/sdist
 "repokit" = ["templates/*"]
+
+[tool.pytest.ini_options]
+# Only the regression suite. private/old_test_runs/ holds whole generated
+# repositories from 2025, and tests/one-offs/ holds exploratory scripts.
+testpaths = ["tests"]
+norecursedirs = ["one-offs", "__pycache__", ".*"]
 

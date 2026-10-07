@@ -2167,7 +2167,7 @@ def main() -> int:
                 print(
                     f"    repokit adopt {args.name} --strategy {summary['recommended_strategy']}"
                 )
-                if args.publish_to:
+                if getattr(args, "publish_to", None):
                     print(f"  With publishing:")
                     print(
                         f"    repokit adopt {args.name} --publish-to {args.publish_to}"

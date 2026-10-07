@@ -80,7 +80,8 @@ class GuardrailsManager:
         
         # Write hook file
         try:
-            hook_path.write_text(hook_content)
+            # Hook templates are UTF-8; Windows' default codec cannot write them
+            hook_path.write_text(hook_content, encoding='utf-8')
             # Make executable
             hook_path.chmod(hook_path.stat().st_mode | stat.S_IEXEC)
             logger.info(f"✓ Installed {hook_name} hook")
@@ -94,7 +95,7 @@ class GuardrailsManager:
         # Try to use the template we created
         template_path = Path(__file__).parent / 'hooks' / 'pre-commit-guardrails'
         if template_path.exists():
-            return template_path.read_text()
+            return template_path.read_text(encoding='utf-8')
         
         # Fallback to inline version
         return '''#!/usr/bin/env python3

@@ -3,6 +3,7 @@ Test utilities and helpers for RepoKit test suite.
 """
 
 import os
+import stat
 import sys
 import shutil
 import tempfile
@@ -15,10 +16,24 @@ from typing import List, Dict, Any, Optional, Tuple
 from functools import wraps
 from dotenv import load_dotenv
 
-# Load test environment variables
+# Load test environment variables -- only when live GitHub tests were asked
+# for. .env.test holds a real token, and tests that see a token create real
+# repositories (see tests/conftest.py).
 test_env_path = Path(__file__).parent.parent / '.env.test'
-if test_env_path.exists():
+if os.environ.get('REPOKIT_LIVE_GITHUB') == '1' and test_env_path.exists():
     load_dotenv(test_env_path)
+
+
+def force_rmtree(path):
+    """Remove a directory tree, including git's read-only object files on Windows."""
+    def _make_writable_and_retry(func, target, _exc):
+        os.chmod(target, stat.S_IWRITE)
+        func(target)
+
+    if sys.version_info >= (3, 12):
+        shutil.rmtree(path, onexc=_make_writable_and_retry)
+    else:
+        shutil.rmtree(path, onerror=_make_writable_and_retry)
 
 
 class TestConfig:
@@ -186,6 +201,8 @@ class RepoKitTestCase(unittest.TestCase):
             cwd=cwd or self.test_dir,
             capture_output=True,
             text=True,
+            encoding='utf-8',
+            errors='replace',
             env=env
         )
         

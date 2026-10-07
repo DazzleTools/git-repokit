@@ -10,6 +10,8 @@ import time
 import json
 from pathlib import Path
 
+import pytest
+
 from .test_utils import (
     RepoKitTestCase,
     requires_github_token,
@@ -18,6 +20,7 @@ from .test_utils import (
 )
 
 
+@pytest.mark.live
 class TestGitHubIntegration(RepoKitTestCase):
     """Test real GitHub API integration."""
     

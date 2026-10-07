@@ -5,13 +5,14 @@ Tests for RepoKit guardrails functionality.
 
 import unittest
 import tempfile
-import shutil
 import os
 import subprocess
 from pathlib import Path
 
 from repokit.branch_utils import BranchContext
 from repokit.guardrails import GuardrailsManager
+
+from .test_utils import force_rmtree
 
 
 class TestBranchContext(unittest.TestCase):
@@ -36,8 +37,8 @@ class TestBranchContext(unittest.TestCase):
     def tearDown(self):
         """Clean up test repository."""
         os.chdir(self.orig_dir)
-        shutil.rmtree(self.test_dir)
-    
+        force_rmtree(self.test_dir)
+
     def test_branch_detection(self):
         """Test branch type detection."""
         context = BranchContext()
@@ -86,8 +87,8 @@ class TestBranchContext(unittest.TestCase):
     
     def test_commit_validation(self):
         """Test commit validation in different branches."""
-        # Switch to main branch
-        subprocess.run(['git', 'checkout', '-b', 'main'], check=True, capture_output=True)
+        # Be on main, whatever git's default branch name is
+        subprocess.run(['git', 'checkout', '-B', 'main'], check=True, capture_output=True)
         context = BranchContext()
         
         # Stage a private file
@@ -141,8 +142,8 @@ class TestGuardrailsManager(unittest.TestCase):
     def tearDown(self):
         """Clean up test repository."""
         os.chdir(self.orig_dir)
-        shutil.rmtree(self.test_dir)
-    
+        force_rmtree(self.test_dir)
+
     def test_guardrails_setup(self):
         """Test guardrails installation."""
         manager = GuardrailsManager()
@@ -194,8 +195,8 @@ class TestGuardrailsManager(unittest.TestCase):
     
     def test_branch_excludes_setup(self):
         """Test branch-specific exclude configuration."""
-        # Start in main branch
-        subprocess.run(['git', 'checkout', '-b', 'main'], check=True, capture_output=True)
+        # Start in main branch, whatever git's default branch name is
+        subprocess.run(['git', 'checkout', '-B', 'main'], check=True, capture_output=True)
         
         context = BranchContext()
         context.setup_branch_excludes()

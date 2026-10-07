@@ -11,13 +11,16 @@ import time
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from .test_utils import (
-    RepoKitTestCase, 
+    RepoKitTestCase,
     requires_github_token,
     TestConfig
 )
 
 
+@pytest.mark.live
 class TestDeploymentScenarios(RepoKitTestCase):
     """Test all deployment scenarios from documentation."""
     
