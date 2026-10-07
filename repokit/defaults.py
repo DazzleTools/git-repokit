@@ -104,9 +104,10 @@ BRANCH_SPECIFIC_EXCLUDES = {
 #   private_branch  the local-only branch for private work, or None for none
 #   push            branches publish pushes (default: branches)
 #
-# main-only is the current model: one branch, private notes kept in a
-# separate repository under private/. The others are the legacy branch model,
-# kept working for projects that use it.
+# main-only is the recommended model: one branch, private notes kept out of
+# git (in S3, in a separate repository under private/). The others are the
+# private-branch model: private work on a local-only branch, finished work
+# moved to the public branches. Valid, more involved, fully supported.
 BRANCH_STRATEGIES = {
     "main-only": {
         "branches": ["main"],
@@ -147,7 +148,7 @@ BRANCH_STRATEGIES = {
     },
 }
 
-LEGACY_BRANCH_STRATEGIES = [name for name in BRANCH_STRATEGIES if name != "main-only"]
+PRIVATE_BRANCH_STRATEGIES = [name for name in BRANCH_STRATEGIES if name != "main-only"]
 
 
 def strategy_branch_list(name: str) -> List[str]:

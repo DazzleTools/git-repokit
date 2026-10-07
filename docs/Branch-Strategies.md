@@ -5,7 +5,7 @@ This guide explains RepoKit's branch strategies and helps you choose the right o
 ## 📋 Table of Contents
 
 1. [Main-Only Strategy (Recommended)](#main-only-strategy-recommended)
-2. [The Legacy Branch Model](#the-legacy-branch-model)
+2. [The Private-Branch Model](#the-private-branch-model)
 3. [Understanding Branch Strategies](#understanding-branch-strategies)
 4. [Simple Strategy](#simple-strategy)
 5. [GitFlow Strategy](#gitflow-strategy)
@@ -33,9 +33,11 @@ There is no private branch and no worktree beside the repository. Private work l
 repokit create my-project --branch-strategy main-only
 ```
 
-## The Legacy Branch Model
+## The Private-Branch Model
 
-The strategies below keep private work on a local-only `private` branch and cut public branches from it. The repository lives in `my-project/local/` (on `private`), with `main` checked out in `my-project/github/`. They still work and existing projects use them, but new projects should start with main-only.
+The strategies below keep your working history on a local-only `private` branch and move finished work to the public branches -- squashed, fast-forwarded, or selectively, leaving private files and folders behind. The repository lives in `my-project/local/` (on `private`), with `main` checked out in `my-project/github/`.
+
+This is a valid workflow, and it is what RepoKit was first built for. It is also the more involved one: keeping private material off public branches takes care, which is why RepoKit installs hooks that refuse private files on public branches. If you only need private notes, main-only with `private/` kept out of git is simpler and recommended; choose a strategy below when you want private work in git history on its own branch.
 
 ## 🤔 Understanding Branch Strategies
 

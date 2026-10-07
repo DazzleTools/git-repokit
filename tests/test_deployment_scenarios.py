@@ -21,6 +21,7 @@ from .test_utils import (
 
 
 @pytest.mark.live
+@pytest.mark.deployment
 class TestDeploymentScenarios(RepoKitTestCase):
     """Test all deployment scenarios from documentation."""
     

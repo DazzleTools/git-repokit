@@ -14,7 +14,7 @@ import subprocess
 from typing import Dict, Any, Optional
 
 from .config import ConfigManager
-from .defaults import BRANCH_STRATEGIES, LEGACY_BRANCH_STRATEGIES
+from .defaults import BRANCH_STRATEGIES, PRIVATE_BRANCH_STRATEGIES
 from .repo_manager import RepoManager
 from .template_engine import TemplateEngine
 from .directory_analyzer import (
@@ -121,8 +121,9 @@ Branch Strategies:
   main-only    - one branch, main; the repository is <name>/ itself and
                  private/ stays out of git
 
-  Legacy branch model (a local-only 'private' branch; repository in
-  <name>/local/, main checked out in <name>/github/):
+  Private-branch model (work on a local-only 'private' branch, move finished
+  work to the public branches; repository in <name>/local/, main checked out
+  in <name>/github/):
   standard     - private, main, dev, staging, test, live
   simple       - private, main, dev
   gitflow      - private, main, develop, release, hotfix
@@ -240,7 +241,7 @@ Recipe: Microservice
     branch_group.add_argument(
         "--private-branch",
         default=None,
-        help="Name of the private branch (default: the strategy's; 'private' in the legacy strategies)"
+        help="Name of the private branch (default: the strategy's; 'private' in the private-branch strategies)"
     )
 
     branch_group.add_argument(
@@ -251,7 +252,7 @@ Recipe: Microservice
     branch_group.add_argument(
         "--branch-strategy",
         choices=list(BRANCH_STRATEGIES),
-        help="Predefined branch strategy to use (main-only, or a legacy branch strategy)"
+        help="Predefined branch strategy to use (main-only, or a private-branch strategy)"
     )
     
     branch_group.add_argument(
@@ -688,7 +689,7 @@ For more detailed documentation, see: docs/Adoption-Guide.md
     adopt_branch_group.add_argument(
         "--private-branch",
         default=None,
-        help="Name of the private branch (default: the strategy's; 'private' in the legacy strategies)"
+        help="Name of the private branch (default: the strategy's; 'private' in the private-branch strategies)"
     )
 
     adopt_branch_group.add_argument(
@@ -696,11 +697,11 @@ For more detailed documentation, see: docs/Adoption-Guide.md
         help="Name of the default branch (default: main)"
     )
 
-    # Adoption builds the legacy branch model only; main-only adoption is not
+    # Adoption builds the private-branch model only; main-only adoption is not
     # implemented yet.
     adopt_branch_group.add_argument(
         "--branch-strategy",
-        choices=LEGACY_BRANCH_STRATEGIES,
+        choices=PRIVATE_BRANCH_STRATEGIES,
         help="Branch strategy to implement"
     )
     

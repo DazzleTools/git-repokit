@@ -9,10 +9,15 @@ import os
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from repokit.branch_utils import BranchContext
 from repokit.guardrails import GuardrailsManager
 
 from .test_utils import force_rmtree
+
+# builds real git repositories with hooks
+pytestmark = pytest.mark.integration
 
 
 class TestBranchContext(unittest.TestCase):

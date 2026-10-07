@@ -60,10 +60,13 @@ def _set(name, value):
 def pytest_configure(config):
     global _temp_home
 
-    config.addinivalue_line(
-        "markers",
+    for line in (
+        "unit: fast, in-process; no repokit CLI run and no git repository built",
+        "integration: runs the repokit CLI or builds real git repositories in temp dirs",
         f"live: talks to the real GitHub API; skipped unless {LIVE_ENV}=1",
-    )
+        "deployment: the live end-to-end deployment scenarios (also live)",
+    ):
+        config.addinivalue_line("markers", line)
 
     _set("GIT_CONFIG_COUNT", str(len(GIT_OVERRIDES)))
     for i, (key, value) in enumerate(GIT_OVERRIDES.items()):
@@ -95,7 +98,29 @@ def pytest_unconfigure(config):
         shutil.rmtree(_temp_home, ignore_errors=True)
 
 
+def _categorize(item):
+    """Give every test exactly one of unit / integration / live.
+
+    live (and deployment) are marked in the test files. Everything built on
+    RepoKitTestCase runs the CLI, so it is integration, as are files that
+    mark themselves with `pytestmark = pytest.mark.integration`. The rest is
+    unit. `tests/run_tests.py --unit|--integration|--github` selects on these.
+    """
+    from .test_utils import RepoKitTestCase
+
+    if "live" in item.keywords or "integration" in item.keywords:
+        return
+    cls = getattr(item, "cls", None)
+    if cls is not None and issubclass(cls, RepoKitTestCase):
+        item.add_marker(pytest.mark.integration)
+    else:
+        item.add_marker(pytest.mark.unit)
+
+
 def pytest_collection_modifyitems(config, items):
+    for item in items:
+        _categorize(item)
+
     if live_github_enabled():
         return
     skip_live = pytest.mark.skip(reason=f"live GitHub test; set {LIVE_ENV}=1 to run")

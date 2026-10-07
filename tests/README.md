@@ -5,33 +5,34 @@ Comprehensive testing framework for RepoKit functionality including unit tests, 
 ## Quick Start
 
 ```bash
-# Run the suite (from the project root)
-python -m pytest
-
-# Also run the live GitHub tests -- these create real repositories
-REPOKIT_LIVE_GITHUB=1 python -m pytest
-```
-
-The suite is isolated from your own setup by `tests/conftest.py`: git never signs the commits tests make, `HOME`/`USERPROFILE` point at a temporary directory (so `~/.repokit/credentials.json` is never touched), and GitHub tokens are blanked. Tests marked `live` are skipped, and `.env.test` is not read, unless `REPOKIT_LIVE_GITHUB=1` is set.
-
-> **Note:** `tests/run_tests.py` and the commands below do not currently run: the test modules use package-relative imports, which the runner's top-level imports cannot load (`ImportError: attempted relative import with no known parent package`). Use `python -m pytest`.
-
-```bash
-# Run all tests
+# Run all tests (live GitHub tests skipped)
 python tests/run_tests.py
 
-# Run only unit tests (no GitHub token required)
+# Run only unit tests -- fast, a few seconds
 python tests/run_tests.py --unit
 
-# Run integration tests
+# Run integration tests -- the CLI and real git repositories, in temp dirs
 python tests/run_tests.py --integration
 
-# Run GitHub deployment tests (requires token)
+# Run GitHub API tests -- live: creates real repositories (requires token)
 python tests/run_tests.py --github
 
-# Check test environment setup
+# Run the deployment scenarios -- live (requires token)
+python tests/run_tests.py --deployment
+
+# Check the test environment; runs nothing
 python tests/run_tests.py --check
+
+# Keep the generated repositories for inspection (under test_runs/, git-ignored)
+python tests/run_tests.py --integration --keep-run
+
+# Anything after -- goes to pytest
+python tests/run_tests.py --unit -- -k config
 ```
+
+`run_tests.py` is a thin driver around pytest; `python -m pytest` (optionally with `-m unit`, `-m integration`, `-m live`, `-m deployment`) runs the same tests. Every test carries exactly one of `unit`, `integration` or `live`: tests built on `RepoKitTestCase` and files that mark themselves are integration, live tests are marked in their files, and the rest are unit (`tests/conftest.py`).
+
+The suite is isolated from your own setup by `tests/conftest.py`, however it is run: git never signs the commits tests make, `HOME`/`USERPROFILE` point at a temporary directory (so `~/.repokit/credentials.json` is never touched), and GitHub tokens are blanked. Tests marked `live` are skipped, and `.env.test` is not read, unless `REPOKIT_LIVE_GITHUB=1` is set -- which `--github` and `--deployment` do for you.
 
 ## Test Categories
 

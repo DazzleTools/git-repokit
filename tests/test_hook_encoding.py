@@ -12,9 +12,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import pytest
+
 from repokit.guardrails import GuardrailsManager
 
 from .test_utils import force_rmtree
+
+pytestmark = pytest.mark.integration
 
 
 class TestHookOutputEncoding(unittest.TestCase):

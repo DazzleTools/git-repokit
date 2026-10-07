@@ -5,6 +5,15 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.6] - 2026-10-07
+
+### Fixed
+- `python tests/run_tests.py` runs again, with its choices: `--unit`, `--integration`, `--github`, `--deployment`, `--check`, `--keep-run`, `--test-dir`, `--no-cleanup`, `--verbose`. It is now a thin driver around pytest, so every run keeps the suite's isolation; arguments after `--` go to pytest.
+
+### Changed
+- Every test is marked `unit`, `integration` or `live` (deployment scenarios also `deployment`), so `python -m pytest -m unit` and the runner's flags select the same tests.
+- The help, README and `docs/Branch-Strategies.md` describe the branch strategies with a private branch as the private-branch model -- valid and fully supported, more involved than main-only -- rather than as legacy.
+
 ## [0.4.5] - 2026-10-07
 
 ### Added
