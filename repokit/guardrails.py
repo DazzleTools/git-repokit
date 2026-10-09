@@ -60,6 +60,69 @@ class GuardrailsManager:
         
         return True
     
+    def _vendored_common(self) -> Optional[Path]:
+        """The project's git-repokit-common copy (the folder with install-hooks.sh), if any."""
+        for candidate in (self.repo_path / "scripts" / "repokit-common", self.repo_path / "scripts"):
+            if (candidate / "install-hooks.sh").is_file() and (candidate / "repokit_config.py").is_file():
+                return candidate
+        return None
+
+    def setup_repokit_common(self, vendor: bool = False) -> int:
+        """Install git-repokit-common's hooks, with the private-branch settings.
+
+        Never vendors silently: adding the subtree makes commits, so it needs
+        --vendor and a clean working tree. Returns a process exit code.
+        """
+        from . import common_kit
+        from .defaults import DEFAULT_PRIVATE_DIRS, DEFAULT_SENSITIVE_FILES
+
+        if not self.git_dir.exists():
+            logger.error("Not in a git repository!")
+            return 1
+
+        copy = self._vendored_common()
+        if copy is None:
+            src = common_kit.source({})
+            url, ref = src if src else (common_kit.DEFAULT_URL, common_kit.DEFAULT_REF)
+            if not vendor:
+                print("This project has no git-repokit-common copy, whose hooks the guardrails use.")
+                print("Add it (two commits on the current branch), then re-run:")
+                print(f"  git subtree add --prefix={common_kit.PREFIX} {url} {ref} --squash")
+                print("or run: repokit setup-guardrails --vendor")
+                print("(repokit setup-guardrails --legacy installs git-repokit's previous hooks instead.)")
+                return 1
+            dirty = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"],
+                                   cwd=self.repo_path, capture_output=True, text=True).stdout.strip()
+            if dirty:
+                print("The working tree has uncommitted changes; commit or stash them before --vendor.")
+                return 1
+            problem = common_kit.vendor(str(self.repo_path), url, ref)
+            if problem:
+                print(f"Could not add git-repokit-common: {problem}")
+                return 1
+            print(f"Added git-repokit-common at {common_kit.PREFIX}/")
+            print(common_kit.RESIGN_HINT)
+            copy = self._vendored_common()
+
+        private_paths = ["CLAUDE.md"] + [f"{d.rstrip('/')}/" for d in DEFAULT_PRIVATE_DIRS] + list(DEFAULT_SENSITIVE_FILES)
+        private_branch = self.context.current_branch if self.context.is_private_branch() else None
+        written = common_kit.write_settings(
+            str(self.repo_path), common_kit.private_branch_settings(private_branch, private_paths))
+        if written:
+            print(f"Wrote the private-branch settings to {written} -- commit it on every branch that should be checked.")
+
+        problem = common_kit.install_hooks(str(self.repo_path))
+        if problem:
+            print(f"Could not install the hooks: {problem}")
+            return 1
+
+        # Branch-specific exclusions (a setup step, not a hook) stay git-repokit's
+        self.context.setup_branch_excludes()
+
+        print("git-repokit-common hooks installed (pre-commit, post-commit, pre-push).")
+        self._print_status()
+        return 0
+
     def _install_hook(self, hook_name: str, force: bool = False) -> bool:
         """Install a specific git hook."""
         hook_path = self.hooks_dir / hook_name
@@ -348,6 +411,8 @@ EOF
             'branch': self.context.current_branch,
             'branch_type': self.context.branch_type,
             'pre_commit_hook': (self.hooks_dir / 'pre-commit').exists(),
+            'repokit_common_hooks': (self.hooks_dir / 'pre-commit').is_file() and
+                'repokit-common hook stub' in (self.hooks_dir / 'pre-commit').read_text(encoding='utf-8', errors='replace'),
             'post_checkout_hook': (self.hooks_dir / 'post-checkout').exists(),
             'excludes_configured': (self.git_dir / 'info' / 'exclude').exists(),
             'staged_files': self.context.get_staged_files(),
@@ -367,7 +432,8 @@ EOF
         
         print("\n📊 RepoKit Guardrails Status:")
         print(f"   Current Branch: {status['branch']} ({status['branch_type']})")
-        print(f"   Pre-commit Hook: {'✅' if status['pre_commit_hook'] else '❌'}")
+        print(f"   Pre-commit Hook: {'✅' if status['pre_commit_hook'] else '❌'}"
+              f"{' (git-repokit-common)' if status['repokit_common_hooks'] else ''}")
         print(f"   Post-checkout Hook: {'✅' if status['post_checkout_hook'] else '❌'}")
         print(f"   Branch Excludes: {'✅' if status['excludes_configured'] else '❌'}")
         
@@ -475,12 +541,18 @@ EOF
 
 
 def setup_guardrails_command(args) -> int:
-    """CLI command to set up guardrails."""
+    """CLI command to set up guardrails.
+
+    By default the hooks are git-repokit-common's (djdarcy, 2026-10-08: "we
+    should switch it to repokit-common hooks as all future projects should be
+    using all of our tools properly"). --legacy keeps git-repokit's previous
+    hooks available.
+    """
     manager = GuardrailsManager()
-    
-    if manager.setup_guardrails(force=args.force):
-        return 0
-    return 1
+
+    if getattr(args, "legacy", False):
+        return 0 if manager.setup_guardrails(force=args.force) else 1
+    return manager.setup_repokit_common(vendor=getattr(args, "vendor", False))
 
 
 def check_guardrails_command(args) -> int:

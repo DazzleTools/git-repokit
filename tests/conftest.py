@@ -42,6 +42,8 @@ GIT_OVERRIDES = {
 
 TOKEN_VARS = ("REPOKIT_TEST_GITHUB_TOKEN", "GITHUB_TOKEN", "GH_TOKEN")
 
+COMMON_SOURCE_ENV = "REPOKIT_COMMON_SOURCE"
+
 _saved_env = {}
 _temp_home = None
 
@@ -86,6 +88,18 @@ def pytest_configure(config):
     if not live_github_enabled():
         for name in TOKEN_VARS:
             _set(name, "")
+
+    # `repokit create` vendors git-repokit-common; never from the network in
+    # tests. Use a sibling checkout when there is one, else switch it off.
+    if not os.environ.get(COMMON_SOURCE_ENV):
+        sibling = REPO_ROOT.parent / "git-repokit-common"
+        _set(COMMON_SOURCE_ENV, str(sibling) if (sibling / ".git").exists() else "off")
+
+
+def repokit_common_available():
+    """True when tests can vendor git-repokit-common from a local checkout."""
+    value = os.environ.get(COMMON_SOURCE_ENV, "off")
+    return value.lower() != "off" and os.path.isdir(value)
 
 
 def pytest_unconfigure(config):

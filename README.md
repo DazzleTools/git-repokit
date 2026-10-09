@@ -1,7 +1,7 @@
 # RepoKit
 
 [![GitHub Workflow Status](https://github.com/djdarcy/git-repokit/actions/workflows/main.yml/badge.svg)](https://github.com/djdarcy/git-repokit/actions)
-[![Version](https://img.shields.io/badge/version-0.4.6-blue)](https://github.com/djdarcy/git-repokit/releases)
+[![Version](https://img.shields.io/badge/version-0.5.0-blue)](https://github.com/djdarcy/git-repokit/releases)
 [![Python](https://img.shields.io/badge/python-%3E%3D3.7-darkgreen)](https://python.org/downloads)
 [![License](https://img.shields.io/badge/license-MIT-orange)](https://github.com/djdarcy/git-repokit/blob/main/LICENSE)
 [![GitHub Discussions](https://img.shields.io/badge/discussions-Welcome-lightgrey)](https://github.com/djdarcy/git-repokit/discussions)
@@ -145,17 +145,23 @@ repokit analyze /path/to/project
 
 RepoKit supports multiple branching strategies.
 
-### Main-only (recommended for new projects)
+### Main-only (the default)
 ```
 main
 ```
-The repository is the project folder itself; `private/` is ignored by git. `repokit create my-project --branch-strategy main-only`
+`repokit create my-project` makes the project folder the repository, on `main`, with:
+- `private/` as **its own git repository** (ignored by the project; linked into every worktree);
+- [git-repokit-common](https://github.com/DazzleTools/git-repokit-common) vendored at `scripts/repokit-common/`, with its hooks installed (version sync, private-content checks, test gating).
+
+`--no-common` skips git-repokit-common; `--private-mode branch` keeps private work on a private branch only.
 
 ### The private-branch model
 
 These keep your working history on a local-only `private` branch (repository in `<name>/local/`, `main` in `<name>/github/`) and move finished work to the public branches -- squashed, fast-forwarded, or selectively. A valid workflow, and RepoKit's original one, but more involved: hooks refuse private files on public branches to keep mistakes from leaking. See [docs/Branch-Strategies.md](docs/Branch-Strategies.md).
 
-### Standard (current default)
+With `--with-common`, these strategies also get git-repokit-common's hooks, configured to refuse private files on the public branches. `repokit setup-guardrails` installs the same hooks in an existing project.
+
+### Standard
 ```
 private → dev → main → test → staging → live
 ```

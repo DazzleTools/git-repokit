@@ -48,6 +48,19 @@ class RepoManager:
         # Only a missing key falls back to the legacy "private".
         self.private_branch = config.get("private_branch", "private")
 
+        # How private work is kept: "nested" (private/ is its own repository)
+        # or "branch" (on the private branch only). The default follows the
+        # strategy, so a private-branch strategy alone behaves as it always did.
+        self.private_mode = config.get("private_mode") or (
+            "nested" if not self.private_branch else "branch"
+        )
+
+        # Vendor git-repokit-common (hooks and tools) into the project: on by
+        # default for main-only, opt-in for the private-branch strategies.
+        with_common = config.get("with_common")
+        self.with_common = (not self.private_branch) if with_common is None else bool(with_common)
+        self.common_vendored = False
+
         if self.private_branch is None and not config.get("worktrees"):
             # Flat layout: the repository is <name>/ itself, one branch,
             # no worktrees beside it.
@@ -124,12 +137,29 @@ class RepoManager:
             # Set up branches
             self._setup_branches()
 
+            # git-repokit-common: vendored while the tree is still clean (one
+            # commit), so in the private-branch model the public branches cut
+            # later inherit it. Its hooks are installed at the end.
+            if self.with_common and not self.config.get("is_adoption", False):
+                self._vendor_repokit_common()
+
             # Set up private content protection BEFORE any commits
             # This is critical to prevent private content from reaching public branches
             self._setup_protection()
 
+            # Nested mode: private/ becomes its own repository, ignored by this one
+            if self.private_mode == "nested":
+                from .vault import init_private_repo
+                if not init_private_repo(self.repo_root, self.project_name, self.logger):
+                    raise RuntimeError("could not create the private repository in private/")
+
             # Generate template files
             self._generate_template_files()
+
+            # The language templates rewrite .gitignore; put the vault's lines back
+            if self.private_mode == "nested":
+                from .vault import ensure_parent_ignores
+                ensure_parent_ignores(self.repo_root)
 
             # Create initial commit
             self._create_initial_commit()
@@ -149,11 +179,23 @@ class RepoManager:
             # This is the key change - moved worktree setup to the end
             self._setup_worktrees()
 
+            # Nested mode: every worktree reaches the real private/ through a link
+            if self.private_mode == "nested":
+                self._link_private_into_worktrees()
+
             # Set up local exclude patterns for branch-conditional ignoring
             self._setup_local_excludes()
 
             # Set up GitHub integration (copy files to GitHub worktree)
             self._setup_github_integration()
+
+            # repokit-common's hooks, last, so create's own commits never run them
+            if self.common_vendored:
+                from .common_kit import install_hooks
+                problem = install_hooks(self.repo_root)
+                if problem:
+                    self.logger.warning(f"repokit-common hooks not installed: {problem}")
+                    self.logger.warning("Run: sh scripts/repokit-common/install-hooks.sh")
 
             # Generate RepoKit configuration file with signature
             self._generate_repokit_config()
@@ -843,6 +885,79 @@ class RepoManager:
             category="common",
         )
 
+    def _vendor_repokit_common(self) -> None:
+        """Add git-repokit-common at scripts/repokit-common/ and commit its settings.
+
+        A failure (offline, no git subtree) is a warning with the commands to
+        run by hand, never a failed create; the project then keeps git-repokit's
+        own pre-commit hook as its guard (_setup_protection).
+        """
+        from . import common_kit
+
+        src = common_kit.source(self.config)
+        if src is None:
+            self.logger.info("git-repokit-common: vendoring switched off")
+            return
+        url, ref = src
+        problem = common_kit.vendor(self.repo_root, url, ref)
+        if problem:
+            self.logger.warning(f"git-repokit-common not added: {problem}")
+            self.logger.warning(
+                f"Run: git subtree add --prefix={common_kit.PREFIX} {url} {ref} --squash"
+            )
+            return
+        self.common_vendored = True
+        self.logger.info(f"Vendored git-repokit-common at {common_kit.PREFIX}/")
+
+        # The private-branch model: repokit-common's pre-commit must protect the
+        # paths git-repokit's guard did, and know a custom private branch.
+        if self.private_branch:
+            private_paths = ["CLAUDE.md"]
+            private_paths += [f"{d.rstrip('/')}/" for d in self.config.get("private_dirs", [])]
+            private_paths += list(self.config.get("sensitive_files", []))
+            written = common_kit.write_settings(
+                self.repo_root,
+                common_kit.private_branch_settings(self.private_branch, private_paths),
+            )
+            if written:
+                self.run_git(["add", written], cwd=self.repo_root)
+                self.run_git(["commit", "-m", "Configure git-repokit-common for the private-branch model"],
+                             cwd=self.repo_root)
+
+    def _link_private_into_worktrees(self) -> None:
+        """Link <worktree>/private to the real vault in every worktree but the main one."""
+        from .vault import link_private
+
+        private_path = os.path.join(self.repo_root, "private")
+
+        # Every worktree reads the repository's shared info/exclude. "/private"
+        # (no trailing slash) also matches the link itself, which git sees as a
+        # symlink, not a directory; and public branches may carry no .gitignore.
+        common_dir = self.run_git(["rev-parse", "--git-common-dir"], cwd=self.repo_root, check=False) or ".git"
+        if not os.path.isabs(common_dir):
+            common_dir = os.path.join(self.repo_root, common_dir)
+        exclude = os.path.join(common_dir, "info", "exclude")
+        os.makedirs(os.path.dirname(exclude), exist_ok=True)
+        existing = open(exclude, encoding="utf-8").read() if os.path.exists(exclude) else ""
+        if "/private" not in existing.splitlines():
+            with open(exclude, "a", encoding="utf-8") as f:
+                f.write(("\n" if existing and not existing.endswith("\n") else "")
+                        + "# private/ in a worktree is a link to the private repository\n/private\n")
+
+        output = self.run_git(["worktree", "list", "--porcelain"], cwd=self.repo_root, check=False) or ""
+        main = os.path.normcase(os.path.abspath(self.repo_root))
+        for line in output.splitlines():
+            if not line.startswith("worktree "):
+                continue
+            path = os.path.abspath(line[len("worktree "):].strip())
+            if os.path.normcase(path) == main:
+                continue
+            problem = link_private(path, private_path)
+            if problem:
+                self.logger.warning(f"Could not link private/ into {path}: {problem}")
+            else:
+                self.logger.info(f"Linked {path}/private to the private repository")
+
     def _setup_github_integration(self) -> None:
         """Set up GitHub integration."""
         self.logger.info("Setting up GitHub integration")
@@ -926,7 +1041,13 @@ class RepoManager:
                     f.write("**/__private__*\n")
                 f.write("\n")
 
-        # Create pre-commit hook using BranchContext patterns
+        # With git-repokit-common vendored, its hooks are the project's hooks
+        # (installed at the end of setup_repository); git-repokit writes none.
+        if self.common_vendored:
+            return
+
+        # Fallback guard when git-repokit-common is not vendored (--no-common,
+        # or vendoring failed): git-repokit's own pre-commit hook.
         hooks_dir = os.path.join(self.repo_root, ".git", "hooks")
         os.makedirs(hooks_dir, exist_ok=True)
 
@@ -1249,6 +1370,18 @@ exit 0
                 all_files.append(relative_path)
         return all_files
     
+    @staticmethod
+    def _is_vendored(path: str) -> bool:
+        """True for files of the vendored git-repokit-common copy.
+
+        Upstream code is never private: its own file names (e.g. tests about
+        private-patterns) must not be cut from public branches by the
+        private-name patterns.
+        """
+        from .common_kit import PREFIX
+        normalized = str(path).replace("\\", "/").lstrip("./")
+        return normalized == PREFIX or normalized.startswith(PREFIX + "/")
+
     def _filter_files_for_public_branch(self, file_list: List[str]) -> List[str]:
         """
         Filter out sensitive files using existing pattern infrastructure.
@@ -1275,9 +1408,12 @@ exit 0
         context = BranchContext(self.repo_root, self._get_branch_config())
         
         for file_path in file_list:
+            if self._is_vendored(file_path):
+                clean_files.append(file_path)  # vendored upstream code is never private
+                continue
             is_sensitive = False
             matching_pattern = None
-            
+
             # Check against DEFAULT_SENSITIVE_PATTERNS
             for pattern in patterns_to_exclude:
                 # Use same cross-platform pattern matching as cleanup
@@ -1433,8 +1569,10 @@ exit 0
             tracked_files = self.run_git(["ls-files"], cwd=self.repo_root).splitlines()
             
             # Use existing guardrails logic to identify private files
-            private_files = context.check_private_files(tracked_files)
-            
+            # (vendored upstream code is never private)
+            private_files = [(f, r) for f, r in context.check_private_files(tracked_files)
+                             if not self._is_vendored(f)]
+
             files_removed = []
             if private_files:
                 self.logger.info(f"Removing {len(private_files)} private files from branch '{branch_name}'")
@@ -1527,8 +1665,10 @@ exit 0
             tracked_files = self.run_git(["ls-files"], cwd=self.repo_root).splitlines()
             
             # Use existing guardrails logic to identify private files
-            private_files = context.check_private_files(tracked_files)
-            
+            # (vendored upstream code is never private)
+            private_files = [(f, r) for f, r in context.check_private_files(tracked_files)
+                             if not self._is_vendored(f)]
+
             # Switch back to original branch
             self.run_git(["checkout", current_branch], cwd=self.repo_root)
             
@@ -2054,9 +2194,12 @@ exit 0
                 )
                 return
 
-            # Add files to git (use -f for private directory since it's in .gitignore)
+            # Add files to git (use -f for private directory since it's in .gitignore).
+            # In nested mode private/ is its own repository: its files are the
+            # vault's to commit, never this repository's.
             self.run_git(["add", "CLAUDE.md"], cwd=self.repo_root)
-            self.run_git(["add", "-f", "private/claude/"], cwd=self.repo_root)
+            if self.private_mode != "nested":
+                self.run_git(["add", "-f", "private/claude/"], cwd=self.repo_root)
 
             # Only commit if not in adoption mode (in adoption, user commits manually)
             if not self.config.get("is_adoption", False):
@@ -2135,8 +2278,11 @@ exit 0
         if config_patterns:
             patterns_to_clean.extend(config_patterns)
         
-        # Determine if this is a private branch
+        # Determine if this is a private branch (this repository's own private
+        # branch counts, whatever its name -- e.g. --private-branch scratch)
         private_branches = DEFAULT_PRIVATE_BRANCHES + self.config.get("private_branches", [])
+        if self.private_branch and self.private_branch not in private_branches:
+            private_branches = private_branches + [self.private_branch]
         is_private_branch = branch_context in private_branches
         
         cleanup_logger.info(f"Branch context: {branch_context}")
@@ -2162,7 +2308,9 @@ exit 0
                 for file in files:
                     file_path = os.path.join(root, file)
                     relative_path = os.path.relpath(file_path, self.repo_root)
-                    
+                    if self._is_vendored(relative_path):
+                        continue
+
                     # Check if file matches any sensitive pattern
                     should_remove = False
                     matching_pattern = None
@@ -2210,6 +2358,8 @@ exit 0
                 files_to_remove_from_index = []
                 
                 for tracked_file in tracked_files:
+                    if self._is_vendored(tracked_file):
+                        continue
                     # Check if tracked file matches any sensitive pattern
                     should_remove = False
                     matching_pattern = None
@@ -2362,6 +2512,8 @@ exit 0
             "language": self.config.get("language", "generic"),
             "branch_strategy": self.config.get("branch_strategy", "standard"),
             "private_branch": self.config.get("private_branch", "private"),
+            "private_mode": self.private_mode,
+            "repokit_common": self.common_vendored,
         }
         
         # Add additional config if available

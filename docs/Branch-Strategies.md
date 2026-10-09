@@ -19,18 +19,20 @@ This guide explains RepoKit's branch strategies and helps you choose the right o
 
 **Best for**: new projects.
 
-One branch, `main`, and the repository is the project folder itself:
+One branch, `main`, and the repository is the project folder itself. It is what `repokit create` makes by default:
 
 ```
-my-project/          # the repository, on main
-  private/           # private notes -- ignored by git, never committed
+my-project/                # the repository, on main
+  private/                 # its own git repository -- ignored by this one
+  scripts/repokit-common/  # git-repokit-common: hooks, version sync, tools
   docs/ scripts/ tests/ ...
 ```
 
-There is no private branch and no worktree beside the repository. Private work lives in `private/`, which `.gitignore` excludes, so nothing private can reach `main` or GitHub. Feature branches are yours to create as you need them.
+There is no private branch and no worktree beside the repository. Private work lives in `private/`, which is a separate git repository with its own history; the project's `.gitignore` excludes it, so nothing private can reach `main` or GitHub, and no hook has to guard it. Any worktree you create can link `private/` to the same repository (git-repokit does this for the worktrees it creates). Feature branches are yours to create as you need them.
 
 ```bash
-repokit create my-project --branch-strategy main-only
+repokit create my-project                  # main-only, nested private/, git-repokit-common
+repokit create my-project --no-common      # without git-repokit-common
 ```
 
 ## The Private-Branch Model

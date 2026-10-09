@@ -150,6 +150,11 @@ BRANCH_STRATEGIES = {
 
 PRIVATE_BRANCH_STRATEGIES = [name for name in BRANCH_STRATEGIES if name != "main-only"]
 
+# What a bare `repokit create` makes. adopt and migrate build the private-branch
+# model only, so they default to the strategy below instead.
+DEFAULT_BRANCH_STRATEGY = "main-only"
+DEFAULT_ADOPT_STRATEGY = "standard"
+
 
 def strategy_branch_list(name: str) -> List[str]:
     """All branches a strategy has, its private branch first when it has one."""

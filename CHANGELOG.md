@@ -5,6 +5,24 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-10-09
+
+> **Changed default:** a bare `repokit create NAME` now makes a main-only repository at `NAME/` with a nested private repository and git-repokit-common. For the previous result, pass `--branch-strategy standard` (or the strategy you used), which behaves as before.
+
+### Added
+- `--private-mode nested|branch`: `nested` makes `private/` its own git repository (signing off inside it, a standard folder layout, a first commit; the project ignores `/private/` and `CLAUDE.local.md`), and links it into every worktree `create` makes (a junction on Windows, a symlink elsewhere). Default: nested for main-only, branch for the private-branch strategies.
+- `--with-common` / `--no-common`: vendor git-repokit-common at `scripts/repokit-common/` (git subtree) and install its hooks. On by default for main-only. In the private-branch model it also writes `private-patterns` (and `private-branches` for a custom private branch) so its pre-commit refuses private files on public branches. `REPOKIT_COMMON_SOURCE` points vendoring at another source (a local path works), or `off`.
+- `repokit setup-guardrails --vendor` adds git-repokit-common to an existing project first; `--legacy` installs git-repokit's previous hooks.
+
+### Changed
+- `repokit create` writes no hook of its own when git-repokit-common is vendored; its hooks are the project's hooks. Without it (`--no-common`, or vendoring failed) git-repokit's own pre-commit guard is installed as before.
+- `repokit setup-guardrails` installs git-repokit-common's hooks from the project's copy (and the private-branch settings) instead of git-repokit's pre-commit and post-checkout. Without a copy it explains how to add one and changes nothing.
+- `adopt` and `migrate` keep `standard` as their default strategy.
+
+### Fixed
+- Cutting public branches no longer drops files of a vendored git-repokit-common copy whose names merely contain "private".
+- A custom private branch name is treated as private when public branches are cut.
+
 ## [0.4.6] - 2026-10-07
 
 ### Fixed

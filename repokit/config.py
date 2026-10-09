@@ -20,6 +20,7 @@ from .defaults import (
     DEFAULT_SENSITIVE_PATTERNS,
     BRANCH_SPECIFIC_EXCLUDES,
     BRANCH_STRATEGIES,
+    DEFAULT_BRANCH_STRATEGY,
 )
 
 
@@ -56,8 +57,8 @@ class ConfigManager:
             "default_branch": "main",
             # Base defaults match the default strategy; apply_branch_strategy
             # replaces them with the chosen strategy's values
-            "branches": list(BRANCH_STRATEGIES["standard"]["branches"]),
-            "worktrees": list(BRANCH_STRATEGIES["standard"]["worktrees"]),
+            "branches": list(BRANCH_STRATEGIES[DEFAULT_BRANCH_STRATEGY]["branches"]),
+            "worktrees": list(BRANCH_STRATEGIES[DEFAULT_BRANCH_STRATEGY]["worktrees"]),
             "directories": [
                 "convos",
                 "docs",
@@ -70,7 +71,7 @@ class ConfigManager:
             "private_dirs": DEFAULT_PRIVATE_DIRS.copy(),
             "sensitive_files": DEFAULT_SENSITIVE_FILES.copy(),
             "sensitive_patterns": DEFAULT_SENSITIVE_PATTERNS.copy(),
-            "private_branch": "private",
+            "private_branch": BRANCH_STRATEGIES[DEFAULT_BRANCH_STRATEGY]["private_branch"],
             "github": True,
             "use_github_noreply": True,  # Add GitHub no-reply setting
             "user": {"name": "", "email": ""},
@@ -101,7 +102,7 @@ class ConfigManager:
                 },
             },
             # Branch strategy templates
-            "branch_strategy": "standard",  # Default strategy
+            "branch_strategy": DEFAULT_BRANCH_STRATEGY,
             # Defined once in defaults.BRANCH_STRATEGIES; copied so a config
             # file can extend or override strategies without touching it.
             "branch_strategies": copy.deepcopy(BRANCH_STRATEGIES),

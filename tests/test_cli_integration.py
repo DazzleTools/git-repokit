@@ -53,15 +53,15 @@ class TestCLICommands(RepoKitTestCase):
         project_dir = os.path.join(self.test_dir, project_name)
         self.assertTrue(os.path.exists(project_dir))
         
-        # Check basic structure (RepoKit creates structure in local/ subdirectory)
-        local_dir = os.path.join(project_dir, "local")
-        self.assert_directory_structure(local_dir, [
+        # The default (main-only) layout: the project folder is the repository
+        self.assert_directory_structure(project_dir, [
             "docs", "tests", "scripts", "private"
         ])
-        
-        # Check Python-specific files (created in local/ subdirectory)
-        self.assert_file_exists(local_dir, "requirements.txt")
-        self.assert_file_exists(local_dir, "setup.py")
+        self.assertTrue(os.path.isdir(os.path.join(project_dir, ".git")))
+
+        # Check Python-specific files
+        self.assert_file_exists(project_dir, "requirements.txt")
+        self.assert_file_exists(project_dir, "setup.py")
         
     def test_create_with_ai_integration(self):
         """Test project creation with AI integration."""
@@ -75,14 +75,14 @@ class TestCLICommands(RepoKitTestCase):
         
         project_dir = os.path.join(self.test_dir, project_name)
         
-        # Check AI files created (in local/ subdirectory)
-        local_dir = os.path.join(project_dir, "local")
-        self.assert_file_exists(local_dir, "CLAUDE.md")
-        private_dir = os.path.join(local_dir, "private")
-        
-        # Check instructions directory
+        # Check AI files created (default layout: the project folder is the repository)
+        self.assert_file_exists(project_dir, "CLAUDE.md")
+        private_dir = os.path.join(project_dir, "private")
+
+        # Instructions land in the private repository
         instructions_dir = os.path.join(private_dir, "claude", "instructions")
         self.assertTrue(os.path.exists(instructions_dir))
+        self.assertTrue(os.path.isdir(os.path.join(private_dir, ".git")))
         
     def test_analyze_empty_directory(self):
         """Test analyze command on empty directory."""

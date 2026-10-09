@@ -14,7 +14,7 @@ import subprocess
 from typing import Dict, Any, Optional
 
 from .config import ConfigManager
-from .defaults import BRANCH_STRATEGIES, PRIVATE_BRANCH_STRATEGIES
+from .defaults import BRANCH_STRATEGIES, DEFAULT_ADOPT_STRATEGY, PRIVATE_BRANCH_STRATEGIES
 from .repo_manager import RepoManager
 from .template_engine import TemplateEngine
 from .directory_analyzer import (
@@ -252,9 +252,29 @@ Recipe: Microservice
     branch_group.add_argument(
         "--branch-strategy",
         choices=list(BRANCH_STRATEGIES),
-        help="Predefined branch strategy to use (main-only, or a private-branch strategy)"
+        help="Predefined branch strategy to use (default: main-only; or a private-branch strategy)"
     )
-    
+
+    branch_group.add_argument(
+        "--private-mode",
+        choices=["nested", "branch"],
+        help="How private work is kept: 'nested' makes private/ its own git repository "
+             "(linked into every worktree); 'branch' keeps it on the private branch only. "
+             "Default: nested for main-only, branch for the private-branch strategies"
+    )
+
+    common_group = branch_group.add_mutually_exclusive_group()
+    common_group.add_argument(
+        "--with-common", dest="with_common", action="store_true", default=None,
+        help="Vendor git-repokit-common (hooks, version sync, tools) at scripts/repokit-common/ "
+             "and install its hooks (default for main-only)"
+    )
+    common_group.add_argument(
+        "--no-common", dest="with_common", action="store_false",
+        help="Do not vendor git-repokit-common; git-repokit's own pre-commit guard is installed instead "
+             "(default for the private-branch strategies)"
+    )
+
     branch_group.add_argument(
         "--branch-config",
         help="Path to branch configuration file (JSON)",
@@ -1096,24 +1116,41 @@ The stored credentials are used automatically when publishing repositories.
         "setup-guardrails",
         help="Set up private content protection guardrails",
         description="""
-Set up RepoKit guardrails to prevent accidental commits of private content
-to public branches. This installs git hooks and configures branch-specific
-exclusions.
+Set up guardrails that keep private content off public branches.
+
+The hooks are git-repokit-common's: this installs them from the project's
+vendored copy (scripts/repokit-common/), writes the settings the private-branch
+model needs, and configures branch-specific exclusions.
         """,
         epilog="""
 Examples:
-  # Set up guardrails in current repository
+  # Install git-repokit-common's hooks from the vendored copy
   repokit setup-guardrails
-  
-  # Force reinstall hooks
-  repokit setup-guardrails --force
+
+  # No copy yet: vendor git-repokit-common first (makes two commits)
+  repokit setup-guardrails --vendor
+
+  # The previous git-repokit hooks (pre-commit + post-checkout restore)
+  repokit setup-guardrails --legacy --force
         """
     )
-    
+
     guardrails_parser.add_argument(
         "--force",
         action="store_true",
-        help="Overwrite existing hooks"
+        help="Overwrite existing hooks (--legacy only; install-hooks.sh always rewrites its stubs)"
+    )
+    guardrails_parser.add_argument(
+        "--vendor",
+        action="store_true",
+        help="Add git-repokit-common at scripts/repokit-common/ first if the project has no copy "
+             "(git subtree; needs a clean working tree)"
+    )
+    guardrails_parser.add_argument(
+        "--legacy",
+        action="store_true",
+        help="Install git-repokit's previous hooks instead (its own pre-commit and the post-checkout "
+             "that restores private files from the private branch)"
     )
     
     check_guardrails_parser = subparsers.add_parser(
@@ -1554,6 +1591,15 @@ def args_to_config(args: argparse.Namespace) -> Dict[str, Any]:
     # Handle branch strategy
     if hasattr(args, "branch_strategy") and args.branch_strategy:
         cli_config["branch_strategy"] = args.branch_strategy
+    elif getattr(args, "command", None) in ("adopt", "migrate"):
+        # Adoption builds the private-branch model only (see defaults)
+        cli_config["branch_strategy"] = DEFAULT_ADOPT_STRATEGY
+
+    if getattr(args, "private_mode", None):
+        cli_config["private_mode"] = args.private_mode
+
+    if getattr(args, "with_common", None) is not None:
+        cli_config["with_common"] = args.with_common
 
     # Handle AI integration
     if hasattr(args, "ai") and args.ai and args.ai != "none":
