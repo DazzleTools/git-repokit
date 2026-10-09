@@ -5,6 +5,11 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-10-09
+
+### Fixed
+- `repokit` no longer crashes with `UnicodeEncodeError` when its status output (emoji) goes to a console that is not UTF-8, such as Windows' default code page or output piped to another program; such characters are replaced. `repokit setup-guardrails` used to crash this way after finishing its work.
+
 ## [0.5.0] - 2026-10-09
 
 > **Changed default:** a bare `repokit create NAME` now makes a main-only repository at `NAME/` with a nested private repository and git-repokit-common. For the previous result, pass `--branch-strategy standard` (or the strategy you used), which behaves as before.

@@ -1653,6 +1653,15 @@ def main() -> int:
     Returns:
         Exit code (0 for success, non-zero for failure)
     """
+    # Status output uses symbols a non-UTF-8 console (Windows' default code
+    # page, output piped to a tool) cannot encode; replace them rather than
+    # crash after the work is done.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
     args = parse_arguments()
 
     # Set up logging based on verbosity

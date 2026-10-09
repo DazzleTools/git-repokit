@@ -10,6 +10,7 @@ vendored from a local checkout (tests/conftest.py); without one these tests skip
 
 import os
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 
@@ -150,6 +151,19 @@ class TestSetupGuardrails(RepoKitTestCase):
         self.assertNotEqual(code, 0)
         self.assertIn("git subtree add", out)
         self.assertEqual(len(git(self.repo, "log", "--oneline").stdout.splitlines()), 1)
+
+    def test_output_on_a_non_utf8_console_does_not_crash(self):
+        # The status lines print emoji; with output piped and no UTF-8
+        # override (the suite sets one), the command used to crash after
+        # installing everything.
+        env = {k: v for k, v in os.environ.items() if k not in ("PYTHONIOENCODING", "PYTHONUTF8")}
+        result = subprocess.run(
+            [sys.executable, "-m", "repokit", "setup-guardrails", "--vendor"],
+            cwd=self.repo, capture_output=True, env=env,
+        )
+        out = (result.stdout + result.stderr).decode("utf-8", errors="replace")
+        self.assertNotIn("UnicodeEncodeError", out)
+        self.assertEqual(result.returncode, 0, out)
 
     def test_vendor_installs_repokit_common_hooks(self):
         self.assert_repokit_success(["setup-guardrails", "--vendor"], cwd=self.repo)
