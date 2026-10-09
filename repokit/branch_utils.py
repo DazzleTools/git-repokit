@@ -9,6 +9,40 @@ import subprocess
 import os
 from typing import Set, List, Dict, Optional, Tuple
 
+# Lines RepoKit writes into .git/info/exclude for either branch type. Anything
+# else in the file belongs to the user (or another tool) and is kept.
+_REPOKIT_EXCLUDE_LINES = {
+    "CLAUDE.md", "private/claude/", "private/docs/", "private/notes/", "private/temp/",
+    "revisions/", "test-runs/", "test_runs/",
+    "# AI integration files", "# Development conversation logs",
+    "# Private development documentation", "# Development notes and temporary files",
+    "# Revision history (private branch only)", "# Test artifacts", "# Test artifacts (not needed in git)",
+    "# Private branches can contain all content",
+    "# These files are tracked in 'private' branch but ignored in public branches",
+}
+
+
+def _write_excludes(exclude_file: str, excludes: List[str]) -> None:
+    """Write RepoKit's branch excludes, keeping every line that is not RepoKit's.
+
+    The file used to be overwritten, which silently dropped the user's own
+    excludes (and git's template comments) each time branch excludes were set up.
+    """
+    kept: List[str] = []
+    if os.path.exists(exclude_file):
+        with open(exclude_file, encoding="utf-8", errors="replace") as f:
+            for line in f.read().splitlines():
+                stripped = line.strip()
+                if stripped.startswith("# RepoKit:") or stripped in _REPOKIT_EXCLUDE_LINES:
+                    continue
+                kept.append(line)
+    while kept and not kept[-1].strip():
+        kept.pop()
+    while kept and not kept[0].strip():
+        kept.pop(0)
+    with open(exclude_file, "w", encoding="utf-8") as f:
+        f.write("\n".join(kept + ([""] if kept else []) + excludes) + "\n")
+
 
 class BranchContext:
     """Manages branch context and security rules with configurable patterns."""
@@ -280,9 +314,8 @@ class BranchContext:
                 "test_runs/",
             ]
             
-            with open(exclude_file, 'w') as f:
-                f.write('\n'.join(excludes))
-                
+            _write_excludes(exclude_file, excludes)
+
             print(f"✓ Set up branch excludes for public branch '{self.current_branch}'")
         else:
             # Private branch - minimal excludes
@@ -295,9 +328,8 @@ class BranchContext:
                 "test_runs/",
             ]
             
-            with open(exclude_file, 'w') as f:
-                f.write('\n'.join(excludes))
-                
+            _write_excludes(exclude_file, excludes)
+
             print(f"✓ Set up branch excludes for private branch '{self.current_branch}'")
 
 

@@ -165,11 +165,38 @@ class TestSetupGuardrails(RepoKitTestCase):
         self.assertNotIn("UnicodeEncodeError", out)
         self.assertEqual(result.returncode, 0, out)
 
+    def test_previous_hooks_are_moved_aside_not_lost(self):
+        hooks = Path(self.repo, ".git", "hooks")
+        hooks.mkdir(exist_ok=True)
+        (hooks / "pre-commit").write_text("#!/bin/sh\n# an older guard\nexit 0\n", encoding="utf-8")
+        (hooks / "post-checkout").write_text("#!/bin/sh\n# RepoKit post-checkout hook\nexit 0\n", encoding="utf-8")
+        self.assert_repokit_success(["setup-guardrails", "--vendor"], cwd=self.repo)
+        self.assertIn(STUB_MARKER, hook_text(self.repo))
+        self.assertIn("an older guard", (hooks / "pre-commit.before-repokit-common").read_text(encoding="utf-8"))
+        self.assertTrue((hooks / "post-checkout.disabled").is_file())
+        self.assertFalse((hooks / "post-checkout").exists())
+
     def test_vendor_installs_repokit_common_hooks(self):
         self.assert_repokit_success(["setup-guardrails", "--vendor"], cwd=self.repo)
         self.assertTrue(Path(self.repo, "scripts", "repokit-common", "install-hooks.sh").is_file())
         self.assertIn(STUB_MARKER, hook_text(self.repo))
         self.assertFalse(Path(self.repo, ".git", "hooks", "post-checkout").exists())
+
+
+class TestExcludesKeepUserLines(unittest.TestCase):
+
+    def test_branch_excludes_keep_lines_that_are_not_repokits(self):
+        import tempfile
+        from repokit.branch_utils import _write_excludes
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "exclude")
+            Path(path).write_text("# mine\nCLAUDE.local.md\n", encoding="utf-8")
+            _write_excludes(path, ["# RepoKit: block", "CLAUDE.md"])
+            _write_excludes(path, ["# RepoKit: block", "CLAUDE.md"])  # twice: no duplicates
+            lines = Path(path).read_text(encoding="utf-8").splitlines()
+        self.assertIn("CLAUDE.local.md", lines)
+        self.assertEqual(lines.count("CLAUDE.md"), 1)
+        self.assertEqual(lines.count("# RepoKit: block"), 1)
 
 
 if __name__ == "__main__":

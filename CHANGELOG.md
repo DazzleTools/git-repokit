@@ -5,6 +5,15 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-10-09
+
+### Changed
+- git-repokit uses git-repokit-common itself: vendored at `scripts/repokit-common/`, its hooks installed, settings under `[tool.repokit-common]` in `pyproject.toml`.
+
+### Fixed
+- `repokit setup-guardrails` replaces a project's existing hooks without stopping at install-hooks.sh's overwrite question: a previous `pre-commit` is renamed to `pre-commit.before-repokit-common` and git-repokit's old `post-checkout` to `post-checkout.disabled` -- moved aside, never deleted.
+- Setting up branch excludes no longer overwrites the whole of `.git/info/exclude`; lines that are not RepoKit's are kept.
+
 ## [0.5.1] - 2026-10-09
 
 ### Fixed

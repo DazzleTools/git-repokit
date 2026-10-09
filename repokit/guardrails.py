@@ -111,6 +111,24 @@ class GuardrailsManager:
         if written:
             print(f"Wrote the private-branch settings to {written} -- commit it on every branch that should be checked.")
 
+        # install-hooks.sh asks before replacing a pre-commit that is not one
+        # of its stubs, and cannot be answered from here. Running this command
+        # is the request to switch, so move the old hooks aside -- renamed,
+        # never deleted -- and let it install into a free slot.
+        for name, suffix, mine in (
+            ("pre-commit", ".before-repokit-common", lambda t: "repokit-common hook stub" not in t),
+            ("post-checkout", ".disabled", lambda t: "RepoKit" in t and "post-checkout" in t.lower()),
+        ):
+            hook = self.hooks_dir / name
+            if hook.is_file() and mine(hook.read_text(encoding="utf-8", errors="replace")):
+                target = self.hooks_dir / (name + suffix)
+                n = 1
+                while target.exists():
+                    n += 1
+                    target = self.hooks_dir / f"{name}{suffix}.{n}"
+                hook.rename(target)
+                print(f"Moved the previous {name} hook to {target.name}")
+
         problem = common_kit.install_hooks(str(self.repo_path))
         if problem:
             print(f"Could not install the hooks: {problem}")
