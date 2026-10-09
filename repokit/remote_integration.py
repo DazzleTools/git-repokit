@@ -112,7 +112,10 @@ class RemoteIntegration:
             # This is necessary because GitHub doesn't let you set default branch at creation
             # if the repo is empty
             try:
-                default_branch_url = f"{api_url}/repos/{organization if organization else 'user'}/{repo_name}/default_branch"
+                # The repository's real owner (an organization, or the token's
+                # user); the setting lives on the repository itself
+                owner = repo_info.get("owner", {}).get("login") or organization
+                default_branch_url = f"{api_url}/repos/{owner}/{repo_name}"
                 default_branch_data = {"default_branch": "main"}
                 default_branch_response = requests.patch(
                     default_branch_url, headers=headers, json=default_branch_data

@@ -5,6 +5,17 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-10-09
+
+### Added
+- `repokit create NAME --github`: creates the repository on GitHub with the gh CLI, using its login (no token handled by git-repokit), private unless `--public`, under `--org NAME` (alias of `--organization`) or the gh user, and pushes the public branches. In the private-branch model the private branch is never pushed. `--no-push` creates nothing on GitHub.
+
+### Fixed
+- The wheel now contains the templates (all of them -- `templates/*` matched none) and the hook files `setup-guardrails --legacy` installs. Building needs setuptools 62.3 or later.
+- `requests` is declared as a dependency (the `--publish-to` REST path imports it).
+- `repokit create --publish-to github --token TOKEN` uses the token; it was ignored.
+- After creating a repository through the REST API, the default branch is set on the repository's real owner; the request went to a literal `user` path that does not exist.
+
 ## [0.5.2] - 2026-10-09
 
 ### Changed

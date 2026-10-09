@@ -306,9 +306,20 @@ Recipe: Microservice
     # Remote/Publishing options
     remote_group = create_parser.add_argument_group("Remote Repository")
     remote_group.add_argument(
+        "--github",
+        action="store_true",
+        help="Create the repository on GitHub with the gh CLI (its login is used; private unless "
+             "--public) and push the public branches. With --no-push nothing is pushed"
+    )
+    remote_group.add_argument(
+        "--public",
+        action="store_true",
+        help="With --github: make the GitHub repository public"
+    )
+    remote_group.add_argument(
         "--publish-to",
         choices=["github", "gitlab"],
-        help="Publish repository to a remote service"
+        help="Publish repository to a remote service through its REST API and a token"
     )
     
     remote_group.add_argument(
@@ -324,16 +335,16 @@ Recipe: Microservice
     )
     
     remote_group.add_argument(
-        "--organization",
+        "--organization", "--org",
         help="GitHub organization or GitLab group name"
     )
-    
+
     remote_group.add_argument(
         "--no-push",
         action="store_true",
         help="Don't push branches after creating remote repository"
     )
-    
+
     # Authentication
     auth_group = create_parser.add_argument_group("Authentication")
     auth_group.add_argument(
@@ -2673,8 +2684,27 @@ def main() -> int:
             if not success:
                 return 1
 
+            # GitHub through gh (its login, no token here)
+            if getattr(args, "github", False):
+                if args.no_push:
+                    logger.info("--github with --no-push: nothing created on GitHub")
+                else:
+                    from .github_create import create_on_github
+                    problem = create_on_github(
+                        repo_manager.repo_root, repo_manager.project_name, config,
+                        repo_manager.private_branch, organization=args.organization,
+                        public=getattr(args, "public", False), logger=logger,
+                    )
+                    if problem:
+                        logger.error(f"GitHub: {problem}")
+                        logger.error("The local repository is complete; retry with gh once fixed.")
+                        return 1
+
             # Publish to remote if requested
             if args.publish_to:
+                # --token reaches the token lookup through its environment variable
+                if getattr(args, "token", None):
+                    os.environ[f"{args.publish_to.upper()}_TOKEN"] = args.token
                 from .remote_integration import RemoteIntegration
 
                 remote_integration = RemoteIntegration(

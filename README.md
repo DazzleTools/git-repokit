@@ -1,7 +1,7 @@
 # RepoKit
 
 [![GitHub Workflow Status](https://github.com/djdarcy/git-repokit/actions/workflows/main.yml/badge.svg)](https://github.com/djdarcy/git-repokit/actions)
-[![Version](https://img.shields.io/badge/version-0.5.2-blue)](https://github.com/djdarcy/git-repokit/releases)
+[![Version](https://img.shields.io/badge/version-0.6.0-blue)](https://github.com/djdarcy/git-repokit/releases)
 [![Python](https://img.shields.io/badge/python-%3E%3D3.7-darkgreen)](https://python.org/downloads)
 [![License](https://img.shields.io/badge/license-MIT-orange)](https://github.com/djdarcy/git-repokit/blob/main/LICENSE)
 [![GitHub Discussions](https://img.shields.io/badge/discussions-Welcome-lightgrey)](https://github.com/djdarcy/git-repokit/discussions)
@@ -191,6 +191,18 @@ repokit create my-project \
 ```
 
 ## 🔐 GitHub/GitLab Integration
+
+### With the gh CLI (simplest)
+
+```bash
+gh auth login                                   # once
+repokit create my-project --github              # private repo under your account, main pushed
+repokit create my-project --github --public --org MyOrg
+```
+
+git-repokit uses gh's login, so no token is configured here. Only public branches are pushed; a private branch never leaves your machine.
+
+### Through the REST API with a token
 
 ### Initial Setup
 ```bash

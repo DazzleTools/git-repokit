@@ -1,16 +1,16 @@
 [build-system]
 # bump setuptools so we can use PEP 621 metadata
-requires = ["setuptools>=61", "wheel"]
+requires = ["setuptools>=62.3", "wheel"]  # 62.3: recursive ** in package-data
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "repokit"
-version = "0.5.2"
+version = "0.6.0"
 description = "A tool for creating standardized Git repositories with complex branching and worktree workflows"
 readme = "README.md"
 requires-python = ">=3.7"
-# you have no true runtime deps now that pkg_resources is gone!
-dependencies = []
+# requests: the --publish-to REST path (remote_integration.py imports it)
+dependencies = ["requests>=2.25.0"]
 
 [project.scripts]
 repokit = "repokit.cli:main"
@@ -30,8 +30,9 @@ where = ["."]
 include = ["repokit", "repokit.*"]
 
 [tool.setuptools.package-data]
-# make sure your `templates/` directory ends up in the wheel/sdist
-"repokit" = ["templates/*"]
+# Every template at every depth, and the hook files setup-guardrails --legacy
+# installs. ("templates/*" shipped none of them: a measured wheel had 0.)
+"repokit" = ["templates/**/*", "hooks/*"]
 
 [tool.pytest.ini_options]
 # Only the regression suite. private/old_test_runs/ holds whole generated
