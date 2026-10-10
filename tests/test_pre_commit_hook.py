@@ -83,6 +83,32 @@ def _in_head(where, name):
     return _git(where, "ls-tree", "-r", "--name-only", "HEAD").stdout.split().count(name) == 1
 
 
+def _vendor_version_tools(root):
+    vendored = root / "scripts" / "repokit-common"
+    vendored.mkdir(parents=True, exist_ok=True)
+    for name in ("sync-versions.py", "repokit_config.py"):
+        shutil.copy(HOOK.parents[1] / name, vendored / name)
+    return vendored
+
+
+def test_versioning_off_commits_without_a_version_warning(repo):
+    """CONSEQUENCE: 7 (behaviour) -- a project that keeps no version source sets
+    versioning = "off" and its commits say nothing about versions; without the
+    setting the same project is warned on every commit (git-repokit's case)."""
+    root, hooks = repo
+    _vendor_version_tools(root)
+    (root / ".repokit-common.toml").write_text("[tool.repokit-common]\nprivate-patterns = []\n", encoding="utf-8")
+    _git(root, "add", "-A")
+    r = _git(root, "commit", "-q", "-m", "tools", hooks_dir=hooks, check=False)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "Version update failed" in r.stdout + r.stderr
+    (root / ".repokit-common.toml").write_text('[tool.repokit-common]\nprivate-patterns = []\nversioning = "off"\n', encoding="utf-8")
+    _git(root, "add", "-A")
+    r = _git(root, "commit", "-q", "-m", "off", hooks_dir=hooks, check=False)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "ersion" not in r.stdout + r.stderr
+
+
 def test_private_file_is_blocked_in_a_worktree(worktree):
     """CONSEQUENCE: 9 (safety) -- a private file cannot be committed to a public branch from a git worktree."""
     wt, hooks = worktree
@@ -292,6 +318,60 @@ def test_every_private_branch_name_allows_private_content(repo, branch):
     _git(root, "checkout", "-q", "-b", branch)
     result = _commit(root, hooks, "private/notes.md")
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_a_configured_private_branch_allows_private_content(repo):
+    """CONSEQUENCE: 8 (behaviour) -- a project's own private branch (git-repokit's --private-branch) is private once listed in private-branches."""
+    root, hooks = repo
+    _configure(root, raw='[tool.repokit-common]\nprivate-branches = ["scratch"]\n')
+    _git(root, "checkout", "-q", "-b", "scratch")
+    result = _commit(root, hooks, "private/notes.md")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert _in_head(root, "private/notes.md")
+
+
+def test_private_branches_still_leave_main_public(repo):
+    """CONSEQUENCE: 9 (safety) -- configuring private branches never makes a public branch accept private files."""
+    root, hooks = repo
+    _configure(root, raw='[tool.repokit-common]\nprivate-branches = ["scratch"]\n')
+    result = _commit(root, hooks, "private/notes.md")
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert not _in_head(root, "private/notes.md")
+
+
+def test_private_branches_replace_the_default_list(repo):
+    """CONSEQUENCE: 8 (safety) -- like strict-branches, the setting replaces the default: an unlisted 'private' branch is public."""
+    root, hooks = repo
+    _configure(root, raw='[tool.repokit-common]\nprivate-branches = ["scratch"]\n')
+    _git(root, "checkout", "-q", "-b", "private")
+    result = _commit(root, hooks, "private/notes.md")
+    assert result.returncode != 0, result.stdout + result.stderr
+
+
+def test_private_branches_take_glob_patterns(repo):
+    """CONSEQUENCE: 6 (behaviour) -- entries are shell glob patterns, as in strict-branches."""
+    root, hooks = repo
+    _configure(root, raw='[tool.repokit-common]\nprivate-branches = ["wip/*"]\n')
+    _git(root, "checkout", "-q", "-b", "wip/idea")
+    result = _commit(root, hooks, "private/notes.md")
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_the_environment_overrides_private_branches(repo):
+    """CONSEQUENCE: 6 (behaviour) -- REPOKIT_PRIVATE_BRANCHES wins for one run; an empty value makes every branch public."""
+    root, hooks = repo
+    _git(root, "checkout", "-q", "-b", "private")
+    env = dict(os.environ, REPOKIT_PRIVATE_BRANCHES="")
+    path = root / "private" / "notes.md"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("x\n")
+    _git(root, "add", "-f", "private/notes.md")
+    result = subprocess.run(
+        ["git", "-c", "user.email=hooktest@example.invalid", "-c", "user.name=hooktest",
+         "-c", "commit.gpgsign=false", "-c", f"core.hooksPath={hooks}",
+         "commit", "-q", "-m", "add"],
+        cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
+    assert result.returncode != 0, result.stdout + result.stderr
 
 
 def test_the_first_commit_on_a_new_private_branch_is_treated_as_private(repo):
