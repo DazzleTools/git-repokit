@@ -5,6 +5,14 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2026-10-09
+
+### Added
+- **The C/C++ archetypes are proven through `repokit create`.** `--language c-cpp` (cmake-app) configures with the vcpkg toolchain, builds and passes its CTest; `--archetype c-cpp/msbuild` builds with MSBuild; `--archetype c-cpp/minimal` builds with `rc` and `cl`; each binary reports the header's version. The tests run against Visual Studio 2022's bundled tools and skip, saying so, where they are absent. `c-cpp/cmake-lib` and `c-cpp/qt` announce themselves as not built yet. The resource file and header reach the project with the layer's bytes and only the tokens changed.
+
+### Fixed
+- The layer engine copied `__pycache__/` and `.pyc` files found beside the template sources into the created project, tokens and all. repokit-common's pre-push hook compiles `repokit/` for its syntax check and leaves that bytecode in the template tree, so after one push attempt every python project created from that checkout carried seven stale bytecode files. Bytecode is skipped now.
+
 ## [0.7.1] - 2026-10-09
 
 ### Added

@@ -1,0 +1,187 @@
+redgreen G4 -- 2026-10-09__08-33-42
+=== M1 cmake-app main.cpp broken (repokit/templates/layers/archetypes/c-cpp/cmake-app/src/main.cpp) :: tests/test_layers_c_cpp.py -k cmake_app
+F                                                                        [100%]
+================================== FAILURES ===================================
+_______ TestCCppLayer.test_cmake_app_configures_builds_and_passes_ctest _______
+
+self = <tests.test_layers_c_cpp.TestCCppLayer testMethod=test_cmake_app_configures_builds_and_passes_ctest>
+
+    @needs_toolchain
+    def test_cmake_app_configures_builds_and_passes_ctest(self):
+        """U4.2: the default C/C++ project configures with the vcpkg toolchain,
+        builds, passes its CTest, and the binary reports the header's version."""
+        repo = self._create("my-tool", "--language", "c-cpp")
+        env = dict(os.environ, VCPKG_ROOT=str(VCPKG))
+        r = _run([str(CMAKE), "--preset", "windows-release"], repo, env)
+        self.assertEqual(r.returncode, 0, r.stdout[-3000:] + r.stderr[-3000:])
+        self.assertIn("my-tool version 0.1.0", r.stdout)
+        r = _run([str(CMAKE), "--build", "--preset", "windows-release"], repo, env)
+        self.assertEqual(r.returncode, 0, r.stdout[-3000:] + r.stderr[-3000:])
+        r = _run([str(CTEST), "--preset", "windows-release"], repo, env)
+        self.assertEqual(r.returncode, 0, r.stdout[-3000:] + r.stderr[-3000:])
+        exe = repo / "build" / "Release" / "my-tool.exe"
+        self.assertTrue(exe.exists())
+        r = _run([str(exe), "--version"], repo)
+        self.assertEqual(r.returncode, 0)
+>       self.assertIn("0.1.0", r.stdout)
+E       AssertionError: '0.1.0' not found in 'my-tool: try --version\n'
+
+tests\test_layers_c_cpp.py:116: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Warning: No GitHub token available for cleanup
+=========================== short test summary info ===========================
+FAILED tests/test_layers_c_cpp.py::TestCCppLayer::test_cmake_app_configures_builds_and_passes_ctest
+1 failed, 5 deselected in 10.59s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M2 minimal source broken (repokit/templates/layers/archetypes/c-cpp/minimal/src/__RK_SNAKE__.c) :: tests/test_layers_c_cpp.py -k minimal
+F                                                                        [100%]
+================================== FAILURES ===================================
+_____________ TestCCppLayer.test_minimal_archetype_builds_with_cl _____________
+
+self = <tests.test_layers_c_cpp.TestCCppLayer testMethod=test_minimal_archetype_builds_with_cl>
+
+    @needs_toolchain
+    def test_minimal_archetype_builds_with_cl(self):
+        """U4.3: build.bat compiles the one source file with rc and cl under vcvars64."""
+        repo = self._create("my-tool", "--archetype", "c-cpp/minimal")
+        wrapper = repo.parent / "run_min.cmd"
+        # .\ because NoDefaultCurrentDirectoryInExePath may be set; CRLF for cmd
+        wrapper.write_bytes(f'@call "{VCVARS}" >nul\r\n@cd /d "{repo}"\r\n@call .\\build.bat\r\n'.encode())
+        r = _run(["cmd.exe", "/c", str(wrapper)], repo)
+        self.assertEqual(r.returncode, 0, r.stdout[-3000:] + r.stderr[-3000:])
+        exe = repo / "build" / "my-tool.exe"
+        self.assertTrue(exe.exists(), r.stdout[-2000:])
+        r = _run([str(exe), "--version"], repo)
+        self.assertEqual(r.returncode, 0)
+>       self.assertIn("0.1.0", r.stdout)
+E       AssertionError: '0.1.0' not found in 'my-tool: try --version\n'
+
+tests\test_layers_c_cpp.py:144: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Warning: No GitHub token available for cleanup
+=========================== short test summary info ===========================
+FAILED tests/test_layers_c_cpp.py::TestCCppLayer::test_minimal_archetype_builds_with_cl
+1 failed, 5 deselected in 7.38s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M3 msbuild main.cpp broken (repokit/templates/layers/archetypes/c-cpp/msbuild/src/main.cpp) :: tests/test_layers_c_cpp.py -k msbuild
+F                                                                        [100%]
+================================== FAILURES ===================================
+_________________ TestCCppLayer.test_msbuild_archetype_builds _________________
+
+self = <tests.test_layers_c_cpp.TestCCppLayer testMethod=test_msbuild_archetype_builds>
+
+    @needs_toolchain
+    def test_msbuild_archetype_builds(self):
+        """U4.3: the Visual Studio solution builds and the binary runs."""
+        repo = self._create("my-tool", "--archetype", "c-cpp/msbuild")
+        r = _run([str(MSBUILD), str(repo / "my-tool.sln"), "-nologo", "-v:minimal",
+                  "-p:Configuration=Release", "-p:Platform=x64"], repo)
+        self.assertEqual(r.returncode, 0, r.stdout[-3000:] + r.stderr[-3000:])
+        exe = repo / "x64" / "Release" / "my-tool.exe"
+        self.assertTrue(exe.exists(), r.stdout[-2000:])
+        r = _run([str(exe), "--version"], repo)
+        self.assertEqual(r.returncode, 0)
+>       self.assertIn("0.1.0", r.stdout)
+E       AssertionError: '0.1.0' not found in 'my-tool: try --version\n'
+
+tests\test_layers_c_cpp.py:129: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Warning: No GitHub token available for cleanup
+=========================== short test summary info ===========================
+FAILED tests/test_layers_c_cpp.py::TestCCppLayer::test_msbuild_archetype_builds
+1 failed, 5 deselected in 7.23s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M4 cmake-lib no longer a stub (repokit/templates/layers/manifest.toml) :: tests/test_layers_c_cpp.py -k stubs
+F                                                                        [100%]
+================================== FAILURES ===================================
+________ TestCCppLayer.test_cmake_lib_and_qt_stubs_announce_themselves ________
+
+self = <tests.test_layers_c_cpp.TestCCppLayer testMethod=test_cmake_lib_and_qt_stubs_announce_themselves>
+
+    def test_cmake_lib_and_qt_stubs_announce_themselves(self):
+        """U4 stubs: naming an unbuilt archetype stops before anything is created."""
+        for arch in ("c-cpp/cmake-lib", "c-cpp/qt"):
+            rc, out, err = self.run_repokit(["create", "demo", "--archetype", arch, "--no-push"])
+            self.assertNotEqual(rc, 0, arch)
+>           self.assertIn(f"archetype {arch} is not built yet", out + err)
+E           AssertionError: 'archetype c-cpp/cmake-lib is not built yet' not found in "\n============================================================\nGit User Configuration Required\n============================================================\nRepoKit needs your git user information for commits and templates.\nThis will be saved to your project's .repokit.json file.\n\nEnter your full name (for git commits): 2026-10-09 08:34:11 - ERROR - repokit - Error setting up repository: layer folder missing: archetypes/c-cpp/cmake-lib (under C:\\code\\git-repokit\\repokit\\templates\\layers)\n"
+
+tests\test_layers_c_cpp.py:77: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Warning: No GitHub token available for cleanup
+=========================== short test summary info ===========================
+FAILED tests/test_layers_c_cpp.py::TestCCppLayer::test_cmake_lib_and_qt_stubs_announce_themselves
+1 failed, 5 deselected in 4.55s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M5 the header's MINOR changed in the layer (repokit/templates/layers/languages/c-cpp/include/__RK_SNAKE__/version.h) :: tests/test_layers_c_cpp.py -k 'bytes or cmake_app'
+F.                                                                       [100%]
+================================== FAILURES ===================================
+_______ TestCCppLayer.test_cmake_app_configures_builds_and_passes_ctest _______
+
+self = <tests.test_layers_c_cpp.TestCCppLayer testMethod=test_cmake_app_configures_builds_and_passes_ctest>
+
+    @needs_toolchain
+    def test_cmake_app_configures_builds_and_passes_ctest(self):
+        """U4.2: the default C/C++ project configures with the vcpkg toolchain,
+        builds, passes its CTest, and the binary reports the header's version."""
+        repo = self._create("my-tool", "--language", "c-cpp")
+        env = dict(os.environ, VCPKG_ROOT=str(VCPKG))
+        r = _run([str(CMAKE), "--preset", "windows-release"], repo, env)
+        self.assertEqual(r.returncode, 0, r.stdout[-3000:] + r.stderr[-3000:])
+        self.assertIn("my-tool version 0.1.0", r.stdout)
+        r = _run([str(CMAKE), "--build", "--preset", "windows-release"], repo, env)
+        self.assertEqual(r.returncode, 0, r.stdout[-3000:] + r.stderr[-3000:])
+        r = _run([str(CTEST), "--preset", "windows-release"], repo, env)
+>       self.assertEqual(r.returncode, 0, r.stdout[-3000:] + r.stderr[-3000:])
+E       AssertionError: 8 != 0 : Test project C:/Users/Extreme/AppData/Local/Temp/repokit_test_w97xzhn5/my-tool/build
+E           Start 1: version
+E       1/1 Test #1: version ..........................***Failed    0.01 sec
+E       version string 0.1.9 != components 0.1.0
+E       
+E       
+E       0% tests passed, 1 tests failed out of 1
+E       
+E       Total Test time (real) =   0.02 sec
+E       
+E       The following tests FAILED:
+E       	  1 - version (Failed)
+E       Errors while running CTest
+
+tests\test_layers_c_cpp.py:111: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Warning: No GitHub token available for cleanup
+=========================== short test summary info ===========================
+FAILED tests/test_layers_c_cpp.py::TestCCppLayer::test_cmake_app_configures_builds_and_passes_ctest
+1 failed, 1 passed, 4 deselected in 17.47s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+porcelain unchanged

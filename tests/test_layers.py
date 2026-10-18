@@ -184,6 +184,26 @@ def test_a_token_in_a_workflow_file_is_an_error(tmp_path):
         layers.assemble(root, r.layers, str(tmp_path / "p"), CTX, engine=ENGINE)
 
 
+def test_bytecode_beside_the_templates_is_not_a_layer_file(tmp_path):
+    """CONSEQUENCE: 9 (safety) -- repokit-common's pre-push hook compiles
+    repokit/ for its syntax check and leaves __pycache__/*.pyc beside the
+    template sources, with the tokens inside; after one push attempt every
+    created python project carried seven of them (found 2026-10-17)."""
+    root = _tree(tmp_path)
+    cache = root / "archetypes/alpha/app/__RK_SNAKE__/__pycache__"
+    cache.mkdir(parents=True)
+    (cache / "cli.cpython-312.pyc").write_bytes(b"\xa7\r\r\n\0\0__RK_PROJECT__\0")
+    (root / "archetypes/alpha/app/stray.pyc").write_bytes(b"\0__RK_PROJECT__")
+    dest = tmp_path / "proj"
+    dest.mkdir()
+    r = layers.resolve(layers.load_manifest(root), "alpha")
+    written = layers.assemble(root, r.layers, str(dest), CTX, engine=ENGINE)
+    assert not list(dest.rglob("*.pyc")) and not list(dest.rglob("__pycache__"))
+    assert not [p for p in dest.rglob("*") if p.is_file() and p.suffix != ".bin"
+                and RK_TOKEN.search(p.read_bytes().decode("latin-1"))]
+    assert all(not w.endswith(".pyc") for w in written)
+
+
 def test_preserve_existing_leaves_an_adopted_projects_files_alone(tmp_path):
     """CONSEQUENCE: 8 (safety) -- adopt: an existing file is neither replaced
     nor appended to; missing files are still laid down."""

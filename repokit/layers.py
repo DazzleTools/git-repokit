@@ -182,6 +182,10 @@ def assemble(root: Path, layers: List[str], dest: str, context: Dict[str, Any],
         if not base.is_dir():
             raise LayerError(f"layer folder missing: {layer} (under {root})")
         for src in sorted(p for p in base.rglob("*") if p.is_file()):
+            # Bytecode beside the template sources (a syntax check compiled
+            # them) is not part of any layer, and carries the tokens inside.
+            if "__pycache__" in src.parts or src.suffix in (".pyc", ".pyo"):
+                continue
             rel = src.relative_to(base).as_posix()
             data = src.read_bytes()
             if rel.endswith(APPEND):
