@@ -166,14 +166,24 @@ Recipe: Microservice
         help="Name of the repository to create"
     )
     
-    # Language and description
+    # Language and description. The names come from the code-type layers'
+    # manifest (repokit/templates/layers/manifest.toml) and are validated
+    # against it before anything is created, so the list here is the help only.
     create_parser.add_argument(
         "--language", "-l",
-        choices=["python", "javascript", "generic"],
-        default="generic",
-        help="Programming language for templates (default: generic)"
+        action="append",
+        metavar="LANG[,LANG...]",
+        help=f"The project's language(s), in the order their layers apply; a list or repeated. "
+             f"Known: {', '.join(_known_language_names())} (default: generic, no code-type layers)"
     )
-    
+
+    create_parser.add_argument(
+        "--archetype",
+        metavar="LANG/NAME",
+        help=f"The code-type archetype within a language (implies that language). "
+             f"Known: {', '.join(_known_archetype_names()) or 'none'}; each language has a default"
+    )
+
     create_parser.add_argument(
         "--description", "-d",
         help="Short description of the repository"
@@ -645,12 +655,13 @@ For more detailed documentation, see: docs/Adoption-Guide.md
         help="Path to repository (default: current directory)"
     )
     
-    # Language and description
+    # Language and description (the same names as create; the layers are laid
+    # down without overwriting the adopted project's own files)
     adopt_parser.add_argument(
         "--language", "-l",
-        choices=["python", "javascript", "generic"],
-        default="generic",
-        help="Programming language for templates (default: generic)"
+        action="append",
+        metavar="LANG[,LANG...]",
+        help=f"The project's language(s). Known: {', '.join(_known_language_names())} (default: generic)"
     )
     
     adopt_parser.add_argument(
@@ -1535,6 +1546,26 @@ def setup_logging(verbosity: int, quiet: bool = False) -> None:
             logger.info("Pattern matching and cleanup debugging enabled")
 
 
+def _known_language_names():
+    """The languages the layers' manifest names (for help text); generic alone
+    when the manifest cannot be read."""
+    try:
+        from . import layers
+        root = layers.layers_root()
+        return layers.known_languages(layers.load_manifest(root)) if root else [layers.GENERIC]
+    except Exception:
+        return ["generic"]
+
+
+def _known_archetype_names():
+    try:
+        from . import layers
+        root = layers.layers_root()
+        return layers.known_archetypes(layers.load_manifest(root)) if root else []
+    except Exception:
+        return []
+
+
 def args_to_config(args: argparse.Namespace) -> Dict[str, Any]:
     """
     Convert command-line arguments to configuration dictionary.
@@ -1545,10 +1576,17 @@ def args_to_config(args: argparse.Namespace) -> Dict[str, Any]:
     Returns:
         Configuration dictionary
     """
+    # --language is a list (repeated, or comma-separated); `language` keeps the
+    # first for everything that reads one value, `languages` carries them all.
+    languages = []
+    if getattr(args, "language", None):
+        from .layers import parse_languages
+        languages = parse_languages(args.language)
+
     # Base configuration from CLI arguments
     cli_config = {
         "name": getattr(args, "name", None),
-        "language": getattr(args, "language", None),
+        "language": languages[0] if languages else None,
         "description": getattr(args, "description", None),
         "private_branch": getattr(args, "private_branch", None),
         "user": (
@@ -1557,6 +1595,11 @@ def args_to_config(args: argparse.Namespace) -> Dict[str, Any]:
             else None
         ),
     }
+
+    if languages:
+        cli_config["languages"] = languages
+    if getattr(args, "archetype", None):
+        cli_config["archetype"] = args.archetype
 
     # Handle directory profile configuration
     if hasattr(args, "dir_profile") and args.dir_profile:
@@ -2671,6 +2714,23 @@ def main() -> int:
     elif args.command == "create":
         if not args.name:
             logger.error("Repository name is required for 'create' command")
+            return 1
+
+        # The code-type names are checked here, before a folder or a repository
+        # exists: an unknown language or archetype, or a stub that is not built
+        # yet, stops with the known names.
+        from . import layers as _layers
+        from .template_engine import TemplateEngine as _TemplateEngine
+        try:
+            _root = _layers.layers_root(_TemplateEngine(templates_dir=args.templates_dir))
+            if _root is not None:
+                _layers.resolve(_layers.load_manifest(_root),
+                                config.get("languages") or [config.get("language") or _layers.GENERIC],
+                                config.get("archetype"))
+            elif config.get("archetype"):
+                raise _layers.LayerError("no code-type layers found with the templates, so --archetype cannot be used")
+        except _layers.LayerError as e:
+            logger.error(str(e))
             return 1
 
         try:

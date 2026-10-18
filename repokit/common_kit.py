@@ -12,6 +12,7 @@ the hooks look for first (/create-project, Phase 3).
 """
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -58,7 +59,20 @@ def vendor(repo_root: str, url: str, ref: str) -> Optional[str]:
     if os.path.isdir(url):
         url = os.path.abspath(url)
     rc, out = _git(["subtree", "add", f"--prefix={PREFIX}", url, ref, "--squash"], repo_root)
-    return None if rc == 0 else out or "git subtree add failed"
+    if rc == 0:
+        return None
+    # A failure midway (Windows' path limit on a deep project directory, a
+    # lost connection) leaves what git read into the index and part of the
+    # checkout behind; take it back out so the project's first commit is not
+    # made of, or refused for, half of repokit-common.
+    prefix = os.path.join(repo_root, PREFIX)
+    if os.path.exists(prefix):
+        _git(["reset", "-q", "--", PREFIX], repo_root)
+        target = prefix
+        if sys.platform == "win32" and not prefix.startswith("\\\\?\\"):
+            target = "\\\\?\\" + os.path.abspath(prefix)
+        shutil.rmtree(target, ignore_errors=True)
+    return out or "git subtree add failed"
 
 
 def find_sh() -> Optional[str]:
@@ -114,11 +128,37 @@ def _toml_list(values: List[str]) -> str:
     return "[" + ", ".join('"' + v.replace("\\", "\\\\").replace('"', '\\"') + '"' for v in values) + "]"
 
 
+_TABLE_HEADER = re.compile(r"^[ \t]*\[[ \t]*tool[ \t]*\.[ \t]*\"?repokit-common\"?[ \t]*\][ \t]*\r?\n", re.MULTILINE)
+
+
+def _merge_into_table(text: str, settings: Dict[str, List[str]]) -> Optional[str]:
+    """Add the keys the existing [tool.repokit-common] table lacks, right after
+    its header; a key already present is never overwritten. Returns the new
+    text, or None when nothing was missing."""
+    header = _TABLE_HEADER.search(text)
+    if not header:
+        return None
+    rest = text[header.end():]
+    next_table = re.search(r"^[ \t]*\[", rest, re.MULTILINE)   # the table ends at the next header
+    table = rest[: next_table.start()] if next_table else rest
+    missing = [key for key in settings
+               if not re.search(rf"^[ \t]*{re.escape(key)}[ \t]*=", table, re.MULTILINE)]
+    if not missing:
+        return None
+    nl = "\r\n" if "\r\n" in text else "\n"
+    lines = "".join(f"{key} = {_toml_list(settings[key])}{nl}" for key in missing)
+    return text[: header.end()] + lines + rest
+
+
 def write_settings(repo_root: str, settings: Dict[str, List[str]]) -> Optional[str]:
     """Write [tool.repokit-common] settings; returns the file written, or None.
 
-    pyproject.toml when the project has one and no table yet, else
-    .repokit-common.toml (with the header repokit-common requires).
+    pyproject.toml when the project has one (the table is added, or the keys
+    it lacks are merged into the table it has), else .repokit-common.toml
+    (created with the header repokit-common requires, or merged the same way).
+    A key already present is never overwritten: a code-type layer may ship
+    the file with its own version-source, and the private-branch settings go
+    in beside it rather than being dropped.
     """
     if not settings:
         return None
@@ -127,17 +167,29 @@ def write_settings(repo_root: str, settings: Dict[str, List[str]]) -> Optional[s
 
     pyproject = os.path.join(repo_root, "pyproject.toml")
     if os.path.isfile(pyproject):
-        with open(pyproject, encoding="utf-8") as f:
+        with open(pyproject, encoding="utf-8", newline="") as f:
             text = f.read()
-        if "[tool.repokit-common]" not in text:
-            with open(pyproject, "a", encoding="utf-8") as f:
-                f.write(("\n" if text and not text.endswith("\n") else "") + "\n" + body)
+        if _TABLE_HEADER.search(text):
+            merged = _merge_into_table(text, settings)
+            if merged is None:
+                return None
+            with open(pyproject, "w", encoding="utf-8", newline="") as f:
+                f.write(merged)
             return "pyproject.toml"
-        return None  # a table already exists; never merge into it blindly
+        with open(pyproject, "a", encoding="utf-8") as f:
+            f.write(("\n" if text and not text.endswith("\n") else "") + "\n" + body)
+        return "pyproject.toml"
 
     path = os.path.join(repo_root, ".repokit-common.toml")
     if os.path.exists(path):
-        return None
+        with open(path, encoding="utf-8", newline="") as f:
+            text = f.read()
+        merged = _merge_into_table(text, settings)
+        if merged is None:
+            return None
+        with open(path, "w", encoding="utf-8", newline="") as f:
+            f.write(merged)
+        return ".repokit-common.toml"
     with open(path, "w", encoding="utf-8") as f:
         f.write("# Settings for the vendored git-repokit-common hooks and tools\n" + body)
     return ".repokit-common.toml"

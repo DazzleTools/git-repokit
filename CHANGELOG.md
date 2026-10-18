@@ -5,6 +5,24 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-10-09
+
+### Added
+- **Code-type layers: `--language` takes a list and `--archetype` names one within a language.** The structure every project gets is unchanged; on top of it `repokit create` lays down each language's layer and the archetype's, from `repokit/templates/layers/manifest.toml` (`repokit/layers.py`): a later file replaces an earlier one, `<name>.rkappend` appends (each language adds its own `.gitignore` lines), `__RK_NAME__` tokens in file names and contents become the project's names, and workflow files are copied unchanged. Known now: `python` (default archetype `python/setuppy`, today's `setup.py` and `requirements.txt`), `c-cpp` (`c-cpp/cmake-app`, `c-cpp/msbuild`, `c-cpp/minimal`, from the C/C++ template proof). `python/pypi`, `python/comfyui`, `python/django`, `python/qt`, `c-cpp/cmake-lib`, `c-cpp/qt` and the `javascript` language are announced as not built yet: naming one stops before anything is created, as does an unknown name, with the known names listed. `.repokit.json` records `languages` and `archetype`.
+- `adopt --language` accepts the same names; the layers never overwrite an adopted project's own files.
+
+### Changed
+- **Templates are rendered byte for byte.** One renderer serves both placeholder styles -- `$var` in the structure's `*.template` files, `__RK_NAME__` tokens in the layers -- and changes nothing but the placeholders, so a BOM, line endings and bytes outside UTF-8 survive. The templates are pinned to LF (`.gitattributes`), so a generated project has the same bytes on every platform; on Windows the structure files were CRLF before.
+- The Python `.gitignore` now carries Python's own ignore lines (`__pycache__/`, `*.egg-info/`, `.venv/`, ...); before, `--language python` fell through to the common file.
+- `[tool.repokit-common]` settings are merged into a table a layer already wrote (a C/C++ project's `version-source`) instead of being dropped; a key already present is never overwritten.
+- git-repokit's own commits are quiet about versions (`versioning = "off"` in its `[tool.repokit-common]` table; needs git-repokit-common 0.4.0).
+
+### Fixed
+- `--language javascript` produced a project missing `package.json` and `.npmrc` (its template folder did not exist); it is now a stub that says so.
+- The wheel carries the whole layer tree: `MANIFEST.in` grafts the templates, because the package-data glob skipped every dotfile and dot directory.
+- The pre-commit hook git-repokit writes when git-repokit-common is not vendored (`--no-common`, or vendoring failed) turned `*.log` into the regex `^.*.log`, so any path with `log` after another character -- `catalog.py`, `src/logger.py`, repokit-common's own `search_sesslog.py` -- was refused as private content. The patterns are escaped now, and `**/` matches at the root as well as below it. History protection's branch rules had the same unescaped `.`.
+- A `git subtree add` of repokit-common that fails midway (Windows' path limit under a deep project directory) no longer leaves half of it staged for the first commit, and a refused first commit is reported as an error instead of a debug line under the success banner. On Windows a created repository now sets `core.longpaths`, since Git for Windows keeps to the 260-character MAX_PATH otherwise and repokit-common's deepest vendored path is 133 of them.
+
 ## [0.6.0] - 2026-10-09
 
 ### Added

@@ -38,6 +38,40 @@ def match_pattern(path: str, pattern: str) -> bool:
     return fnmatch.fnmatch(os.path.basename(path), pattern)
 
 
+def glob_to_ere(pattern: str) -> str:
+    """A private-content pattern as a POSIX extended regex for `grep -E`.
+
+    Anchored at the start of the path. Regex metacharacters are escaped, so
+    `*.log` no longer matches `catalog.py`; `*` matches any run of characters
+    (across `/`, as the hooks always read it), `**/` any directory prefix or
+    none, a trailing `/` everything inside that directory, and a pattern with
+    no `*` the whole path.
+    """
+    is_dir = pattern.endswith("/")
+    body = pattern.rstrip("/") if is_dir else pattern
+    out: List[str] = []
+    i = 0
+    while i < len(body):
+        if body.startswith("**/", i):
+            out.append("(.*/)?")
+            i += 3
+            continue
+        c = body[i]
+        if c == "*":
+            out.append(".*")
+        elif c in ".+?()[]{}^$|\\":
+            out.append("\\" + c)
+        else:
+            out.append(c)
+        i += 1
+    core = "".join(out)
+    if is_dir:
+        return f"^{core}/"
+    if "*" in body:
+        return f"^{core}"
+    return f"^{core}$"
+
+
 def should_include_file(
     path: str,
     rel_path: str,

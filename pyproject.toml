@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "repokit"
-version = "0.6.0"
+version = "0.7.0"
 description = "A tool for creating standardized Git repositories with complex branching and worktree workflows"
 readme = "README.md"
 requires-python = ">=3.7"
@@ -29,6 +29,12 @@ dev = [
 where = ["."]
 include = ["repokit", "repokit.*"]
 
+[tool.setuptools]
+# The layer tree holds dotfiles (.gitignore.rkappend, .repokit-common.toml)
+# and dot directories (.github/); "templates/**/*" skips both (measured:
+# 1 of 5 probe files shipped), so MANIFEST.in grafts the whole tree.
+include-package-data = true
+
 [tool.setuptools.package-data]
 # Every template at every depth, and the hook files setup-guardrails --legacy
 # installs. ("templates/*" shipped none of them: a measured wheel had 0.)
@@ -44,3 +50,6 @@ norecursedirs = ["one-offs", "__pycache__", ".*"]
 # Paths a public branch must not receive, beyond git-repokit-common's built-in
 # list. (.repokit.json is tracked here, so it is not listed.)
 private-patterns = ["CLAUDE.md", "convos/", "logs/", "private/", "revisions/"]
+# git-repokit's version is computed in repokit/__version__.py, not a shape
+# sync-versions.py writes: the hooks say nothing about it.
+versioning = "off"

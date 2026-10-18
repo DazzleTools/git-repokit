@@ -1,0 +1,62 @@
+# The code-type layers: what each language and archetype adds on top of the
+# structure every project gets. Layers are applied in order (each language's,
+# then the archetype's); a later file replaces an earlier one, and a file named
+# <name>.rkappend is appended to <name> instead -- including a file the
+# structure templates already wrote (.gitignore). __RK_NAME__ tokens are
+# replaced in file names and text contents (see repokit/layers.py).
+
+[languages.python]
+layers = ["languages/python"]
+default = "python/setuppy"
+
+[languages.c-cpp]
+layers = ["languages/c-cpp"]
+default = "c-cpp/cmake-app"
+
+[languages.javascript]
+stub = true
+description = "planned as the js-ts layer (JavaScript and TypeScript together, after the C/C++ layer)"
+
+[archetypes."python/setuppy"]
+languages = ["python"]
+layers = ["archetypes/python/setuppy"]
+description = "setup.py and requirements.txt: git-repokit's Python output before the layers"
+
+[archetypes."python/pypi"]
+stub = true
+description = "pyproject.toml with a dynamic version, the package, tests and the publish-on-release workflow: the shape of git-repokit-template's projects (built in 0.7.1)"
+
+[archetypes."python/comfyui"]
+stub = true
+description = "a ComfyUI custom-node package (the template holds its pyproject shape; the node skeleton is not written yet)"
+
+[archetypes."python/django"]
+stub = true
+description = "a Django project"
+
+[archetypes."python/qt"]
+stub = true
+description = "a Python Qt app (PySide6 or PyQt)"
+
+[archetypes."c-cpp/cmake-app"]
+languages = ["c-cpp"]
+layers = ["archetypes/c-cpp/cmake-app"]
+description = "CMake + presets + vcpkg manifest + CTest + 3-OS CI (xormove's shape)"
+
+[archetypes."c-cpp/msbuild"]
+languages = ["c-cpp"]
+layers = ["archetypes/c-cpp/msbuild"]
+description = "Visual Studio solution, Windows only"
+
+[archetypes."c-cpp/minimal"]
+languages = ["c-cpp"]
+layers = ["archetypes/c-cpp/minimal"]
+description = "One source file, Makefile + build.bat"
+
+[archetypes."c-cpp/cmake-lib"]
+stub = true
+description = "Library with install/export targets and a package config (starts from cmake-app)"
+
+[archetypes."c-cpp/qt"]
+stub = true
+description = "Qt 6 app: find_package(Qt6), qt_add_executable, windeployqt (starts from cmake-app)"

@@ -1,11 +1,11 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="$project_name",
+    name="__RK_PROJECT__",
     version="0.1.1",
-    description="$description",
-    author="$author",
-    author_email="$author_email",
+    description="__RK_DESCRIPTION__",
+    author="__RK_AUTHOR__",
+    author_email="__RK_EMAIL__",
     packages=find_packages(),
     install_requires=[
         # Add your dependencies here

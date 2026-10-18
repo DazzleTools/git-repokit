@@ -1,0 +1,58 @@
+redgreen G2 at b00b1a8 (tree dirty: slice uncommitted) -- 2026-10-09__07-55-41
+python 3.12.0
+
+=== M6 path tokens unresolved (repokit/layers.py) :: tests/test_layers.py tests/test_layers_cli.py -m 'not integration' -k 'replaces_appends or stack_in_the_order'
+F                                                                        [100%]
+================================== FAILURES ===================================
+________ test_assemble_replaces_appends_resolves_paths_and_keeps_bytes ________
+
+tmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-12852/test_assemble_replaces_appends0')
+
+    def test_assemble_replaces_appends_resolves_paths_and_keeps_bytes(tmp_path):
+        """CONSEQUENCE: 9 (safety) -- the anchor for the walk: a later layer's file
+        replaces, .rkappend appends (to a file the structure already wrote too),
+        tokens resolve in paths and text, binaries and workflows are byte-copied,
+        and a BOM, CRLF and a non-UTF-8 byte survive."""
+        root = _tree(tmp_path)
+        dest = tmp_path / "proj"
+        dest.mkdir()
+        (dest / ".gitignore").write_text("# structure\n*.log", encoding="utf-8")   # no trailing newline
+        r = layers.resolve(layers.load_manifest(root), "alpha,beta")
+        written = layers.assemble(root, r.layers, str(dest), CTX, engine=ENGINE)
+        assert (dest / "README.md").read_text() == "beta readme replaces alpha's\n"
+        assert (dest / ".gitignore").read_text() == "# structure\n*.log\n\n# alpha\n*.alpha\n# beta\n*.beta\n"
+>       assert (dest / "include/my_tool/version.h").read_bytes() == b"\xef\xbb\xbf#define MY_TOOL_V 1\r\n"
+
+tests\test_layers.py:163: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Python312\Lib\pathlib.py:1020: in read_bytes
+    with self.open(mode='rb') as f:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-12852/test_assemble_replaces_appends0/proj/include/my_tool/version.h')
+mode = 'rb', buffering = -1, encoding = None, errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Extreme\\AppData\\Local\\Temp\\pytest-of-Extreme\\pytest-12852\\test_assemble_replaces_appends0\\proj\\include\\my_tool\\version.h'
+
+C:\Python312\Lib\pathlib.py:1014: FileNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_layers.py::test_assemble_replaces_appends_resolves_paths_and_keeps_bytes
+1 failed, 21 deselected in 0.10s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== tree check
+porcelain unchanged

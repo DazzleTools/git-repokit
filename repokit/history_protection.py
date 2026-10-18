@@ -162,7 +162,7 @@ class HistoryProtectionManager:
         # Check each pattern
         for pattern, rule in self.branch_rules.items():
             # Convert glob pattern to regex
-            regex_pattern = pattern.replace('*', '.*')
+            regex_pattern = re.escape(pattern).replace('\\*', '.*')
             if re.match(f'^{regex_pattern}$', branch_name):
                 return rule
         

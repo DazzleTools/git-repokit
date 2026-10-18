@@ -27,7 +27,7 @@ RepoKit automates the creation of standardized Git repositories with professiona
 - **Private Content Protection**: Secure local-only content that never gets pushed
 - **GitHub/GitLab Integration**: Automated repository creation and deployment
 - **AI Development Integration**: Built-in Claude AI assistance with workflow documentation
-- **Template Customization**: Language-specific templates (Python, JavaScript, etc.)
+- **Two template systems**: the structure every project gets, then the code type on top -- a language layer and an archetype within it (`--language python,c-cpp`, `--archetype c-cpp/cmake-app`), laid down from a manifest so a new language is a folder, not code
 - **Comprehensive Test Framework**: Unit, integration, and end-to-end testing
 
 ### Universal Project Support
@@ -58,12 +58,29 @@ pip install -e .
 # Basic project creation
 repokit create my-awesome-project --language python
 
+# A C/C++ project: the language's layer plus its default archetype (cmake-app)
+repokit create my-tool --language c-cpp
+
+# An archetype names its language; several languages stack in the order given
+repokit create my-tool --archetype c-cpp/msbuild
+repokit create my-tool --language python,c-cpp
+
 # Create and deploy to GitHub in one command
 repokit create my-project --language python --publish-to github --private-repo
 
 # Create with AI integration
 repokit create my-project --ai claude --publish-to github
 ```
+
+### Languages and archetypes (the code-type layers)
+
+Every project gets the same structure (README, CONTRIBUTING, `.github/`, `.gitignore`, the vault, repokit-common). `--language` adds the code type on top, from `repokit/templates/layers/`: each language has a layer and a default archetype, and an archetype (`--archetype LANG/NAME`) adds its own layer and implies its language. With several languages and no `--archetype`, the first language is the primary one and only its default archetype applies (two archetypes would both claim the settings and build files); the other languages add their language layers. A later layer's file replaces an earlier one; a file named `<name>.rkappend` is appended instead (so each language adds its lines to `.gitignore`); `__RK_NAME__` tokens in file names and contents become the project's names (`my-tool`, `my_tool`, `MY_TOOL`, `MyTool`, the author, the year, a GUID). Workflow files are copied unchanged. Files are written byte for byte, so a header's BOM or a `.sln`'s line endings are what the layer holds. `repokit create --help` lists the known languages and archetypes; an unknown name, or one whose layer is not built yet, stops before anything is created and names what is known. `generic` (the default) adds no code-type files.
+
+| Language | Default archetype | Archetypes |
+|---|---|---|
+| `python` | `python/setuppy` (`setup.py` + `requirements.txt`: today's Python output) | `python/pypi`, `python/comfyui`, `python/django`, `python/qt` announced |
+| `c-cpp` | `c-cpp/cmake-app` (CMake presets, a vcpkg manifest, CTest, a build-time version stamp, CI) | `c-cpp/msbuild` (a Visual Studio solution), `c-cpp/minimal` (one source file, `Makefile` + `build.bat`); `c-cpp/cmake-lib` and `c-cpp/qt` announced. All three build as generated with Visual Studio 2022's tools (`tests/test_layers_c_cpp.py`); the version lives in `include/<name>/version.h`, which CMake, the `.rc` resource and the code all read |
+| `javascript` | -- | planned as the js-ts layer |
 
 ### Adopt an Existing Project
 ```bash

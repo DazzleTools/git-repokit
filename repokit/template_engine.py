@@ -5,12 +5,57 @@ Template engine for RepoKit.
 Handles loading and rendering templates from the package's template directory.
 """
 
+import datetime
 import os
 import logging
+import re
 import string
+import uuid
 import importlib.resources as resources
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Union
+
+# The second placeholder dialect: __RK_NAME__ tokens, used by the code-type
+# layers (repokit/layers.py) in file contents AND file names, where a `$` is
+# shell-hostile and collides with CMake's ${VAR}, Make's $$ and Actions' ${{ }}.
+# The structure templates (*.template) keep string.Template's $var; both
+# dialects read one context (token_context) so a project has one set of names.
+RK_TOKEN = re.compile(r"__RK_([A-Z_]+?)__")
+
+
+def token_context(context: Dict[str, Any], archetype: Optional[str] = None) -> Dict[str, Any]:
+    """The context plus the RK_* names the token dialect resolves.
+
+    Derived from the same values the $var templates use (project_name,
+    description, author, author_email, the GitHub user), after the proof's
+    assemble.py names(): PROJECT (my-tool), SNAKE (my_tool), MACRO (MY_TOOL),
+    PASCAL (MyTool), ORG, DESCRIPTION, ARCHETYPE, YEAR, DATE, and two GUIDs
+    for Visual Studio files. Call it once per project so every file shares
+    the GUIDs.
+    """
+    name = str(context.get("project_name") or "project")
+    words = [w for w in re.split(r"[-_\s]+", name) if w] or [name]
+    github = context.get("github")
+    org = (context.get("organization")
+           or (github.get("username") if isinstance(github, dict) else None)
+           or context.get("github_user") or "your-org")
+    today = datetime.date.today()
+    tokens = {
+        "RK_PROJECT": name,
+        "RK_SNAKE": "_".join(words).lower(),
+        "RK_MACRO": "_".join(words).upper(),
+        "RK_PASCAL": "".join(w[:1].upper() + w[1:] for w in words),
+        "RK_ORG": str(org),
+        "RK_DESCRIPTION": str(context.get("description") or ""),
+        "RK_ARCHETYPE": archetype or "",
+        "RK_YEAR": str(today.year),
+        "RK_DATE": today.isoformat(),
+        "RK_GUID_PROJECT": str(uuid.uuid4()).upper(),
+        "RK_GUID_SOLUTION": str(uuid.uuid4()).upper(),
+        "RK_AUTHOR": str(context.get("author") or context.get("author_name") or ""),
+        "RK_EMAIL": str(context.get("author_email") or ""),
+    }
+    return {**context, **tokens}
 
 
 class TemplateEngine:
@@ -89,7 +134,6 @@ class TemplateEngine:
         self.fallback_templates = {
             "common/README.md.template": """# $project_name\n\n$description\n""",
             "common/gitignore.template": """# Ignore common files\n.DS_Store\n*.log\n""",
-            "github/workflows/main.yml.template": """name: CI\n\non:\n  push:\n    branches: [ main ]\n  pull_request:\n    branches: [ main ]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n    - uses: actions/checkout@v3\n""",
         }
 
     def get_template_path(
@@ -200,6 +244,37 @@ class TemplateEngine:
         )
         return None
 
+    def load_template_bytes(self, template_name: str, category: str = "common") -> Optional[bytes]:
+        """load_template, but the file's bytes (a fallback template is UTF-8)."""
+        template_path = self.get_template_path(template_name, category)
+        if template_path:
+            try:
+                with open(template_path, "rb") as f:
+                    return f.read()
+            except OSError as e:
+                self.logger.error(f"Error loading template {template_path}: {str(e)}")
+        text = self.load_template(template_name, category)
+        return text.encode("utf-8") if text is not None else None
+
+    def render_bytes(self, data: bytes, context: Dict[str, Any], dollar: bool) -> bytes:
+        """Substitute placeholders in a file's bytes, changing nothing else.
+
+        latin-1 maps every byte to one character and back, so a BOM, CRLF
+        line endings and bytes outside UTF-8 all survive; the substituted
+        values are encoded as UTF-8 first. With ``dollar`` the $var dialect
+        (string.Template.safe_substitute: unknown and malformed placeholders
+        such as ${CMAKE_VAR}, $<GENEX>, ${{ github }} and $1 are left alone)
+        runs first; the __RK_NAME__ tokens are replaced in every case, and an
+        unknown token is left in place. Proven on both template populations
+        by tests/one-offs/thinking/poc-one-engine/poc_one_engine.py.
+        """
+        values = {k: str(v).encode("utf-8").decode("latin-1") for k, v in context.items()}
+        text = data.decode("latin-1")
+        if dollar:
+            text = string.Template(text).safe_substitute(values)
+        text = RK_TOKEN.sub(lambda m: values.get("RK_" + m.group(1), m.group(0)), text)
+        return text.encode("latin-1")
+
     def render_template(self, template_content: str, context: Dict[str, Any]) -> str:
         """
         Render a template with the given context.
@@ -245,18 +320,21 @@ class TemplateEngine:
             self.logger.info(f"Preserving existing file: {output_path}")
             return True
             
-        template_content = self.load_template(template_name, category)
-        if not template_content:
+        data = self.load_template_bytes(template_name, category)
+        if not data:
             return False
 
-        rendered_content = self.render_template(template_content, context)
+        # Bytes in, bytes out: the template's own line endings reach the file
+        # (the templates are pinned to LF by .gitattributes), where the text
+        # path used to write CRLF on Windows.
+        rendered = self.render_bytes(data, context, dollar=True)
 
         try:
             # Create directory if it doesn't exist
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-            with open(output_path, "w", encoding="utf-8") as f:
-                f.write(rendered_content)
+            with open(output_path, "wb") as f:
+                f.write(rendered)
 
             if self.verbose >= 2:
                 self.logger.debug(f"Rendered template {template_name} to {output_path}")

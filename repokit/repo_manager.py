@@ -305,6 +305,13 @@ class RepoManager:
                 # Regular project creation
                 self.run_git(["init"], cwd=self.repo_root)
 
+        # Git for Windows keeps to MAX_PATH (260 characters for the whole
+        # absolute path) unless told otherwise; repokit-common's deepest
+        # vendored path is 133, so a project a hundred-odd characters deep
+        # failed `git subtree add` with "Filename too long".
+        if os.name == "nt":
+            self.run_git(["config", "core.longpaths", "true"], cwd=self.repo_root)
+
         # Configure git user information using enhanced GitConfigManager
         from .git_config import GitConfigManager
         git_config_manager = GitConfigManager(
@@ -464,11 +471,18 @@ class RepoManager:
                 verbose=self.verbose
             )
             
+            # The README's $badges were never filled here (the template carried
+            # the literal word into every project since the template was made):
+            # the badges need the resolved language, so resolve the layers first.
+            self._resolve_layers()
+            language = self.config.get("language", "generic")
             base_context = {
                 "project_name": self.project_name,
                 "description": self.config.get("description", "A new project"),
+                "language": language,
+                "badges": self._generate_badges(language),
             }
-            
+
             # Enhance context with comprehensive git user information
             context = git_config_manager.get_template_context(base_context)
 
@@ -660,12 +674,24 @@ class RepoManager:
             verbose=self.verbose
         )
         
+        # The code-type resolution first: it settles the language, the archetype
+        # and so which CI workflow the README's badge can point at.
+        self._resolve_layers()
+        language = self.config.get("language", "generic")
+
+        github_config = self.config.get("github", {})
+        github_user = (github_config.get("username") if isinstance(github_config, dict) else None) \
+            or "YOUR_GITHUB_USERNAME"
+        import datetime
+
         # Context for template rendering with enhanced git config
         base_context = {
             "project_name": self.project_name,
             "language": language,
             "description": self.config.get("description", ""),
             "badges": self._generate_badges(language),
+            "github_user": github_user,
+            "date": datetime.date.today().isoformat(),
         }
         
         # Enhance context with comprehensive git user information
@@ -675,20 +701,12 @@ class RepoManager:
         github_dir = os.path.join(self.repo_root, ".github")
         os.makedirs(github_dir, exist_ok=True)
 
-        # Create workflow directory
-        workflow_dir = os.path.join(github_dir, "workflows")
-        os.makedirs(workflow_dir, exist_ok=True)
-
         # Create ISSUE_TEMPLATE directory
         issue_dir = os.path.join(github_dir, "ISSUE_TEMPLATE")
         os.makedirs(issue_dir, exist_ok=True)
 
-        # Generate GitHub workflow file
-        render_template(
-            "main.yml",
-            os.path.join(workflow_dir, "main.yml"),
-            category="github/workflows"
-        )
+        # CI comes from the code-type layers (ci-<language>.yml), not from the
+        # structure: git-repokit's own workflow used to be written here.
 
         # Generate issue templates
         render_template(
@@ -717,173 +735,144 @@ class RepoManager:
             category="common"
         )
 
-        # Create language-specific configuration files
-        self._create_language_specific_files(language, context)
+        # Line-ending normalisation and the vendored-tooling attribute
+        render_template(
+            "gitattributes",
+            os.path.join(self.repo_root, ".gitattributes"),
+            category="common"
+        )
 
-    def _create_language_specific_files(
-        self, language: str, context: Dict[str, Any]
-    ) -> None:
-        """
-        Create language-specific configuration files.
+        # A changelog with the first version's heading, so git-repokit-common's
+        # version sync finds its section and compare link from the first commit
+        render_template(
+            "CHANGELOG.md",
+            os.path.join(self.repo_root, "CHANGELOG.md"),
+            category="common"
+        )
 
-        Args:
-            language: Programming language
-            context: Template context variables
-        """
-        if language == "python":
-            # Create setup.py
-            self.template_engine.render_template_to_file(
-                "setup.py",
-                os.path.join(self.repo_root, "setup.py"),
-                context,
-                category="languages/python",
-            )
+        # The structure's .gitignore and launch.json, then the code type on top
+        self._write_gitignore_and_launch(context)
+        self._apply_layers(context)
 
-            # Create requirements.txt
-            self.template_engine.render_template_to_file(
-                "requirements.txt",
-                os.path.join(self.repo_root, "requirements.txt"),
-                context,
-                category="languages/python",
-            )
+    def _write_gitignore_and_launch(self, context: Dict[str, Any]) -> None:
+        """The common .gitignore (keeping an adopted project's own patterns) and
+        VS Code's launch.json. The language files that used to be written here
+        come from the code-type layers now (_apply_layers)."""
+        gitignore_path = os.path.join(self.repo_root, ".gitignore")
 
-            # Create Python .gitignore (preserve existing adoption-specific patterns)
-            gitignore_path = os.path.join(self.repo_root, ".gitignore")
-            
-            # Check if .gitignore already exists with adoption patterns
-            existing_adoption_patterns = ""
-            if os.path.exists(gitignore_path):
-                with open(gitignore_path, 'r') as f:
-                    content = f.read()
-                    # Look for adoption-specific patterns
-                    if "Adoption-specific" in content:
-                        # Extract everything after the last "# Add custom patterns below"
-                        lines = content.split('\n')
-                        start_idx = -1
-                        for i, line in enumerate(lines):
-                            if "Adoption-specific" in line:
-                                start_idx = i - 1  # Include the comment before
-                                break
-                        if start_idx >= 0:
-                            existing_adoption_patterns = '\n'.join(lines[start_idx:])
-            
-            # Generate new Python .gitignore
-            self.template_engine.render_template_to_file(
-                "gitignore",
-                gitignore_path,
-                context,
-                category="languages/python",
-            )
-            
-            # Re-append adoption patterns if they existed
-            if existing_adoption_patterns:
-                with open(gitignore_path, "a") as f:
-                    f.write("\n" + existing_adoption_patterns)
-                self.logger.info("Preserved adoption-specific patterns in Python .gitignore")
+        # An adopted repository's own patterns sit after "# Add custom patterns
+        # below"; keep them across the rewrite.
+        existing_adoption_patterns = ""
+        if os.path.exists(gitignore_path):
+            with open(gitignore_path, 'r') as f:
+                content = f.read()
+                if "Adoption-specific" in content:
+                    lines = content.split('\n')
+                    add_custom_found = False
+                    adoption_lines = []
+                    for line in lines:
+                        if "# Add custom patterns below" in line:
+                            add_custom_found = True
+                            continue
+                        if add_custom_found:
+                            adoption_lines.append(line)
+                    if adoption_lines:
+                        existing_adoption_patterns = '\n'.join(adoption_lines)
+                        self.logger.debug(f"Found existing adoption patterns to preserve: {len(adoption_lines)} lines")
 
-        elif language == "javascript":
-            # Create package.json
-            self.template_engine.render_template_to_file(
-                "package.json",
-                os.path.join(self.repo_root, "package.json"),
-                context,
-                category="languages/javascript",
-            )
+        self.template_engine.render_template_to_file(
+            "gitignore",
+            gitignore_path,
+            context,
+            category="common",
+        )
 
-            # Create .npmrc
-            self.template_engine.render_template_to_file(
-                "npmrc",
-                os.path.join(self.repo_root, ".npmrc"),
-                context,
-                category="languages/javascript",
-            )
+        if existing_adoption_patterns.strip():
+            with open(gitignore_path, "a") as f:
+                f.write(existing_adoption_patterns)
+            self.logger.info("Preserved adoption-specific patterns in .gitignore")
 
-            # Create JavaScript .gitignore (preserve existing adoption-specific patterns)
-            gitignore_path = os.path.join(self.repo_root, ".gitignore")
-            
-            # Check if .gitignore already exists with adoption patterns
-            existing_adoption_patterns = ""
-            if os.path.exists(gitignore_path):
-                with open(gitignore_path, 'r') as f:
-                    content = f.read()
-                    # Look for adoption-specific patterns
-                    if "Adoption-specific" in content:
-                        # Extract everything after the last "# Add custom patterns below"
-                        lines = content.split('\n')
-                        add_custom_found = False
-                        adoption_lines = []
-                        for line in lines:
-                            if "# Add custom patterns below" in line:
-                                add_custom_found = True
-                                continue
-                            if add_custom_found:
-                                adoption_lines.append(line)
-                        if adoption_lines:
-                            existing_adoption_patterns = '\n'.join(adoption_lines)
-                            self.logger.debug(f"Found existing adoption patterns to preserve: {len(adoption_lines)} lines")
-            
-            # Generate new JavaScript .gitignore
-            self.template_engine.render_template_to_file(
-                "gitignore",
-                gitignore_path,
-                context,
-                category="languages/javascript",
-            )
-            
-            # Re-append preserved adoption patterns if any existed
-            if existing_adoption_patterns.strip():
-                with open(gitignore_path, "a") as f:
-                    f.write(existing_adoption_patterns)
-                self.logger.info("Preserved adoption-specific patterns in JavaScript .gitignore")
-        else:
-            # Create generic .gitignore (preserve existing adoption-specific patterns)
-            gitignore_path = os.path.join(self.repo_root, ".gitignore")
-            
-            # Check if .gitignore already exists with adoption patterns
-            existing_adoption_patterns = ""
-            if os.path.exists(gitignore_path):
-                with open(gitignore_path, 'r') as f:
-                    content = f.read()
-                    # Look for adoption-specific patterns
-                    if "Adoption-specific" in content:
-                        # Extract everything after the last "# Add custom patterns below"
-                        lines = content.split('\n')
-                        add_custom_found = False
-                        adoption_lines = []
-                        for line in lines:
-                            if "# Add custom patterns below" in line:
-                                add_custom_found = True
-                                continue
-                            if add_custom_found:
-                                adoption_lines.append(line)
-                        if adoption_lines:
-                            existing_adoption_patterns = '\n'.join(adoption_lines)
-                            self.logger.debug(f"Found existing adoption patterns to preserve: {len(adoption_lines)} lines")
-            
-            # Generate new generic .gitignore
-            self.template_engine.render_template_to_file(
-                "gitignore",
-                gitignore_path,
-                context,
-                category="common",
-            )
-            
-            # Re-append preserved adoption patterns if any existed
-            if existing_adoption_patterns.strip():
-                with open(gitignore_path, "a") as f:
-                    f.write(existing_adoption_patterns)
-                self.logger.info("Preserved adoption-specific patterns in generic .gitignore")
-
-        # Add VS Code launch.json for all languages
         vscode_dir = os.path.join(self.repo_root, ".vscode")
         os.makedirs(vscode_dir, exist_ok=True)
-
         self.template_engine.render_template_to_file(
             "launch.json",
             os.path.join(vscode_dir, "launch.json"),
             context,
             category="common",
         )
+
+    def _resolve_layers(self):
+        """Resolve the code-type layers once (repokit/layers.py): returns
+        (root, resolution) or None when the package has no layer tree, and
+        settles config's `languages`, `archetype` and single-value `language`
+        (an archetype implies its language; .repokit.json, the badges and the
+        build-command map read them). The CLI has validated the names already,
+        so an error here is a broken layer tree and stops the create."""
+        from . import layers
+
+        if getattr(self, "_layer_resolution", None) is not None:
+            return self._layer_resolution
+        languages = self.config.get("languages") or [self.config.get("language") or layers.GENERIC]
+        archetype = self.config.get("archetype")
+        root = layers.layers_root(self.template_engine)
+        if root is None:
+            if [l for l in layers.parse_languages(languages) if l != layers.GENERIC] or archetype:
+                self.logger.warning("No code-type layers found with the templates; only the structure was written")
+            return None
+        resolution = layers.resolve(layers.load_manifest(root), languages, archetype)
+        self.config["languages"] = resolution.languages
+        self.config["archetype"] = resolution.archetype
+        self.config["language"] = resolution.languages[0] if resolution.languages else layers.GENERIC
+        self._layer_resolution = (root, resolution)
+        return self._layer_resolution
+
+    def _ci_workflow(self) -> Optional[str]:
+        """The CI workflow file the resolved layers will write, for the README's
+        badge: ci-<language>.yml from the first language whose layer or
+        archetype ships one; None when none does (then no workflow badge)."""
+        resolved = self._resolve_layers()
+        if resolved is None:
+            return None
+        root, resolution = resolved
+        for layer in reversed(resolution.layers):
+            folder = root / layer / ".github" / "workflows"
+            if folder.is_dir():
+                names = sorted(p.name for p in folder.iterdir() if p.name.startswith("ci-") and p.suffix == ".yml")
+                if names:
+                    return names[0]
+        return None
+
+    def _apply_layers(self, context: Dict[str, Any]) -> None:
+        """Lay the code-type layers (the languages' and the archetype's) over the
+        structure, from the resolution _resolve_layers settled."""
+        from . import layers
+        from .template_engine import token_context
+
+        resolved = self._resolve_layers()
+        if resolved is None:
+            return
+        root, resolution = resolved
+        if not resolution.layers:
+            return
+        ctx = token_context(context, resolution.archetype)
+        written = layers.assemble(
+            root, resolution.layers, self.repo_root, ctx,
+            engine=self.template_engine,
+            preserve_existing=self.config.get("preserve_existing", False),
+            logger=self.logger,
+        )
+        self.logger.info(f"Code-type layers {', '.join(resolution.layers)}: {len(written)} files")
+
+        # A layer may ship .repokit-common.toml (or a pyproject table) of its
+        # own; in the private-branch model the settings written at vendoring
+        # time must still be there, so merge them back (never overwriting).
+        if self.private_branch and getattr(self, "common_vendored", False):
+            from . import common_kit
+            private_paths = ["CLAUDE.md"]
+            private_paths += [f"{d.rstrip('/')}/" for d in self.config.get("private_dirs", [])]
+            private_paths += list(self.config.get("sensitive_files", []))
+            common_kit.write_settings(
+                self.repo_root, common_kit.private_branch_settings(self.private_branch, private_paths))
 
     def _vendor_repokit_common(self) -> None:
         """Add git-repokit-common at scripts/repokit-common/ and commit its settings.
@@ -1084,20 +1073,11 @@ class RepoManager:
             all_patterns.update(config_sensitive_files)
             self.logger.debug(f"Added {len(config_sensitive_files)} config-based sensitive files to hook")
         
-        # Convert all patterns to shell regex patterns
-        patterns = []
-        for pattern in sorted(all_patterns):
-            if pattern.endswith('/'):
-                # Directory patterns: match files inside the directory
-                patterns.append(f"^{pattern.rstrip('/')}/")
-            elif '*' in pattern:
-                # Glob patterns: convert to regex
-                regex_pattern = pattern.replace('*', '.*').replace('**/', '.*/')
-                patterns.append(f"^{regex_pattern}")
-            else:
-                # Exact file patterns
-                patterns.append(f"^{pattern}$")
-        
+        # Convert all patterns to shell regex patterns (escaped: `*.log` used
+        # to become `^.*.log` and refuse catalog.py or search_sesslog.py)
+        from .utils import glob_to_ere
+        patterns = [glob_to_ere(pattern) for pattern in sorted(all_patterns)]
+
         # Join all patterns with | for shell regex
         private_content_regex = "|".join(patterns)
 
@@ -1301,8 +1281,15 @@ exit 0
             else:
                 self.logger.info("No changes to commit in initial setup")
         except Exception as e:
-            # If commit fails, log but continue (for adoptions)
-            self.logger.debug(f"Initial commit skipped: {str(e)}")
+            # An adoption may have nothing new to commit; anything else (a
+            # hook refusing the commit) must be seen, not buried at debug level
+            # under the success banner.
+            if self.config.get("is_adoption", False):
+                self.logger.debug(f"Initial commit skipped: {str(e)}")
+            else:
+                self.logger.error(
+                    f"Initial commit failed; the files are staged but not committed: {str(e)}"
+                )
 
         # No private branch (main-only): the commit above is on main and
         # private paths were never added (.gitignore), so there is nothing
@@ -2510,6 +2497,8 @@ exit 0
             "created_at": datetime.datetime.now().isoformat() + "Z",
             "project_name": self.project_name,
             "language": self.config.get("language", "generic"),
+            "languages": self.config.get("languages") or [self.config.get("language", "generic")],
+            "archetype": self.config.get("archetype"),
             "branch_strategy": self.config.get("branch_strategy", "standard"),
             "private_branch": self.config.get("private_branch", "private"),
             "private_mode": self.private_mode,
@@ -2545,14 +2534,17 @@ exit 0
         badges = []
         badge_links = []
 
-        # Workflow status badge
-        badges.append("[![GitHub Workflow Status][workflow-badge]][workflow-url]")
-        badge_links.extend(
-            [
-                f"[workflow-badge]: https://github.com/{github_user}/{self.project_name}/actions/workflows/main.yml/badge.svg",
-                f"[workflow-url]: https://github.com/{github_user}/{self.project_name}/actions",
-            ]
-        )
+        # Workflow status badge, for the CI file the code-type layers write
+        # (ci-<language>.yml); a project with no CI gets no workflow badge.
+        workflow = self._ci_workflow()
+        if workflow:
+            badges.append("[![GitHub Workflow Status][workflow-badge]][workflow-url]")
+            badge_links.extend(
+                [
+                    f"[workflow-badge]: https://github.com/{github_user}/{self.project_name}/actions/workflows/{workflow}/badge.svg",
+                    f"[workflow-url]: https://github.com/{github_user}/{self.project_name}/actions",
+                ]
+            )
 
         # Version badge
         badges.append("[![Version][version-badge]][version-url]")

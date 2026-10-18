@@ -1,0 +1,427 @@
+redgreen G2 at b00b1a8 (tree dirty: slice uncommitted) -- 2026-10-09__07-54-10
+python 3.12.0
+
+=== M1 latin-1 round trip replaced by utf-8 (repokit/template_engine.py) :: tests/test_layers.py -m 'not integration' -k 'bytes_outside or keeps_bytes'
+FF                                                                       [100%]
+================================== FAILURES ===================================
+________________ test_bytes_outside_placeholders_never_change _________________
+
+    def test_bytes_outside_placeholders_never_change():
+        """CONSEQUENCE: 9 (safety) -- a BOM, CRLF endings and a byte outside UTF-8
+        survive; only the token changes, and the value goes in as UTF-8."""
+        src = b"\xef\xbb\xbf/* \xe9 */\r\n#define __RK_MACRO___X 1\r\n$notatoken ${CMAKE_VAR} $<GENEX> ${{ gh }} $$\r\n"
+>       out = ENGINE.render_bytes(src, CTX, dollar=False)
+
+tests\test_layers.py:47: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <repokit.template_engine.TemplateEngine object at 0x000002B1CB385130>
+data = b'\xef\xbb\xbf/* \xe9 */\r\n#define __RK_MACRO___X 1\r\n$notatoken ${CMAKE_VAR} $<GENEX> ${{ gh }} $$\r\n'
+context = {'RK_ARCHETYPE': 'c-cpp/cmake-app', 'RK_AUTHOR': 'Dustin', 'RK_DATE': '2026-10-09', 'RK_DESCRIPTION': 'Résumé – a tool', ...}
+dollar = False
+
+    def render_bytes(self, data: bytes, context: Dict[str, Any], dollar: bool) -> bytes:
+        """Substitute placeholders in a file's bytes, changing nothing else.
+    
+        latin-1 maps every byte to one character and back, so a BOM, CRLF
+        line endings and bytes outside UTF-8 all survive; the substituted
+        values are encoded as UTF-8 first. With ``dollar`` the $var dialect
+        (string.Template.safe_substitute: unknown and malformed placeholders
+        such as ${CMAKE_VAR}, $<GENEX>, ${{ github }} and $1 are left alone)
+        runs first; the __RK_NAME__ tokens are replaced in every case, and an
+        unknown token is left in place. Proven on both template populations
+        by tests/one-offs/thinking/poc-one-engine/poc_one_engine.py.
+        """
+        values = {k: str(v).encode("utf-8").decode("latin-1") for k, v in context.items()}
+        text = data.decode("utf-8", "replace")
+        if dollar:
+            text = string.Template(text).safe_substitute(values)
+        text = RK_TOKEN.sub(lambda m: values.get("RK_" + m.group(1), m.group(0)), text)
+>       return text.encode("latin-1")
+E       UnicodeEncodeError: 'latin-1' codec can't encode character '\ufeff' in position 0: ordinal not in range(256)
+
+repokit\template_engine.py:277: UnicodeEncodeError
+________ test_assemble_replaces_appends_resolves_paths_and_keeps_bytes ________
+
+tmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-12842/test_assemble_replaces_appends0')
+
+    def test_assemble_replaces_appends_resolves_paths_and_keeps_bytes(tmp_path):
+        """CONSEQUENCE: 9 (safety) -- the anchor for the walk: a later layer's file
+        replaces, .rkappend appends (to a file the structure already wrote too),
+        tokens resolve in paths and text, binaries and workflows are byte-copied,
+        and a BOM, CRLF and a non-UTF-8 byte survive."""
+        root = _tree(tmp_path)
+        dest = tmp_path / "proj"
+        dest.mkdir()
+        (dest / ".gitignore").write_text("# structure\n*.log", encoding="utf-8")   # no trailing newline
+        r = layers.resolve(layers.load_manifest(root), "alpha,beta")
+>       written = layers.assemble(root, r.layers, str(dest), CTX, engine=ENGINE)
+
+tests\test_layers.py:160: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+repokit\layers.py:212: in assemble
+    data = engine.render_bytes(data, context, dollar=False)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <repokit.template_engine.TemplateEngine object at 0x000002B1CB385130>
+data = b'\xef\xbb\xbf#define __RK_MACRO___V 1\r\n'
+context = {'RK_ARCHETYPE': 'c-cpp/cmake-app', 'RK_AUTHOR': 'Dustin', 'RK_DATE': '2026-10-09', 'RK_DESCRIPTION': 'Résumé – a tool', ...}
+dollar = False
+
+    def render_bytes(self, data: bytes, context: Dict[str, Any], dollar: bool) -> bytes:
+        """Substitute placeholders in a file's bytes, changing nothing else.
+    
+        latin-1 maps every byte to one character and back, so a BOM, CRLF
+        line endings and bytes outside UTF-8 all survive; the substituted
+        values are encoded as UTF-8 first. With ``dollar`` the $var dialect
+        (string.Template.safe_substitute: unknown and malformed placeholders
+        such as ${CMAKE_VAR}, $<GENEX>, ${{ github }} and $1 are left alone)
+        runs first; the __RK_NAME__ tokens are replaced in every case, and an
+        unknown token is left in place. Proven on both template populations
+        by tests/one-offs/thinking/poc-one-engine/poc_one_engine.py.
+        """
+        values = {k: str(v).encode("utf-8").decode("latin-1") for k, v in context.items()}
+        text = data.decode("utf-8", "replace")
+        if dollar:
+            text = string.Template(text).safe_substitute(values)
+        text = RK_TOKEN.sub(lambda m: values.get("RK_" + m.group(1), m.group(0)), text)
+>       return text.encode("latin-1")
+E       UnicodeEncodeError: 'latin-1' codec can't encode character '\ufeff' in position 0: ordinal not in range(256)
+
+repokit\template_engine.py:277: UnicodeEncodeError
+=========================== short test summary info ===========================
+FAILED tests/test_layers.py::test_bytes_outside_placeholders_never_change - U...
+FAILED tests/test_layers.py::test_assemble_replaces_appends_resolves_paths_and_keeps_bytes
+2 failed, 15 deselected in 0.09s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M2 $ dialect applied to layer files too (repokit/template_engine.py) :: tests/test_layers.py -m 'not integration' -k 'only_for_template_files'
+F                                                                        [100%]
+================================== FAILURES ===================================
+_____________ test_the_dollar_dialect_is_only_for_template_files ______________
+
+    def test_the_dollar_dialect_is_only_for_template_files():
+        """CONSEQUENCE: 7 (safety) -- under the token dialect a Makefile's $$ and a
+        script's $1 are untouched; under the $ dialect safe_substitute would turn
+        $$ into $ -- which is why layer files never get it."""
+        data = b"all:\n\techo $$HOME $1 $description\n"
+>       assert ENGINE.render_bytes(data, CTX, dollar=False) == data
+E       AssertionError: assert b'all:\n\tech...\x93 a tool\n' == b'all:\n\tech...description\n'
+E         
+E         At index 12 diff: b'H' != b'$'
+E         Use -v to get more diff
+
+tests\test_layers.py:58: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_layers.py::test_the_dollar_dialect_is_only_for_template_files
+1 failed, 16 deselected in 0.07s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M3 stubs resolve like built layers (repokit/layers.py) :: tests/test_layers.py -m 'not integration' -k 'refused_with_the_known_list'
+.F..                                                                     [100%]
+================================== FAILURES ===================================
+_ test_unknown_names_and_stubs_are_refused_with_the_known_list[ghost-None-language ghost is not built yet: planned] _
+
+tmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-12843/test_unknown_names_and_stubs_a1')
+langs = 'ghost', arch = None
+message = 'language ghost is not built yet: planned'
+
+    @pytest.mark.parametrize("langs, arch, message", [
+        ("cobol", None, "unknown language 'cobol'; known: generic, alpha, beta, ghost"),
+        ("ghost", None, "language ghost is not built yet: planned"),
+        ("alpha", "alpha/lib", "archetype alpha/lib is not built yet: later"),
+        ("alpha", "alpha/nope", "unknown archetype 'alpha/nope'; known: alpha/app, alpha/lib"),
+    ])
+    def test_unknown_names_and_stubs_are_refused_with_the_known_list(tmp_path, langs, arch, message):
+        """CONSEQUENCE: 8 (behaviour) -- U2.4's contract: the message names what is
+        known, and nothing is laid down."""
+        m = layers.load_manifest(_tree(tmp_path))
+>       with pytest.raises(layers.LayerError, match=re.escape(message)):
+E       Failed: DID NOT RAISE <class 'repokit.layers.LayerError'>
+
+tests\test_layers.py:146: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_layers.py::test_unknown_names_and_stubs_are_refused_with_the_known_list[ghost-None-language ghost is not built yet: planned]
+1 failed, 3 passed, 13 deselected in 0.12s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M4 an earlier layer wins (replace order inverted) (repokit/layers.py) :: tests/test_layers.py -m 'not integration' -k 'replaces_appends'
+F                                                                        [100%]
+================================== FAILURES ===================================
+________ test_assemble_replaces_appends_resolves_paths_and_keeps_bytes ________
+
+tmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-12844/test_assemble_replaces_appends0')
+
+    def test_assemble_replaces_appends_resolves_paths_and_keeps_bytes(tmp_path):
+        """CONSEQUENCE: 9 (safety) -- the anchor for the walk: a later layer's file
+        replaces, .rkappend appends (to a file the structure already wrote too),
+        tokens resolve in paths and text, binaries and workflows are byte-copied,
+        and a BOM, CRLF and a non-UTF-8 byte survive."""
+        root = _tree(tmp_path)
+        dest = tmp_path / "proj"
+        dest.mkdir()
+        (dest / ".gitignore").write_text("# structure\n*.log", encoding="utf-8")   # no trailing newline
+        r = layers.resolve(layers.load_manifest(root), "alpha,beta")
+        written = layers.assemble(root, r.layers, str(dest), CTX, engine=ENGINE)
+>       assert (dest / "README.md").read_text() == "beta readme replaces alpha's\n"
+E       assert 'alpha readme\n' == "beta readme ...ces alpha's\n"
+E         
+E         - beta readme replaces alpha's
+E         + alpha readme
+
+tests\test_layers.py:161: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_layers.py::test_assemble_replaces_appends_resolves_paths_and_keeps_bytes
+1 failed, 16 deselected in 0.15s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M5 .rkappend replaces instead of appending (repokit/layers.py) :: tests/test_layers.py -m 'not integration' -k 'replaces_appends'
+F                                                                        [100%]
+================================== FAILURES ===================================
+________ test_assemble_replaces_appends_resolves_paths_and_keeps_bytes ________
+
+tmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-12845/test_assemble_replaces_appends0')
+
+    def test_assemble_replaces_appends_resolves_paths_and_keeps_bytes(tmp_path):
+        """CONSEQUENCE: 9 (safety) -- the anchor for the walk: a later layer's file
+        replaces, .rkappend appends (to a file the structure already wrote too),
+        tokens resolve in paths and text, binaries and workflows are byte-copied,
+        and a BOM, CRLF and a non-UTF-8 byte survive."""
+        root = _tree(tmp_path)
+        dest = tmp_path / "proj"
+        dest.mkdir()
+        (dest / ".gitignore").write_text("# structure\n*.log", encoding="utf-8")   # no trailing newline
+        r = layers.resolve(layers.load_manifest(root), "alpha,beta")
+        written = layers.assemble(root, r.layers, str(dest), CTX, engine=ENGINE)
+        assert (dest / "README.md").read_text() == "beta readme replaces alpha's\n"
+        assert (dest / ".gitignore").read_text() == "# structure\n*.log\n\n# alpha\n*.alpha\n# beta\n*.beta\n"
+        assert (dest / "include/my_tool/version.h").read_bytes() == b"\xef\xbb\xbf#define MY_TOOL_V 1\r\n"
+        assert (dest / "src/app.rc").read_bytes() == b"/* \xe9 */\r\nVALUE MY_TOOL_V\r\n"
+        assert (dest / "my-tool.sln").read_bytes() == f"Project {CTX['RK_GUID_PROJECT']}\r\n".encode()
+>       assert (dest / "settings.toml").read_text() == "[t]\na = 1\nb = 2\n"
+E       AssertionError: assert 'b = 2\n' == '[t]\na = 1\nb = 2\n'
+E         
+E         - [t]
+E         - a = 1
+E           b = 2
+
+tests\test_layers.py:166: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_layers.py::test_assemble_replaces_appends_resolves_paths_and_keeps_bytes
+1 failed, 16 deselected in 0.12s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M6 path tokens unresolved (repokit/layers.py) :: tests/test_layers.py -m 'not integration' -k 'replaces_appends' tests/test_layers_cli.py -k 'stack_in_the_order'
+
+22 deselected in 0.05s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M7 token-in-workflow check off (repokit/layers.py) :: tests/test_layers.py -m 'not integration' -k 'workflow_file_is_an_error'
+F                                                                        [100%]
+================================== FAILURES ===================================
+_________________ test_a_token_in_a_workflow_file_is_an_error _________________
+
+tmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-12846/test_a_token_in_a_workflow_fil0')
+
+    def test_a_token_in_a_workflow_file_is_an_error(tmp_path):
+        root = _tree(tmp_path, workflow_token=True)
+        r = layers.resolve(layers.load_manifest(root), "alpha")
+>       with pytest.raises(layers.LayerError, match="token in workflow file"):
+E       Failed: DID NOT RAISE <class 'repokit.layers.LayerError'>
+
+tests\test_layers.py:177: Failed
+=========================== short test summary info ===========================
+FAILED tests/test_layers.py::test_a_token_in_a_workflow_file_is_an_error - Fa...
+1 failed, 16 deselected in 0.13s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M8 preserve_existing ignored (repokit/layers.py) :: tests/test_layers.py -m 'not integration' -k 'preserve_existing'
+F                                                                        [100%]
+================================== FAILURES ===================================
+________ test_preserve_existing_leaves_an_adopted_projects_files_alone ________
+
+tmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-12847/test_preserve_existing_leaves_0')
+
+    def test_preserve_existing_leaves_an_adopted_projects_files_alone(tmp_path):
+        """CONSEQUENCE: 8 (safety) -- adopt: an existing file is neither replaced
+        nor appended to; missing files are still laid down."""
+        root = _tree(tmp_path)
+        dest = tmp_path / "proj"
+        dest.mkdir()
+        (dest / "README.md").write_text("theirs\n")
+        (dest / ".gitignore").write_text("theirs\n")
+        r = layers.resolve(layers.load_manifest(root), "alpha")
+        layers.assemble(root, r.layers, str(dest), CTX, engine=ENGINE, preserve_existing=True)
+>       assert (dest / "README.md").read_text() == "theirs\n" and (dest / ".gitignore").read_text() == "theirs\n"
+E       AssertionError: assert ('alpha readme\n' == 'theirs\n'
+E         
+E         - theirs
+E         + alpha readme)
+
+tests\test_layers.py:191: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_layers.py::test_preserve_existing_leaves_an_adopted_projects_files_alone
+1 failed, 16 deselected in 0.14s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M9 settings never merged (0.6.0 behaviour) (repokit/common_kit.py) :: tests/test_layers.py -m 'not integration' -k 'merges_missing_keys'
+F                                                                        [100%]
+================================== FAILURES ===================================
+________ test_write_settings_merges_missing_keys_and_never_overwrites _________
+
+tmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-12848/test_write_settings_merges_mis0')
+
+    def test_write_settings_merges_missing_keys_and_never_overwrites(tmp_path):
+        """CONSEQUENCE: 9 (safety) -- a layer-supplied .repokit-common.toml keeps its
+        version-source and gains private-patterns; a pyproject table the same; an
+        existing key is untouched; CRLF survives."""
+        f = tmp_path / ".repokit-common.toml"
+        f.write_bytes(b'[tool.repokit-common]\r\nversion-source = "include/x/version.h"\r\nlanguages = ["c-cpp"]\r\n')
+        assert common_kit.write_settings(str(tmp_path), {"private-patterns": ["CLAUDE.md"], "languages": ["NOT-THIS"]}) == ".repokit-common.toml"
+        assert f.read_bytes() == (b'[tool.repokit-common]\r\nprivate-patterns = ["CLAUDE.md"]\r\n'
+                                  b'version-source = "include/x/version.h"\r\nlanguages = ["c-cpp"]\r\n')
+        assert common_kit.write_settings(str(tmp_path), {"private-patterns": ["other"]}) is None   # present: untouched
+        py = tmp_path / "pyproject.toml"
+        py.write_text('[project]\nname = "p"\n\n[tool.repokit-common]\nversion-source = "p/_version.py"\n\n[tool.other]\nx = 1\n')
+>       assert common_kit.write_settings(str(tmp_path), {"private-branches": ["private", "scratch"]}) == "pyproject.toml"
+E       AssertionError: assert None == 'pyproject.toml'
+E        +  where None = <function write_settings at 0x000001A02D53CAE0>('C:\\Users\\Extreme\\AppData\\Local\\Temp\\pytest-of-Extreme\\pytest-12848\\test_write_settings_merges_mis0', {'private-branches': ['private', 'scratch']})
+E        +    where <function write_settings at 0x000001A02D53CAE0> = common_kit.write_settings
+E        +    and   'C:\\Users\\Extreme\\AppData\\Local\\Temp\\pytest-of-Extreme\\pytest-12848\\test_write_settings_merges_mis0' = str(WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-12848/test_write_settings_merges_mis0'))
+
+tests\test_layers.py:228: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_layers.py::test_write_settings_merges_missing_keys_and_never_overwrites
+1 failed, 16 deselected in 0.12s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M10 CLI validation removed (repokit/cli.py) :: tests/test_layers_cli.py -k 'fail_before_anything'
+F                                                                        [100%]
+================================== FAILURES ===================================
+_ TestLanguageLayers.test_unknown_names_and_stubs_fail_before_anything_is_created _
+
+self = <tests.test_layers_cli.TestLanguageLayers testMethod=test_unknown_names_and_stubs_fail_before_anything_is_created>
+
+    def test_unknown_names_and_stubs_fail_before_anything_is_created(self):
+        """U2.4: the failure names what is known and leaves no folder behind."""
+        cases = [
+            (["--language", "cobol"], "unknown language 'cobol'; known: generic, c-cpp, javascript, python"),
+            (["--language", "javascript"], "language javascript is not built yet"),
+            (["--archetype", "python/django"], "archetype python/django is not built yet"),
+            (["--archetype", "python/nope"], "unknown archetype 'python/nope'; known:"),
+        ]
+        for extra, message in cases:
+            rc, out, err = self.run_repokit(["create", "demo", *extra, "--no-push"])
+            self.assertNotEqual(rc, 0, extra)
+            self.assertIn(message, out + err, extra)
+>           self.assertFalse(os.path.exists(os.path.join(self.test_dir, "demo")), extra)
+E           AssertionError: True is not false : ['--language', 'cobol']
+
+tests\test_layers_cli.py:101: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Warning: No GitHub token available for cleanup
+=========================== short test summary info ===========================
+FAILED tests/test_layers_cli.py::TestLanguageLayers::test_unknown_names_and_stubs_fail_before_anything_is_created
+1 failed, 4 deselected in 6.05s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M11 layers not applied by create (repokit/repo_manager.py) :: tests/test_layers_cli.py -k 'keeps_todays_output'
+F                                                                        [100%]
+================================== FAILURES ===================================
+_ TestLanguageLayers.test_python_keeps_todays_output_and_the_vaults_ignore_lines _
+
+self = <tests.test_layers_cli.TestLanguageLayers testMethod=test_python_keeps_todays_output_and_the_vaults_ignore_lines>
+
+    def test_python_keeps_todays_output_and_the_vaults_ignore_lines(self):
+        """U3.2's pin at the CLI: a bare --language python still produces setup.py
+        and requirements.txt with the project's names; the Python ignore lines are
+        appended and the vault's lines, written after the layers, are still there."""
+        self.assert_repokit_success(["create", "demo", "--language", "python", "--no-push"])
+        repo = Path(self.test_dir, "demo")
+>       setup = (repo / "setup.py").read_text(encoding="utf-8")
+
+tests\test_layers_cli.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Python312\Lib\pathlib.py:1028: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/repokit_test_q0y6lk0u/demo/setup.py')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Extreme\\AppData\\Local\\Temp\\repokit_test_q0y6lk0u\\demo\\setup.py'
+
+C:\Python312\Lib\pathlib.py:1014: FileNotFoundError
+---------------------------- Captured stdout call -----------------------------
+Warning: No GitHub token available for cleanup
+=========================== short test summary info ===========================
+FAILED tests/test_layers_cli.py::TestLanguageLayers::test_python_keeps_todays_output_and_the_vaults_ignore_lines
+1 failed, 4 deselected in 6.91s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== tree check
+porcelain unchanged
