@@ -5,6 +5,17 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-10-09
+
+### Added
+- **The `python/pypi` archetype, now Python's default.** `repokit create NAME --language python` produces the shape git-repokit-template's projects have: `pyproject.toml` with a dynamic version and the `[tool.repokit-common]` table, the package (`__init__.py`, `__main__.py`, `cli.py` with `--version`, `_version.py` in the hooks' format), `tests/test_version.py` and `conftest.py`, and the publish-on-release workflow. The generated project installs with `pip install -e .`, its tests pass, and `python -m NAME --version` answers. The previous output (`setup.py` and `requirements.txt`) is `--archetype python/setuppy`.
+
+### Changed
+- With several languages and no `--archetype`, only the first language's default archetype applies; the others add their language layers. Two default archetypes (pypi's `pyproject.toml` table and cmake-app's `.repokit-common.toml`) would both claim the project's settings, so the first language is the primary one.
+
+### Fixed
+- `.repokit.json` recorded `"language": "generic"` when only `--archetype` was given; it now records the archetype's language.
+
 ## [0.7.0] - 2026-10-09
 
 ### Added

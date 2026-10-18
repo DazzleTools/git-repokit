@@ -78,7 +78,7 @@ Every project gets the same structure (README, CONTRIBUTING, `.github/`, `.gitig
 
 | Language | Default archetype | Archetypes |
 |---|---|---|
-| `python` | `python/setuppy` (`setup.py` + `requirements.txt`: today's Python output) | `python/pypi`, `python/comfyui`, `python/django`, `python/qt` announced |
+| `python` | `python/pypi` (`pyproject.toml` with a dynamic version, the package with `cli.py` and `_version.py`, tests, the publish-on-release workflow -- the shape of git-repokit-template's projects) | `python/setuppy` (`setup.py` + `requirements.txt`, the output before 0.7.1); `python/comfyui`, `python/django`, `python/qt` announced |
 | `c-cpp` | `c-cpp/cmake-app` (CMake presets, a vcpkg manifest, CTest, a build-time version stamp, CI) | `c-cpp/msbuild` (a Visual Studio solution), `c-cpp/minimal` (one source file, `Makefile` + `build.bat`); `c-cpp/cmake-lib` and `c-cpp/qt` announced. All three build as generated with Visual Studio 2022's tools (`tests/test_layers_c_cpp.py`); the version lives in `include/<name>/version.h`, which CMake, the `.rc` resource and the code all read |
 | `javascript` | -- | planned as the js-ts layer |
 

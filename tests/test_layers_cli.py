@@ -60,13 +60,49 @@ class TestLanguageLayers(RepoKitTestCase):
         self.assertEqual(meta["archetype"], "python/setuppy")
         self.assertEqual(meta["language"], "python")
 
+    def test_a_bare_python_is_the_pypi_archetype_that_installs_and_tests(self):
+        """U3.3/U3.4: `--language python` is now the pypi archetype (the gate's
+        choice): pyproject.toml with a dynamic version, the package, tests. The
+        project installs with pip and its own tests pass -- in a throwaway venv,
+        so nothing reaches this interpreter's site-packages."""
+        self.assert_repokit_success(["create", "my-tool", "--language", "python",
+                                     "--description", "A demo tool", "--no-push"])
+        repo = Path(self.test_dir, "my-tool")
+        for rel in ("pyproject.toml", "my_tool/__init__.py", "my_tool/__main__.py", "my_tool/cli.py",
+                    "my_tool/_version.py", "tests/test_version.py", ".github/workflows/release.yml"):
+            self.assertTrue((repo / rel).is_file(), rel)
+        pyproject = (repo / "pyproject.toml").read_text(encoding="utf-8")
+        self.assertIn('name = "my-tool"', pyproject)
+        self.assertIn('my-tool = "my_tool.cli:main"', pyproject)
+        self.assertIn('version-source = "my_tool/_version.py"', pyproject)
+        self.assertEqual(_tokens_left(repo), [])
+        meta = json.loads((repo / ".repokit.json").read_text(encoding="utf-8"))
+        self.assertEqual(meta["archetype"], "python/pypi")
+
+        venv = Path(self.test_dir, "venv")
+        subprocess.run([sys.executable, "-m", "venv", str(venv)], check=True, capture_output=True)
+        py = venv / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+        env = {k: v for k, v in os.environ.items() if k not in ("PYTHONPATH", "VIRTUAL_ENV")}
+        env["PIP_CACHE_DIR"] = str(Path(self.test_dir, "pip-cache"))
+        env["PIP_DISABLE_PIP_VERSION_CHECK"] = "1"
+        r = subprocess.run([str(py), "-m", "pip", "install", "-q", "-e", ".", "pytest"], cwd=repo,
+                           capture_output=True, text=True, env=env)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        r = subprocess.run([str(py), "-m", "pytest", "-q", "-p", "no:cacheprovider"], cwd=repo,
+                           capture_output=True, text=True, env=env)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("7 passed", r.stdout)
+        r = subprocess.run([str(py), "-m", "my_tool", "--version"], cwd=repo, capture_output=True, text=True, env=env)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn("my-tool 0.1.0", r.stdout)
+
     def test_languages_stack_in_the_order_given(self):
         """--language c-cpp,python: both language layers land, the first language's
         default archetype (cmake-app) applies and the second's does not, the C
         header's path token is resolved, the layer's .repokit-common.toml names it
         with the archetype's extra target appended, and the workflow file is
-        byte-identical to its source. Reversed, python is primary: setuppy's
-        setup.py, no CMake."""
+        byte-identical to its source. Reversed, python is primary: pypi's
+        pyproject, no CMake."""
         self.assert_repokit_success(["create", "demo", "--language", "c-cpp,python", "--no-push"])
         repo = Path(self.test_dir, "demo")
         for rel in ("CMakeLists.txt", "include/demo/version.h", "src/app.rc", "vcpkg.json"):
@@ -88,10 +124,10 @@ class TestLanguageLayers(RepoKitTestCase):
         rc, out, err = self.run_repokit(["create", "demo2", "--language", "python,c-cpp", "--no-push"])
         self.assertEqual(rc, 0, out + err)
         repo2 = Path(self.test_dir, "demo2")
-        self.assertTrue((repo2 / "setup.py").is_file() and (repo2 / "include/demo2/version.h").is_file())
+        self.assertTrue((repo2 / "pyproject.toml").is_file() and (repo2 / "include/demo2/version.h").is_file())
         self.assertFalse((repo2 / "CMakeLists.txt").exists())
         meta2 = json.loads((repo2 / ".repokit.json").read_text(encoding="utf-8"))
-        self.assertEqual((meta2["languages"], meta2["archetype"]), (["python", "c-cpp"], "python/setuppy"))
+        self.assertEqual((meta2["languages"], meta2["archetype"]), (["python", "c-cpp"], "python/pypi"))
 
     def test_an_archetype_implies_its_language_and_shares_the_guids(self):
         self.assert_repokit_success(["create", "demo", "--archetype", "c-cpp/msbuild", "--no-push"])

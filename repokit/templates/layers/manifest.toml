@@ -7,7 +7,7 @@
 
 [languages.python]
 layers = ["languages/python"]
-default = "python/setuppy"
+default = "python/pypi"
 
 [languages.c-cpp]
 layers = ["languages/c-cpp"]
@@ -23,8 +23,9 @@ layers = ["archetypes/python/setuppy"]
 description = "setup.py and requirements.txt: git-repokit's Python output before the layers"
 
 [archetypes."python/pypi"]
-stub = true
-description = "pyproject.toml with a dynamic version, the package, tests and the publish-on-release workflow: the shape of git-repokit-template's projects (built in 0.7.1)"
+languages = ["python"]
+layers = ["archetypes/python/pypi"]
+description = "pyproject.toml with a dynamic version, the package (__init__, __main__, cli, _version), tests, and the publish-on-release workflow: the shape of git-repokit-template's projects"
 
 [archetypes."python/comfyui"]
 stub = true
