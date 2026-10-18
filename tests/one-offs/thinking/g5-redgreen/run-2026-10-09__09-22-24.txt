@@ -1,0 +1,42 @@
+redgreen G5 -- 2026-10-09__09-22-24
+=== M4 python CI no longer runs pytest (repokit/templates/layers/languages/python/.github/workflows/ci-python.yml) :: tests/test_layers_cli.py -k ci_attributes
+F                                                                        [100%]
+================================== FAILURES ===================================
+___ TestLanguageLayers.test_ci_attributes_and_changelog_follow_the_language ___
+
+self = <tests.test_layers_cli.TestLanguageLayers testMethod=test_ci_attributes_and_changelog_follow_the_language>
+
+    def test_ci_attributes_and_changelog_follow_the_language(self):
+        """U5.1-U5.3: CI comes from the language layers (ci-python.yml runs pytest;
+        ci-c-cpp.yml runs cmake and ctest), never from git-repokit's own
+        workflow; the README's badge names the file that exists, or no workflow
+        badge; .gitattributes carries the vendored line; CHANGELOG.md has the
+        first version's heading, so the vendored version tool syncs and checks."""
+        import yaml
+    
+        def runs(path):
+            ci = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+            return " ".join(str(step.get("run", "")) for job in ci["jobs"].values() for step in job.get("steps", []))
+    
+        self.assert_repokit_success(["create", "my-tool", "--language", "python", "--no-push"])
+        repo = Path(self.test_dir, "my-tool")
+        workflows = repo / ".github" / "workflows"
+        self.assertEqual(sorted(p.name for p in workflows.iterdir()), ["ci-python.yml", "release.yml"])
+        py_runs = runs(workflows / "ci-python.yml")
+>       self.assertIn("python -m pytest tests/", py_runs)   # the test step itself, not just `pip install pytest`
+E       AssertionError: 'python -m pytest tests/' not found in '   python -m pip install --upgrade pip setuptools wheel\nif [ -f pyproject.toml ]; then pip install -e ".[dev]" || pip install -e .; fi\nif [ -f setup.py ] && [ ! -f pyproject.toml ]; then pip install -e .; fi\nif [ -f requirements.txt ]; then pip install -r requirements.txt; fi\npip install pytest\n pip install flake8\n# The package directory: the first top-level folder holding __init__.py\nPKG_DIR=$(python -c "import pathlib; dirs=[d for d in pathlib.Path(\'.\').iterdir() if d.is_dir() and (d / \'__init__.py\').exists() and not d.name.startswith(\'.\')]; print(dirs[0] if dirs else \'.\')")\necho "Linting: $PKG_DIR"\n# Syntax errors and undefined names stop the build\nflake8 "$PKG_DIR"/ --count --select=E9,F63,F7,F82 --show-source --statistics\n# Everything else is reported, never fatal\nflake8 "$PKG_DIR"/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics\n python -c \'print(1)\'\n   python -m pip install --upgrade pip\npip install build wheel twine\npython -m build\ntwine check dist/*\n'
+
+tests\test_layers_cli.py:174: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Warning: No GitHub token available for cleanup
+=========================== short test summary info ===========================
+FAILED tests/test_layers_cli.py::TestLanguageLayers::test_ci_attributes_and_changelog_follow_the_language
+1 failed, 6 deselected in 5.69s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+porcelain unchanged

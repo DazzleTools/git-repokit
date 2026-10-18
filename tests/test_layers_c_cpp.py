@@ -101,6 +101,10 @@ class TestCCppLayer(RepoKitTestCase):
         """U4.2: the default C/C++ project configures with the vcpkg toolchain,
         builds, passes its CTest, and the binary reports the header's version."""
         repo = self._create("my-tool", "--language", "c-cpp")
+        # The project-wide phase is shown by --version like Python's
+        # get_display_version(): set it in the generated header before building.
+        header = repo / "include" / "my_tool" / "version.h"
+        header.write_bytes(header.read_bytes().replace(b'_PROJECT_PHASE ""', b'_PROJECT_PHASE "alpha"'))
         env = dict(os.environ, VCPKG_ROOT=str(VCPKG))
         r = _run([str(CMAKE), "--preset", "windows-release"], repo, env)
         self.assertEqual(r.returncode, 0, r.stdout[-3000:] + r.stderr[-3000:])
@@ -113,7 +117,7 @@ class TestCCppLayer(RepoKitTestCase):
         self.assertTrue(exe.exists())
         r = _run([str(exe), "--version"], repo)
         self.assertEqual(r.returncode, 0)
-        self.assertIn("my-tool 0.1.0 (0.1.0_main_", r.stdout)   # version and the build stamp
+        self.assertIn("my-tool ALPHA 0.1.0 (0.1.0_main_", r.stdout)   # project phase, version, the build stamp
 
     @needs_toolchain
     def test_msbuild_archetype_builds(self):

@@ -115,8 +115,8 @@ class TestLanguageLayers(RepoKitTestCase):
         ignore = (repo / ".gitignore").read_text(encoding="utf-8")
         self.assertIn("cmake-build-*/", ignore)
         self.assertIn(".ruff_cache/", ignore)             # python's language layer still contributes
-        src = LAYERS / "archetypes/c-cpp/cmake-app/.github/workflows/ci.yml"
-        self.assertEqual((repo / ".github/workflows/ci.yml").read_bytes(), src.read_bytes())
+        src = LAYERS / "archetypes/c-cpp/cmake-app/.github/workflows/ci-c-cpp.yml"
+        self.assertEqual((repo / ".github/workflows/ci-c-cpp.yml").read_bytes(), src.read_bytes())
         self.assertEqual(_tokens_left(repo), [])
         meta = json.loads((repo / ".repokit.json").read_text(encoding="utf-8"))
         self.assertEqual((meta["languages"], meta["archetype"]), (["c-cpp", "python"], "c-cpp/cmake-app"))
@@ -153,6 +153,51 @@ class TestLanguageLayers(RepoKitTestCase):
             self.assertNotEqual(rc, 0, extra)
             self.assertIn(message, out + err, extra)
             self.assertFalse(os.path.exists(os.path.join(self.test_dir, "demo")), extra)
+
+    def test_ci_attributes_and_changelog_follow_the_language(self):
+        """U5.1-U5.3: CI comes from the language layers (ci-python.yml runs pytest;
+        ci-c-cpp.yml runs cmake and ctest), never from git-repokit's own
+        workflow; the README's badge names the file that exists, or no workflow
+        badge; .gitattributes carries the vendored line; CHANGELOG.md has the
+        first version's heading, so the vendored version tool syncs and checks."""
+        import yaml
+
+        def runs(path):
+            ci = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+            return " ".join(str(step.get("run", "")) for job in ci["jobs"].values() for step in job.get("steps", []))
+
+        self.assert_repokit_success(["create", "my-tool", "--language", "python", "--no-push"])
+        repo = Path(self.test_dir, "my-tool")
+        workflows = repo / ".github" / "workflows"
+        self.assertEqual(sorted(p.name for p in workflows.iterdir()), ["ci-python.yml", "release.yml"])
+        py_runs = runs(workflows / "ci-python.yml")
+        self.assertIn("python -m pytest tests/", py_runs)   # the test step itself, not just `pip install pytest`
+        self.assertNotIn("mypy repokit", py_runs)
+        self.assertIn("ci-python.yml/badge.svg", (repo / "README.md").read_text(encoding="utf-8"))
+        self.assertIn("scripts/repokit-common/** linguist-vendored",
+                      (repo / ".gitattributes").read_text(encoding="utf-8").splitlines())
+        self.assertIn("## [0.1.0]", (repo / "CHANGELOG.md").read_text(encoding="utf-8"))
+        tool = repo / "scripts" / "repokit-common" / "sync-versions.py"
+        if tool.exists():
+            # a fresh project has no stamp yet (the hooks are installed last): one
+            # sync writes it, then --check must find everything in place
+            r = subprocess.run([sys.executable, str(tool)], cwd=repo, capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            r = subprocess.run([sys.executable, str(tool), "--check"], cwd=repo, capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+        self.assert_repokit_success(["create", "cm", "--language", "c-cpp", "--no-push"])
+        cm = Path(self.test_dir, "cm")
+        self.assertEqual([p.name for p in (cm / ".github" / "workflows").iterdir()], ["ci-c-cpp.yml"])
+        c_runs = runs(cm / ".github" / "workflows" / "ci-c-cpp.yml")
+        self.assertIn("cmake", c_runs)
+        self.assertIn("ctest", c_runs)
+        self.assertIn("ci-c-cpp.yml/badge.svg", (cm / "README.md").read_text(encoding="utf-8"))
+
+        self.assert_repokit_success(["create", "ms", "--archetype", "c-cpp/msbuild", "--no-push"])
+        ms = Path(self.test_dir, "ms")
+        self.assertFalse((ms / ".github" / "workflows").exists())
+        self.assertNotIn("workflows/", (ms / "README.md").read_text(encoding="utf-8"))
 
     def test_generic_lays_down_no_code_type_files(self):
         self.assert_repokit_success(["create", "demo", "--no-push"])

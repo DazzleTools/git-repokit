@@ -5,6 +5,19 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3] - 2026-10-09
+
+### Added
+- **CI per language, from the layers.** The Python layer ships `.github/workflows/ci-python.yml` (pytest on a Python matrix, then a build); the cmake-app archetype ships `ci-c-cpp.yml` (CMake and CTest on three operating systems). The README's workflow badge names the file that exists; a project with no CI (msbuild, minimal, generic) gets no workflow badge.
+- **`.gitattributes` in every project**: line-ending normalisation (`* text=auto`, binaries marked) and `scripts/repokit-common/** linguist-vendored`, so GitHub does not count the vendored tooling as the project's language.
+- **`CHANGELOG.md` in every project**, with the first version's heading and compare links, so git-repokit-common's version tool finds its section from the first commit.
+
+### Changed
+- The C/C++ layer's `version.h` carries `PRE_RELEASE_NUM` and `PROJECT_PHASE` beside `PHASE`, the optional fields a Python `_version.py` has (git-repokit-common 0.4.0 reads and writes them), and the generated programs' `--version` prints the project phase the way Python's `get_display_version()` does: `my-tool ALPHA 0.1.0 (...)` while it is set, `my-tool 0.1.0 (...)` once stable.
+
+### Removed
+- **git-repokit's own CI workflow is no longer written into generated projects.** `main.yml` ran `mypy repokit/` -- git-repokit's type check -- in every project since 2025.
+
 ## [0.7.2] - 2026-10-09
 
 ### Added

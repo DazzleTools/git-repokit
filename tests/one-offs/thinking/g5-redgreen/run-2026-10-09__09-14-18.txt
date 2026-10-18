@@ -1,0 +1,185 @@
+redgreen G5 -- 2026-10-09__09-14-18
+=== M1 badge never names the workflow (repokit/repo_manager.py) :: tests/test_layers_cli.py -k ci_attributes
+F                                                                        [100%]
+================================== FAILURES ===================================
+___ TestLanguageLayers.test_ci_attributes_and_changelog_follow_the_language ___
+
+self = <tests.test_layers_cli.TestLanguageLayers testMethod=test_ci_attributes_and_changelog_follow_the_language>
+
+    def test_ci_attributes_and_changelog_follow_the_language(self):
+        """U5.1-U5.3: CI comes from the language layers (ci-python.yml runs pytest;
+        ci-c-cpp.yml runs cmake and ctest), never from git-repokit's own
+        workflow; the README's badge names the file that exists, or no workflow
+        badge; .gitattributes carries the vendored line; CHANGELOG.md has the
+        first version's heading, so the vendored version tool syncs and checks."""
+        import yaml
+    
+        def runs(path):
+            ci = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+            return " ".join(str(step.get("run", "")) for job in ci["jobs"].values() for step in job.get("steps", []))
+    
+        self.assert_repokit_success(["create", "my-tool", "--language", "python", "--no-push"])
+        repo = Path(self.test_dir, "my-tool")
+        workflows = repo / ".github" / "workflows"
+        self.assertEqual(sorted(p.name for p in workflows.iterdir()), ["ci-python.yml", "release.yml"])
+        py_runs = runs(workflows / "ci-python.yml")
+        self.assertIn("pytest", py_runs)
+        self.assertNotIn("mypy repokit", py_runs)
+>       self.assertIn("ci-python.yml/badge.svg", (repo / "README.md").read_text(encoding="utf-8"))
+E       AssertionError: 'ci-python.yml/badge.svg' not found in '# my-tool\n\n[![Version][version-badge]][version-url]\n[![Python][python-badge]][python-url]\n[![License][license-badge]][license-url]\n[![GitHub Discussions][discussions-badge]][discussions-url]\n\n[version-badge]: https://img.shields.io/badge/version-1.0.0-blue\n[version-url]: https://github.com/YOUR_GITHUB_USERNAME/my-tool/releases\n[python-badge]: https://img.shields.io/badge/python-%3E%3D3.7-darkgreen\n[python-url]: https://python.org/downloads\n[license-badge]: https://img.shields.io/badge/license-MIT-orange\n[license-url]: https://github.com/YOUR_GITHUB_USERNAME/my-tool/blob/main/LICENSE\n[discussions-badge]: https://img.shields.io/badge/discussions-Welcome-lightgrey\n[discussions-url]: https://github.com/YOUR_GITHUB_USERNAME/my-tool/discussions\n\nA new project repository\n\n## Overview\n\n## Features\n\n- Feature 1\n- Feature 2\n- Feature 3\n\n## Installation\n\n```bash\n# Installation instructions here\n```\n\n## Usage\n\n```bash\n# Usage examples here\n```\n\n## Development\n\n### Prerequisites\n\n- List prerequisites here\n\n### Setup\n\n```bash\n# Setup instructions here\n```\n\n## Contributions\nContributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on how to contribute.\n\nLike the project?\n\n[!["Buy Me A Coffee"](https://camo.githubusercontent.com/0b448aabee402aaf7b3b256ae471e7dc66bcf174fad7d6bb52b27138b2364e47/68747470733a2f2f7777772e6275796d6561636f666665652e636f6d2f6173736574732f696d672f637573746f6d5f696d616765732f6f72616e67655f696d672e706e67)](https://www.buymeacoffee.com/djdarcy)\n\n## License\n\nThis project is licensed under the terms specified in the LICENSE file.\n\n## Acknowledgements\n\nUnknown Author unknown@example.com\n'
+
+tests\test_layers_cli.py:176: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Warning: No GitHub token available for cleanup
+=========================== short test summary info ===========================
+FAILED tests/test_layers_cli.py::TestLanguageLayers::test_ci_attributes_and_changelog_follow_the_language
+1 failed, 6 deselected in 5.76s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M2 vendored attribute dropped (repokit/templates/common/gitattributes.template) :: tests/test_layers_cli.py -k ci_attributes
+F                                                                        [100%]
+================================== FAILURES ===================================
+___ TestLanguageLayers.test_ci_attributes_and_changelog_follow_the_language ___
+
+self = <tests.test_layers_cli.TestLanguageLayers testMethod=test_ci_attributes_and_changelog_follow_the_language>
+
+    def test_ci_attributes_and_changelog_follow_the_language(self):
+        """U5.1-U5.3: CI comes from the language layers (ci-python.yml runs pytest;
+        ci-c-cpp.yml runs cmake and ctest), never from git-repokit's own
+        workflow; the README's badge names the file that exists, or no workflow
+        badge; .gitattributes carries the vendored line; CHANGELOG.md has the
+        first version's heading, so the vendored version tool syncs and checks."""
+        import yaml
+    
+        def runs(path):
+            ci = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+            return " ".join(str(step.get("run", "")) for job in ci["jobs"].values() for step in job.get("steps", []))
+    
+        self.assert_repokit_success(["create", "my-tool", "--language", "python", "--no-push"])
+        repo = Path(self.test_dir, "my-tool")
+        workflows = repo / ".github" / "workflows"
+        self.assertEqual(sorted(p.name for p in workflows.iterdir()), ["ci-python.yml", "release.yml"])
+        py_runs = runs(workflows / "ci-python.yml")
+        self.assertIn("pytest", py_runs)
+        self.assertNotIn("mypy repokit", py_runs)
+        self.assertIn("ci-python.yml/badge.svg", (repo / "README.md").read_text(encoding="utf-8"))
+>       self.assertIn("scripts/repokit-common/** linguist-vendored",
+                      (repo / ".gitattributes").read_text(encoding="utf-8").splitlines())
+E       AssertionError: 'scripts/repokit-common/** linguist-vendored' not found in ['# Line endings: git normalises text files to LF in the repository and gives', '# each platform its own on checkout. Files that must keep their bytes are', '# listed as binary.', '* text=auto', '*.png binary', '*.jpg binary', '*.jpeg binary', '*.gif binary', '*.ico binary', '*.pdf binary', '*.zip binary', '*.woff binary', '*.woff2 binary', '', "# The vendored git-repokit-common tooling is not this project's language:", "# GitHub's language statistics and diffs treat it as vendored.", '# (no vendored line)']
+
+tests\test_layers_cli.py:177: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Warning: No GitHub token available for cleanup
+=========================== short test summary info ===========================
+FAILED tests/test_layers_cli.py::TestLanguageLayers::test_ci_attributes_and_changelog_follow_the_language
+1 failed, 6 deselected in 5.86s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M3 changelog heading wrong (repokit/templates/common/CHANGELOG.md.template) :: tests/test_layers_cli.py -k ci_attributes
+F                                                                        [100%]
+================================== FAILURES ===================================
+___ TestLanguageLayers.test_ci_attributes_and_changelog_follow_the_language ___
+
+self = <tests.test_layers_cli.TestLanguageLayers testMethod=test_ci_attributes_and_changelog_follow_the_language>
+
+    def test_ci_attributes_and_changelog_follow_the_language(self):
+        """U5.1-U5.3: CI comes from the language layers (ci-python.yml runs pytest;
+        ci-c-cpp.yml runs cmake and ctest), never from git-repokit's own
+        workflow; the README's badge names the file that exists, or no workflow
+        badge; .gitattributes carries the vendored line; CHANGELOG.md has the
+        first version's heading, so the vendored version tool syncs and checks."""
+        import yaml
+    
+        def runs(path):
+            ci = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+            return " ".join(str(step.get("run", "")) for job in ci["jobs"].values() for step in job.get("steps", []))
+    
+        self.assert_repokit_success(["create", "my-tool", "--language", "python", "--no-push"])
+        repo = Path(self.test_dir, "my-tool")
+        workflows = repo / ".github" / "workflows"
+        self.assertEqual(sorted(p.name for p in workflows.iterdir()), ["ci-python.yml", "release.yml"])
+        py_runs = runs(workflows / "ci-python.yml")
+        self.assertIn("pytest", py_runs)
+        self.assertNotIn("mypy repokit", py_runs)
+        self.assertIn("ci-python.yml/badge.svg", (repo / "README.md").read_text(encoding="utf-8"))
+        self.assertIn("scripts/repokit-common/** linguist-vendored",
+                      (repo / ".gitattributes").read_text(encoding="utf-8").splitlines())
+>       self.assertIn("## [0.1.0]", (repo / "CHANGELOG.md").read_text(encoding="utf-8"))
+E       AssertionError: '## [0.1.0]' not found in "# Changelog\n\nAll notable changes to my-tool are documented here.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n## [Unreleased]\n\n## [0.0.0] - 2026-10-09\n\n### Added\n- The project's structure, from git-repokit.\n\n[Unreleased]: https://github.com/YOUR_GITHUB_USERNAME/my-tool/compare/v0.1.0...HEAD\n[0.1.0]: https://github.com/YOUR_GITHUB_USERNAME/my-tool/releases/tag/v0.1.0\n"
+
+tests\test_layers_cli.py:179: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Warning: No GitHub token available for cleanup
+=========================== short test summary info ===========================
+FAILED tests/test_layers_cli.py::TestLanguageLayers::test_ci_attributes_and_changelog_follow_the_language
+1 failed, 6 deselected in 6.43s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M4 python CI no longer runs pytest (repokit/templates/layers/languages/python/.github/workflows/ci-python.yml) :: tests/test_layers_cli.py -k ci_attributes
+.                                                                        [100%]
+1 passed, 6 deselected in 14.78s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+=== M5 README context loses the badges again (repokit/repo_manager.py) :: tests/test_layers_cli.py -k ci_attributes
+F                                                                        [100%]
+================================== FAILURES ===================================
+___ TestLanguageLayers.test_ci_attributes_and_changelog_follow_the_language ___
+
+self = <tests.test_layers_cli.TestLanguageLayers testMethod=test_ci_attributes_and_changelog_follow_the_language>
+
+    def test_ci_attributes_and_changelog_follow_the_language(self):
+        """U5.1-U5.3: CI comes from the language layers (ci-python.yml runs pytest;
+        ci-c-cpp.yml runs cmake and ctest), never from git-repokit's own
+        workflow; the README's badge names the file that exists, or no workflow
+        badge; .gitattributes carries the vendored line; CHANGELOG.md has the
+        first version's heading, so the vendored version tool syncs and checks."""
+        import yaml
+    
+        def runs(path):
+            ci = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+            return " ".join(str(step.get("run", "")) for job in ci["jobs"].values() for step in job.get("steps", []))
+    
+        self.assert_repokit_success(["create", "my-tool", "--language", "python", "--no-push"])
+        repo = Path(self.test_dir, "my-tool")
+        workflows = repo / ".github" / "workflows"
+        self.assertEqual(sorted(p.name for p in workflows.iterdir()), ["ci-python.yml", "release.yml"])
+        py_runs = runs(workflows / "ci-python.yml")
+        self.assertIn("pytest", py_runs)
+        self.assertNotIn("mypy repokit", py_runs)
+>       self.assertIn("ci-python.yml/badge.svg", (repo / "README.md").read_text(encoding="utf-8"))
+E       AssertionError: 'ci-python.yml/badge.svg' not found in '# my-tool\n\n\n\nA new project repository\n\n## Overview\n\n## Features\n\n- Feature 1\n- Feature 2\n- Feature 3\n\n## Installation\n\n```bash\n# Installation instructions here\n```\n\n## Usage\n\n```bash\n# Usage examples here\n```\n\n## Development\n\n### Prerequisites\n\n- List prerequisites here\n\n### Setup\n\n```bash\n# Setup instructions here\n```\n\n## Contributions\nContributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on how to contribute.\n\nLike the project?\n\n[!["Buy Me A Coffee"](https://camo.githubusercontent.com/0b448aabee402aaf7b3b256ae471e7dc66bcf174fad7d6bb52b27138b2364e47/68747470733a2f2f7777772e6275796d6561636f666665652e636f6d2f6173736574732f696d672f637573746f6d5f696d616765732f6f72616e67655f696d672e706e67)](https://www.buymeacoffee.com/djdarcy)\n\n## License\n\nThis project is licensed under the terms specified in the LICENSE file.\n\n## Acknowledgements\n\nUnknown Author unknown@example.com\n'
+
+tests\test_layers_cli.py:176: AssertionError
+---------------------------- Captured stdout call -----------------------------
+Warning: No GitHub token available for cleanup
+=========================== short test summary info ===========================
+FAILED tests/test_layers_cli.py::TestLanguageLayers::test_ci_attributes_and_changelog_follow_the_language
+1 failed, 6 deselected in 6.48s
+
+C:\Python312\Lib\site-packages\pytest_asyncio\plugin.py:211: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+
+
+porcelain unchanged
