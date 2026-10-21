@@ -237,6 +237,225 @@ def test_the_shipped_manifest_names_only_layers_that_exist():
             assert not m["archetypes"][entry["default"]].get("stub"), name
 
 
+# --- Phase 3, unit 2: the eight rules on a manifest with js-ts entries -----------
+
+MANIFEST_P3 = """\
+[facets.language]
+rank = 0
+exclusive = false
+[facets.runtime]
+rank = 1
+exclusive = true
+[facets.dialect]
+rank = 2
+exclusive = true
+[facets.build]
+rank = 3
+exclusive = true
+[facets.framework]
+rank = 4
+exclusive = false
+[facets.purpose]
+rank = 5
+exclusive = true
+
+[languages.python]
+layers = ["languages/python"]
+default = "python/pypi"
+[languages.c-cpp]
+layers = ["languages/c-cpp"]
+default = "c-cpp/cmake-app"
+[languages.js-ts]
+layers = ["languages/js-ts"]
+default = "js-ts/node-package"
+
+[layers."python/pypi"]
+facet = "build"
+[layers."python/setuppy"]
+facet = "build"
+[layers."python/qt"]
+facet = "framework"
+[layers."c-cpp/cmake-app"]
+facet = "build"
+[layers."c-cpp/cmake-lib"]
+facet = "build"
+[layers."c-cpp/qt"]
+facet = "framework"
+[layers."js-ts/node"]
+facet = "runtime"
+[layers."js-ts/browser"]
+facet = "runtime"
+[layers."js-ts/ts"]
+facet = "dialect"
+[layers."js-ts/vite"]
+facet = "build"
+implies = ["browser"]
+[layers."js-ts/react"]
+facet = "framework"
+[layers."js-ts/svelte"]
+facet = "framework"
+[layers."js-ts/claude-plugin"]
+facet = "purpose"
+implies = ["node"]
+[layers."js-ts/node-package"]
+facet = "purpose"
+implies = ["node", "ts"]
+[layers."js-ts/comfyui-frontend"]
+facet = "purpose"
+implies = ["browser", "js-ts/vite"]
+
+[archetypes."python/pypi"]
+languages = ["python"]
+layers = ["archetypes/python/pypi"]
+[archetypes."python/setuppy"]
+languages = ["python"]
+layers = ["archetypes/python/setuppy"]
+[archetypes."c-cpp/cmake-app"]
+languages = ["c-cpp"]
+layers = ["archetypes/c-cpp/cmake-app"]
+[archetypes."js-ts/node-package"]
+languages = ["js-ts"]
+layers = ["archetypes/js-ts/node", "archetypes/js-ts/ts", "archetypes/js-ts/node-package"]
+[archetypes."js-ts/claude-plugin"]
+languages = ["js-ts"]
+layers = ["archetypes/js-ts/node", "archetypes/js-ts/claude-plugin"]
+[archetypes."js-ts/web-vite-react"]
+languages = ["js-ts"]
+layers = ["archetypes/js-ts/browser", "archetypes/js-ts/ts", "archetypes/js-ts/vite", "archetypes/js-ts/react"]
+"""
+
+
+@pytest.fixture
+def p3(tmp_path):
+    root = tmp_path / "layers"
+    root.mkdir()
+    (root / "manifest.toml").write_text(MANIFEST_P3, encoding="utf-8")
+    return layers.load_manifest(root)
+
+
+def test_ts_and_vite_are_different_facets(p3):
+    """AC-6, djdarcy's correction of 2026-10-19 ("I know that typescript is just a
+    flavor of Javascript, but what does that have to do with "a build system"?"):
+    ts is a dialect, vite a build; they never collide, and dialect sorts first."""
+    r = layers.resolve(p3, [], ["vite", "ts"])
+    assert r.names == ["js-ts", "js-ts/browser", "js-ts/ts", "js-ts/vite"]
+    assert p3["facets"]["dialect"]["rank"] < p3["facets"]["build"]["rank"]
+
+
+def test_a_composed_list_is_ordered_implied_and_recognised_as_its_preset(p3):
+    """AC-3: --with ts,react,vite -> the language, browser (implied by vite), the
+    dialect, the build, the framework; equal to web-vite-react, so that preset."""
+    r = layers.resolve(p3, [], "ts,react,vite")
+    assert r.layers == ["languages/js-ts", "archetypes/js-ts/browser", "archetypes/js-ts/ts",
+                        "archetypes/js-ts/vite", "archetypes/js-ts/react"]
+    assert r.archetype == "js-ts/web-vite-react" and r.notes == [] and r.languages == ["js-ts"]
+
+
+def test_a_bare_preset_name_resolves_when_unique(p3):
+    """AC-7: --with claude-plugin alone is js-ts/claude-plugin (node implied)."""
+    r = layers.resolve(p3, [], ["claude-plugin"])
+    assert r.archetype == "js-ts/claude-plugin"
+    assert r.layers == ["languages/js-ts", "archetypes/js-ts/node", "archetypes/js-ts/claude-plugin"]
+    assert r.tokens == ["claude-plugin"]
+
+
+def test_an_unrecognised_composition_carries_the_note_and_narrows_qt_by_language(p3):
+    """AC-8: cmake-lib,qt -> c-cpp's qt (cmake-lib implied c-cpp), no preset, one note."""
+    r = layers.resolve(p3, [], "cmake-lib,qt")
+    assert r.names == ["c-cpp", "c-cpp/cmake-lib", "c-cpp/qt"]
+    assert r.archetype is None and r.notes == [layers.NOT_A_PRESET]
+
+
+def test_two_layers_in_one_exclusive_facet_are_refused_naming_the_pair(p3):
+    """AC-4: the silent stack C allowed cannot happen."""
+    with pytest.raises(layers.LayerError, match=re.escape("'pypi' and 'setuppy' are both a build for python; pick one")):
+        layers.resolve(p3, [], "pypi,setuppy")
+    with pytest.raises(layers.LayerError, match="both a runtime for js-ts"):
+        layers.resolve(p3, [], "node,browser")
+
+
+def test_a_bare_name_in_two_languages_is_refused_with_both_forms(p3):
+    """AC-5: qt alone names both; with the language listed it resolves."""
+    with pytest.raises(layers.LayerError, match=re.escape("'qt' is ambiguous: c-cpp/qt or python/qt")):
+        layers.resolve(p3, [], ["qt"])
+    assert layers.resolve(p3, "c-cpp", ["qt"]).names == ["c-cpp", "c-cpp/qt"]
+    # both languages listed: the narrowing leaves two, and that is still ambiguous (M5)
+    with pytest.raises(layers.LayerError, match="'qt' is ambiguous"):
+        layers.resolve(p3, "python,c-cpp", ["qt"])
+
+
+def test_a_typo_suggests_the_close_name(p3):
+    """AC-13."""
+    with pytest.raises(layers.LayerError, match=r"unknown name 'pypii'.*did you mean .*pypi"):
+        layers.resolve(p3, [], ["pypii"])
+    with pytest.raises(layers.LayerError, match=r"unknown archetype 'js-ts/claude-plugn'.*did you mean .*js-ts/claude-plugin"):
+        layers.resolve(p3, [], ["js-ts/claude-plugn"])
+
+
+def test_the_default_preset_still_applies_when_nothing_is_asked(p3):
+    """AC-2's unit form: --language python alone is python/pypi; a one-token preset
+    is itself; a preset plus an extra layer is a composition with the note."""
+    r = layers.resolve(p3, "python")
+    assert r.archetype == "python/pypi" and r.layers == ["languages/python", "archetypes/python/pypi"]
+    assert layers.resolve(p3, [], "python/setuppy").archetype == "python/setuppy"
+    r3 = layers.resolve(p3, [], "js-ts/web-vite-react,svelte")
+    assert r3.archetype is None and r3.notes == [layers.NOT_A_PRESET] and r3.names[-1] == "js-ts/svelte"
+    # no tokens, no note: the default is not a composition, and generic has nothing to note (M8)
+    assert r.notes == [] and layers.resolve(p3, "python,c-cpp").notes == []
+    assert layers.resolve(p3, "generic").notes == [] and layers.resolve(p3, []).notes == []
+
+
+def test_resolve_lower_cases_and_dedupes_tokens(p3):
+    r = layers.resolve(p3, [], ["Claude-Plugin", "claude-plugin"])
+    assert r.archetype == "js-ts/claude-plugin" and r.tokens == ["claude-plugin"]
+    # the lower-cased form is what is compared, whichever spelling comes first (M3)
+    assert layers.resolve(p3, [], ["claude-plugin", "Claude-Plugin"]).tokens == ["claude-plugin"]
+
+
+def test_an_implies_entry_may_be_qualified(p3):
+    """A layer may imply a layer by its qualified name (M12): comfyui-frontend
+    implies browser (bare) and js-ts/vite (qualified); both land, once."""
+    r = layers.resolve(p3, [], ["comfyui-frontend"])
+    assert r.names == ["js-ts", "js-ts/browser", "js-ts/vite", "js-ts/comfyui-frontend"]
+
+
+# --- Phase 3, unit 1: every layer has a facet -----------------------------------
+
+def test_every_layer_folder_has_a_manifest_entry_with_a_known_facet():
+    """AC-6's home (Phase 3 design, D1/D3): the shipped manifest carries a
+    [facets] table and a [layers."lang/name"] entry for every folder under
+    archetypes/<lang>/<name>, each naming a facet the table defines; every
+    language folder is a [languages] entry; every non-stub [layers] entry's
+    folder exists; every preset's layers map to a [layers] entry; every
+    `implies` names a layer that exists. Red on the 0.7.3 manifest (no tables)."""
+    root = layers.layers_root(ENGINE)
+    m = layers.load_manifest(root)
+    facets = m["facets"]
+    assert {"language", "runtime", "dialect", "build", "framework", "purpose"} <= set(facets)
+    for name, f in facets.items():
+        assert isinstance(f.get("rank"), int) and isinstance(f.get("exclusive"), bool), name
+    assert facets["dialect"]["rank"] < facets["build"]["rank"]
+    for lang_dir in sorted((root / "archetypes").iterdir()):
+        for folder in sorted(p for p in lang_dir.iterdir() if p.is_dir()):
+            key = f"{lang_dir.name}/{folder.name}"
+            assert key in m["layers"], f"no [layers] entry for {key}"
+            assert m["layers"][key].get("facet") in facets, key
+    for lang_dir in sorted((root / "languages").iterdir()):
+        assert lang_dir.name in m["languages"], lang_dir.name
+    for key, entry in m["layers"].items():
+        lang, name = key.split("/", 1)
+        assert lang in m["languages"], key
+        if not entry.get("stub"):
+            assert (root / "archetypes" / lang / name).is_dir(), key
+        for imp in entry.get("implies", []):
+            target = imp if "/" in imp else f"{lang}/{imp}"
+            assert target in m["layers"] or target in m["languages"], f"{key} implies {imp}"
+    for key, preset in m["archetypes"].items():
+        for layer in preset.get("layers", []):
+            if layer.startswith("archetypes/"):
+                assert layer[len("archetypes/"):] in m["layers"], f"{key}: {layer}"
+
+
 # --- U2.6: settings merge -----------------------------------------------------
 
 def test_write_settings_merges_missing_keys_and_never_overwrites(tmp_path):

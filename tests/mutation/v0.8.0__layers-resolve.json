@@ -1,0 +1,16 @@
+{
+  "test_command": ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests/test_layers.py", "tests/test_layers_compositions.py"],
+  "mutations": [
+    {"id": "M2", "file": "repokit/layers.py", "original": "    return f.get(\"rank\", UNRANKED)", "mutated": "    return f.get(\"rank\", 0)", "note": "unranked facets sort first instead of last"},
+    {"id": "M3", "file": "repokit/layers.py", "original": "        if t.lower() not in tokens:", "mutated": "        if t not in tokens:", "note": "token dedup no longer case-insensitive"},
+    {"id": "M4", "file": "repokit/layers.py", "original": "narrowed = [c for c in candidates if c.split(\"/\")[0] in langs]", "mutated": "narrowed = [c for c in candidates if c.split(\"/\")[1] in langs]", "note": "ambiguity narrowing compares the name instead of the language"},
+    {"id": "M5", "file": "repokit/layers.py", "original": "            if len(narrowed) == 1:", "mutated": "            if len(narrowed) >= 1:", "note": "ambiguous bare names resolve to first candidate instead of refusing"},
+    {"id": "M6", "file": "repokit/layers.py", "original": "            slot = (name.split(\"/\")[0], facet)", "mutated": "            slot = (\"\", facet)", "note": "exclusivity checked across languages rather than per language"},
+    {"id": "M7", "file": "repokit/layers.py", "original": "        for name in langs[:1]:   # the primary language's default only", "mutated": "        for name in langs:   # the primary language's default only", "note": "every language's default applies, not just the primary"},
+    {"id": "M8", "file": "repokit/layers.py", "original": "    if tokens and _recognise:", "mutated": "    if _recognise:", "note": "preset recognition and NOT_A_PRESET note apply even with no tokens"},
+    {"id": "M9", "file": "repokit/layers.py", "original": ".get(\"facet\")), ic[0]))", "mutated": ".get(\"facet\")), -ic[0]))", "note": "within a facet rank, order given is reversed"},
+    {"id": "M10", "file": "repokit/layers.py", "original": "            if expansion == res.layers:", "mutated": "            if set(expansion) <= set(res.layers):", "note": "preset recognised by subset rather than equality of the whole request"},
+    {"id": "M11", "file": "repokit/layers.py", "original": "        by_lang[lang] = key", "mutated": "        by_lang.setdefault(lang, key)", "note": "a layer is preferred over a preset of the same name"},
+    {"id": "M12", "file": "repokit/layers.py", "original": "                target = imp if \"/\" in imp else f\"{lang_name}/{imp}\"", "mutated": "                target = f\"{lang_name}/{imp}\"", "note": "qualified implies entries get wrongly re-prefixed"}
+  ]
+}

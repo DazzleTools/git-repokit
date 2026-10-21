@@ -5,6 +5,26 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-10-20
+
+The 0.8 line gives the code-type templates their type system below the language, and builds the language git-repokit's revival was started for. Through 0.7, a project was a language and one archetype within it. In 0.8 a project is named by the choices the person makes -- where it runs, which dialect it is written in, how it is built or packaged, what it uses, what it is -- each a layer with a facet, composed on the command line or taken whole as a tested preset, so that a Claude Code plugin, a Node package, a Vite site or a plain script are each a few tokens away and none needs a hand-customised template afterwards. 0.8.0 lays down the facets, the resolver and the `--with` grammar with Python and C/C++ unchanged; 0.8.1 adds the plain Python script as a shape; 0.8.2 and 0.8.3 add JavaScript/TypeScript with Node, TypeScript, the npm package and the Claude Code plugin.
+
+### Added
+- **`--with`, a list of presets and layers, replaces `--archetype` on `create` and `adopt`.** A token is a preset (`python/pypi`), a layer qualified by its language (`c-cpp/qt`), or a bare name when only one language has it (`setuppy`). The tool fills in what each layer implies (its language at least), orders the list by facet, refuses two layers that answer the same one-answer question (`pypi,setuppy` names the pair and the facet), refuses a bare name two languages share by naming both forms, and suggests a close name on a typo. A list equal to a preset's expansion is recorded as that preset; any other list is assembled by the rules and noted once as not a tested preset.
+- **Facets in the layers' manifest.** `[facets]` names the questions a project answers below its language -- runtime, dialect, build, framework, purpose -- with the order they apply in and whether a project has one answer or several; `[layers."lang/name"]` gives every layer folder its facet, what it implies, and whether it is built yet. The presets are the `[archetypes]` table as before. The rule for a facet: it is named by the question the person answers, never by the files the answer produces (TypeScript is a dialect, not a build system).
+- **`repokit list [LANG]`**: per language, the presets (planned ones marked) and each facet's choices, on one screen.
+- **`.repokit.json` records `layers`**, every layer in the order applied; `archetype` is the preset the request equalled, or null.
+- `tests/test_layers_compositions.py`: every composition of the shipped layers assembles into a temp directory with no two layers writing one path undeclared and no token left behind.
+
+### Changed
+- Nothing Python or C/C++ produce changed: `--language python` is still the pypi package, `--language c-cpp` the CMake app, `--with python/setuppy` and `--with c-cpp/msbuild` the same files as `--archetype` gave in 0.7.3 (checked byte for byte, `tests/one-offs/thinking/p3-identity/compare.py`).
+
+### Fixed
+- The pypi archetype's `release.yml` could sit in a checkout with CRLF line endings on disk against the repository's LF attribute, and was then copied into projects that way (workflow files are copied byte for byte). The identity check against 0.7.3 found it; the layer is LF again.
+
+### Removed
+- `--archetype`. No alias: git-repokit's own tests, README and this file were its only users (checked against the template-family roster on 2026-10-19).
+
 ## [0.7.3] - 2026-10-09
 
 ### Added

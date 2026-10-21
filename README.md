@@ -27,7 +27,7 @@ RepoKit automates the creation of standardized Git repositories with professiona
 - **Private Content Protection**: Secure local-only content that never gets pushed
 - **GitHub/GitLab Integration**: Automated repository creation and deployment
 - **AI Development Integration**: Built-in Claude AI assistance with workflow documentation
-- **Two template systems**: the structure every project gets, then the code type on top -- a language layer and an archetype within it (`--language python,c-cpp`, `--archetype c-cpp/cmake-app`), laid down from a manifest so a new language is a folder, not code
+- **Two template systems**: the structure every project gets, then the code type on top -- a language layer and, below it, layers named by the choice they answer (how it is built, what it uses, what it is), composed with `--with` or taken whole as a preset (`--language python,c-cpp`, `--with c-cpp/cmake-app`, `--with cmake-lib,qt`); `repokit list` shows them; a new language is a folder and a manifest entry, not code
 - **Comprehensive Test Framework**: Unit, integration, and end-to-end testing
 
 ### Universal Project Support
@@ -61,9 +61,13 @@ repokit create my-awesome-project --language python
 # A C/C++ project: the language's layer plus its default archetype (cmake-app)
 repokit create my-tool --language c-cpp
 
-# An archetype names its language; several languages stack in the order given
-repokit create my-tool --archetype c-cpp/msbuild
+# A preset names its language; several languages stack in the order given
+repokit create my-tool --with c-cpp/msbuild
 repokit create my-tool --language python,c-cpp
+
+# Compose layers below the language (bare names when unique; the tool orders them)
+repokit create my-tool --with setuppy
+repokit list            # every language's presets and layers, one screen
 
 # Create and deploy to GitHub in one command
 repokit create my-project --language python --publish-to github --private-repo
@@ -74,7 +78,9 @@ repokit create my-project --ai claude --publish-to github
 
 ### Languages and archetypes (the code-type layers)
 
-Every project gets the same structure (README, CONTRIBUTING, `.github/`, `.gitignore`, the vault, repokit-common). `--language` adds the code type on top, from `repokit/templates/layers/`: each language has a layer and a default archetype, and an archetype (`--archetype LANG/NAME`) adds its own layer and implies its language. With several languages and no `--archetype`, the first language is the primary one and only its default archetype applies (two archetypes would both claim the settings and build files); the other languages add their language layers. A later layer's file replaces an earlier one; a file named `<name>.rkappend` is appended instead (so each language adds its lines to `.gitignore`); `__RK_NAME__` tokens in file names and contents become the project's names (`my-tool`, `my_tool`, `MY_TOOL`, `MyTool`, the author, the year, a GUID). Workflow files are copied unchanged. Files are written byte for byte, so a header's BOM or a `.sln`'s line endings are what the layer holds. `repokit create --help` lists the known languages and archetypes; an unknown name, or one whose layer is not built yet, stops before anything is created and names what is known. `generic` (the default) adds no code-type files.
+Every project gets the same structure (README, CONTRIBUTING, `.github/`, `.gitignore`, the vault, repokit-common). `--language` adds the code type on top, from `repokit/templates/layers/`: each language has a layer and a default archetype, and an archetype (`--with LANG/NAME`) adds its own layer and implies its language. With several languages and no `--with`, the first language is the primary one and only its default archetype applies (two archetypes would both claim the settings and build files); the other languages add their language layers. A later layer's file replaces an earlier one; a file named `<name>.rkappend` is appended instead (so each language adds its lines to `.gitignore`); `__RK_NAME__` tokens in file names and contents become the project's names (`my-tool`, `my_tool`, `MY_TOOL`, `MyTool`, the author, the year, a GUID). Workflow files are copied unchanged. Files are written byte for byte, so a header's BOM or a `.sln`'s line endings are what the layer holds. `repokit list` prints the known languages, presets and layers; an unknown name, or one whose layer is not built yet, stops before anything is created and names what is known. `generic` (the default) adds no code-type files.
+
+`--with` takes a list. A token is a preset (`python/pypi`, the tested lists in the table below), a layer qualified by its language (`c-cpp/qt`), or a bare name when only one language has it (`setuppy`; `qt` is refused naming both). Every layer belongs to a **facet**, the question it answers -- where it runs, which dialect, how it is built or packaged, what it uses, what it is -- and the tool orders a list by facet, fills in what a layer implies (its language at least), and refuses two answers to a one-answer question (`pypi,setuppy`). A list that equals a preset is recorded as that preset in `.repokit.json`; any other list is assembled by the rules and noted once as not a tested preset. `.repokit.json` records `layers`, every layer in the order applied.
 
 CI comes from the layers too: `ci-python.yml` with the Python layer (a matrix of pytest runs and a build), `ci-c-cpp.yml` with the cmake-app archetype (CMake, CTest on three operating systems); the README's workflow badge names the file that exists, and a project with no CI has no workflow badge. The structure writes `.gitattributes` (line-ending normalisation, and `scripts/repokit-common/** linguist-vendored` so GitHub does not count the vendored tooling as the project's language) and a `CHANGELOG.md` with the first version's heading and links, which git-repokit-common's version tool expects.
 

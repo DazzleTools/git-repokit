@@ -178,10 +178,14 @@ Recipe: Microservice
     )
 
     create_parser.add_argument(
-        "--archetype",
-        metavar="LANG/NAME",
-        help=f"The code-type archetype within a language (implies that language). "
-             f"Known: {', '.join(_known_archetype_names()) or 'none'}; each language has a default"
+        "--with",
+        dest="with_layers",
+        action="append",
+        metavar="NAME[,NAME...]",
+        help="What the project is, below its language: a preset such as python/pypi or "
+             "js-ts/claude-plugin, a layer such as c-cpp/qt, or bare names when unique "
+             "(claude-plugin; cmake-lib,qt). Comma-separated or repeated; each implies its "
+             "language; a list that equals a preset is that preset. See `repokit list`."
     )
 
     create_parser.add_argument(
@@ -663,6 +667,15 @@ For more detailed documentation, see: docs/Adoption-Guide.md
         metavar="LANG[,LANG...]",
         help=f"The project's language(s). Known: {', '.join(_known_language_names())} (default: generic)"
     )
+
+    adopt_parser.add_argument(
+        "--with",
+        dest="with_layers",
+        action="append",
+        metavar="NAME[,NAME...]",
+        help="Presets and layers to lay down without overwriting the project's own files, "
+             "as for create (see `repokit list`)"
+    )
     
     adopt_parser.add_argument(
         "--description", "-d",
@@ -1071,6 +1084,14 @@ Examples:
     )
 
     # Other simple commands
+    list_parser = subparsers.add_parser(
+        "list",
+        help="List the languages, presets and layers that --language and --with accept",
+        description="Per language: its presets (name = layers; planned ones marked), then each "
+                    "facet with its choices and whether one or any may be picked."
+    )
+    list_parser.add_argument("language", nargs="?", help="One language only")
+
     subparsers.add_parser(
         "list-templates",
         help="List all available templates",
@@ -1557,15 +1578,6 @@ def _known_language_names():
         return ["generic"]
 
 
-def _known_archetype_names():
-    try:
-        from . import layers
-        root = layers.layers_root()
-        return layers.known_archetypes(layers.load_manifest(root)) if root else []
-    except Exception:
-        return []
-
-
 def args_to_config(args: argparse.Namespace) -> Dict[str, Any]:
     """
     Convert command-line arguments to configuration dictionary.
@@ -1598,8 +1610,9 @@ def args_to_config(args: argparse.Namespace) -> Dict[str, Any]:
 
     if languages:
         cli_config["languages"] = languages
-    if getattr(args, "archetype", None):
-        cli_config["archetype"] = args.archetype
+    if getattr(args, "with_layers", None):
+        from .layers import parse_languages
+        cli_config["with"] = parse_languages(args.with_layers)
 
     # Handle directory profile configuration
     if hasattr(args, "dir_profile") and args.dir_profile:
@@ -1765,7 +1778,22 @@ def main() -> int:
         config_manager.save_config(args.save_config)
 
     # Handle commands
-    if args.command == "list-templates":
+    if args.command == "list":
+        from . import layers as _layers
+        from .template_engine import TemplateEngine as _TemplateEngine
+        _root = _layers.layers_root(_TemplateEngine(templates_dir=getattr(args, "templates_dir", None)))
+        if _root is None:
+            logger.error("no code-type layers found with the templates")
+            return 1
+        try:
+            for line in _layers.catalogue_lines(_layers.load_manifest(_root), args.language):
+                print(line)
+        except _layers.LayerError as e:
+            logger.error(str(e))
+            return 1
+        return 0
+
+    elif args.command == "list-templates":
         template_engine = TemplateEngine(
             templates_dir=args.templates_dir, verbose=args.verbose
         )
@@ -2445,6 +2473,9 @@ def main() -> int:
             # Override language if specified
             if hasattr(args, 'language') and args.language:
                 adopt_config["language"] = args.language
+            if getattr(args, "with_layers", None):
+                from .layers import parse_languages as _parse
+                adopt_config["with"] = _parse(args.with_layers)
                 
             # Override description if specified
             if hasattr(args, 'description') and args.description:
@@ -2726,9 +2757,9 @@ def main() -> int:
             if _root is not None:
                 _layers.resolve(_layers.load_manifest(_root),
                                 config.get("languages") or [config.get("language") or _layers.GENERIC],
-                                config.get("archetype"))
-            elif config.get("archetype"):
-                raise _layers.LayerError("no code-type layers found with the templates, so --archetype cannot be used")
+                                config.get("with"))
+            elif config.get("with"):
+                raise _layers.LayerError("no code-type layers found with the templates, so --with cannot be used")
         except _layers.LayerError as e:
             logger.error(str(e))
             return 1

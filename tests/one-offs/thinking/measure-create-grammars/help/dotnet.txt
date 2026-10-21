@@ -1,0 +1,167 @@
+$ dotnet new --help
+(exit 0)
+Description:
+  Template Instantiation Commands for .NET CLI.
+
+Usage:
+  dotnet new [<template-short-name> [<template-args>...]] [options]
+  dotnet new [command] [options]
+
+Arguments:
+  <template-short-name>  A short name of the template to create.
+  <template-args>        Template specific options to use.
+
+Options:
+  -o, --output <output>    Location to place the generated output.
+  -n, --name <name>        The name for the output being created. If no name is specified, the name of the output directory is used.
+  --dry-run                Displays a summary of what would happen if the given command line were run if it would result in a template creation. [default: False]
+  --force                  Forces content to be generated even if it would change existing files. [default: False]
+  --no-update-check        Disables checking for the template package updates when instantiating a template. [default: False]
+  --project <project>      The project that should be used for context evaluation.
+  -v, --verbosity <LEVEL>  Sets the verbosity level. Allowed values are q[uiet], m[inimal], n[ormal], and diag[nostic]. [default: normal]
+  -d, --diagnostics        Enables diagnostic output. [default: False]
+  -?, -h, --help           Show command line help.
+
+Commands:
+  create <template-short-name> <template-args>  Instantiates a template with given short name. An alias of 'dotnet new <template name>'.
+  install <package>                             Installs a template package.
+  uninstall <package>                           Uninstalls a template package.
+  update                                        Checks the currently installed template packages for update, and install the updates.
+  search <template-name>                        Searches for the templates on NuGet.org.
+  list <template-name>                          Lists templates containing the specified template name. If no name is specified, lists all templates.
+  details <package-identifier>                  Provides the details for specified template package.
+                                                      The command checks if the package is installed locally, if it was not found, it searches the configured NuGet feeds.
+
+
+$ dotnet new list
+(exit 0)
+These templates matched your input: 
+
+Template Name                     Short Name                          Language    Tags                                                                         
+--------------------------------  ----------------------------------  ----------  -----------------------------------------------------------------------------
+.NET MAUI App                     maui                                [C#]        MAUI/Android/iOS/macOS/Mac Catalyst/Windows/Mobile/Tizen                     
+.NET MAUI Blazor Hybrid and W...  maui-blazor-web                     [C#]        MAUI/Android/iOS/macOS/Mac Catalyst/Windows/Blazor/Blazor Hybrid/Mobile/Tizen
+.NET MAUI Blazor Hybrid App       maui-blazor                         [C#]        MAUI/Android/iOS/macOS/Mac Catalyst/Windows/Blazor/Blazor Hybrid/Mobile/Tizen
+.NET MAUI Class Library           mauilib                             [C#]        MAUI/Android/iOS/macOS/Mac Catalyst/Windows/Mobile/Tizen                     
+.NET MAUI ContentPage (C#)        maui-page-csharp                    [C#]        MAUI/Android/iOS/macOS/Mac Catalyst/WinUI/Xaml/Code/Tizen                    
+.NET MAUI ContentPage (XAML)      maui-page-xaml                      [C#]        MAUI/Android/iOS/macOS/Mac Catalyst/WinUI/Xaml/Code/Tizen                    
+.NET MAUI ContentView (C#)        maui-view-csharp                    [C#]        MAUI/Android/iOS/macOS/Mac Catalyst/WinUI/Xaml/Code/Tizen                    
+.NET MAUI ContentView (XAML)      maui-view-xaml                      [C#]        MAUI/Android/iOS/macOS/Mac Catalyst/WinUI/Xaml/Code/Tizen                    
+.NET MAUI for Aspire Service ...  maui-aspire-servicedefaults         [C#]        MAUI/Aspire/Cloud/Web/Web API/API/Service                                    
+.NET MAUI Multi-Project App       maui-multiproject                   [C#]        MAUI/Android/iOS/macOS/Mac Catalyst/Windows/Mobile                           
+.NET MAUI ResourceDictionary ...  maui-dict-xaml                      [C#]        MAUI/Android/iOS/macOS/Mac Catalyst/WinUI/Xaml/Code                          
+.NET MAUI Window (C#)             maui-window-csharp                  [C#]        MAUI/Android/iOS/macOS/Mac Catalyst/WinUI/Xaml/Code/Tizen                    
+.NET MAUI Window (XAML)           maui-window-xaml                    [C#]        MAUI/Android/iOS/macOS/Mac Catalyst/WinUI/Xaml/Code/Tizen                    
+Android Activity                  android-activity                    [C#]        Android/Mobile                                                               
+Android Application               android                             [C#]        Android/Mobile                                                               
+Android Class Library             androidlib                          [C#]        Android/Mobile                                                               
+Android Java Library Binding      android-bindinglib                  [C#]        Android/Mobile                                                               
+Android Layout                    android-layout                      [C#]        Android/Mobile                                                               
+Android Wear Application          androidwear                         [C#]        Android/Mobile                                                               
+API Controller                    apicontroller                       [C#]        Web/ASP.NET                                                                  
+ASP.NET Core Empty                web                                 [C#],F#     Web/Empty                                                                    
+ASP.NET Core gRPC Service         grpc                                [C#]        Web/gRPC/API/Service                                                         
+ASP.NET Core Web API              webapi                              [C#],F#     Web/Web API/API/Service                                                      
+ASP.NET Core Web API (native ...  webapiaot                           [C#]        Web/Web API/API/Service                                                      
+ASP.NET Core Web App (Model-V...  mvc                                 [C#],F#     Web/MVC                                                                      
+ASP.NET Core Web App (Razor P...  webapp,razor                        [C#]        Web/MVC/Razor Pages                                                          
+Blazor Web App                    blazor                              [C#]        Web/Blazor/WebAssembly                                                       
+Blazor WebAssembly Standalone...  blazorwasm                          [C#]        Web/Blazor/WebAssembly/PWA                                                   
+Class Library                     classlib                            [C#],F#,VB  Common/Library                                                               
+Console App                       console                             [C#],F#,VB  Common/Console                                                               
+dotnet gitattributes file         gitattributes,.gitattributes                    Config                                                                       
+dotnet gitignore file             gitignore,.gitignore                            Config                                                                       
+Dotnet local tool manifest file   tool-manifest                                   Config                                                                       
+EditorConfig file                 editorconfig,.editorconfig                      Config                                                                       
+global.json file                  globaljson,global.json                          Config                                                                       
+iOS Application                   ios                                 [C#],F#,VB  iOS/Mobile                                                                   
+iOS Binding Library               iosbinding                          [C#]        iOS/Mobile                                                                   
+iOS Class Library                 ioslib                              [C#],VB     iOS/Mobile                                                                   
+iOS Controller                    ios-controller                      [C#]        iOS/Mobile                                                                   
+iOS Notification Content Exte...  ios-notification-content-extension  [C#]        iOS/Mobile                                                                   
+iOS Notification Service Exte...  ios-notification-service-extension  [C#]        iOS/Mobile                                                                   
+iOS Storyboard                    ios-storyboard                      [C#]        iOS/Mobile                                                                   
+iOS Tabbed Application            ios-tabbed                          [C#]        iOS/Mobile                                                                   
+iOS View                          ios-view                            [C#]        iOS/Mobile                                                                   
+iOS View Controller               ios-viewcontroller                  [C#]        iOS/Mobile                                                                   
+Mac Catalyst Application          maccatalyst                         [C#],VB     macOS/Mac Catalyst                                                           
+Mac Catalyst Binding Library      maccatalystbinding                  [C#]        macOS/Mac Catalyst                                                           
+Mac Catalyst Class Library        maccatalystlib                      [C#],VB     macOS/Mac Catalyst                                                           
+Mac Catalyst Controller           maccatalyst-controller              [C#]        macOS/Mac Catalyst                                                           
+Mac Catalyst Storyboard           maccatalyst-storyboard              [C#]        macOS/Mac Catalyst                                                           
+Mac Catalyst View                 maccatalyst-view                    [C#]        macOS/Mac Catalyst                                                           
+Mac Catalyst View Controller      maccatalyst-viewcontroller          [C#]        macOS/Mac Catalyst                                                           
+MSBuild Directory.Build.props...  buildprops                                      MSBuild/props                                                                
+MSBuild Directory.Build.targe...  buildtargets                                    MSBuild/props                                                                
+MSBuild Directory.Packages.pr...  packagesprops                                   MSBuild/packages/props/CPM                                                   
+MSTest Playwright Test Project    mstest-playwright                   [C#]        Test/MSTest/Playwright/Desktop/Web                                           
+MSTest Test Class                 mstest-class                        [C#],F#,VB  Test/MSTest                                                                  
+MSTest Test Project               mstest                              [C#],F#,VB  Test/MSTest/Desktop/Web                                                      
+MVC Controller                    mvccontroller                       [C#]        Web/ASP.NET                                                                  
+MVC ViewImports                   viewimports                         [C#]        Web/ASP.NET                                                                  
+MVC ViewStart                     viewstart                           [C#]        Web/ASP.NET                                                                  
+NuGet Config                      nugetconfig,nuget.config                        Config                                                                       
+NUnit Playwright Test Project     nunit-playwright                    [C#]        Test/NUnit/Playwright/Desktop/Web                                            
+NUnit Test Item                   nunit-test                          [C#],F#,VB  Test/NUnit                                                                   
+NUnit Test Project                nunit                               [C#],F#,VB  Test/NUnit/Desktop/Web                                                       
+Protocol Buffer File              proto                                           Web/gRPC                                                                     
+Razor Class Library               razorclasslib                       [C#]        Web/Razor/Library                                                            
+Razor Component                   razorcomponent                      [C#]        Web/ASP.NET                                                                  
+Razor Page                        page                                [C#]        Web/ASP.NET                                                                  
+Razor View                        view                                [C#]        Web/ASP.NET                                                                  
+Solution File                     sln,solution                                    Solution                                                                     
+Solution Filter File              slnf,solutionfilter                             Solution                                                                     
+Web Config                        webconfig                                       Config                                                                       
+Windows Forms App                 winforms                            [C#],VB     Common/WinForms                                                              
+Windows Forms Class Library       winformslib                         [C#],VB     Common/WinForms                                                              
+Windows Forms Control Library     winformscontrollib                  [C#],VB     Common/WinForms                                                              
+Worker Service                    worker                              [C#],F#     Common/Worker/Web                                                            
+WPF Application                   wpf                                 [C#],VB     Common/WPF                                                                   
+WPF Class Library                 wpflib                              [C#],VB     Common/WPF                                                                   
+WPF Custom Control Library        wpfcustomcontrollib                 [C#],VB     Common/WPF                                                                   
+WPF User Control Library          wpfusercontrollib                   [C#],VB     Common/WPF                                                                   
+xUnit Test Project                xunit                               [C#],F#,VB  Test/xUnit/Desktop/Web                                                       
+
+
+$ dotnet new console --help
+(exit 0)
+Console App (C#)
+Author: Microsoft
+Description: A project for creating a command-line application that can run on .NET on Windows, Linux and macOS
+
+Usage:
+  dotnet new console [options] [template options]
+
+Options:
+  -n, --name <name>       The name for the output being created. If no name is specified, the name of the output directory is used.
+  -o, --output <output>   Location to place the generated output.
+  --dry-run               Displays a summary of what would happen if the given command line were run if it would result in a template creation. [default: False]
+  --force                 Forces content to be generated even if it would change existing files. [default: False]
+  --no-update-check       Disables checking for the template package updates when instantiating a template. [default: False]
+  --project <project>     The project that should be used for context evaluation.
+  -lang, --language <C#>  Specifies the template language to instantiate.
+  --type <project>        Specifies the template type to instantiate.
+
+Template options:
+  -f, --framework <net10.0|net8.0|net9.0>  The target framework for the project.
+                                           Type: choice
+                                             net10.0  Target net10.0
+                                             net9.0   Target net9.0
+                                             net8.0   Target net8.0
+                                           Default: net10.0
+  --langVersion <langVersion>              Sets the LangVersion property in the created project file
+                                           Type: text
+  --no-restore                             If specified, skips the automatic restore of the project on create.
+                                           Type: bool
+                                           Default: false
+  --use-program-main                       Whether to generate an explicit Program class and Main method instead of top-level statements.
+                                           Type: bool
+                                           Default: false
+  --aot                                    Whether to enable the project for publishing as native AOT.
+                                           Type: bool
+                                           Default: false
+
+To see help for other template languages (F#, VB), use --language option:
+   dotnet new console -h --language F#
+
+

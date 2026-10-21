@@ -1,9 +1,55 @@
 # The code-type layers: what each language and archetype adds on top of the
 # structure every project gets. Layers are applied in order (each language's,
-# then the archetype's); a later file replaces an earlier one, and a file named
-# <name>.rkappend is appended to <name> instead -- including a file the
+# then the rest by facet); a later file replaces an earlier one, and a file
+# named <name>.rkappend is appended to <name> instead -- including a file the
 # structure templates already wrote (.gitignore). __RK_NAME__ tokens are
 # replaced in file names and text contents (see repokit/layers.py).
+#
+# Three tables below the languages:
+#
+#   [facets.<name>]        the questions a project answers below its language,
+#                          in the order the engine applies them; exclusive means
+#                          a project has one answer per language
+#   [layers."<lang>/<n>"]  one entry per layer folder archetypes/<lang>/<n>:
+#                          its facet, what it implies, and whether it is built
+#   [archetypes."<lang>/<n>"]  the presets: a named, tested list of layers --
+#                          what `--with <lang>/<n>` expands to
+#
+# A facet is named by the question the person answers, never by the files the
+# answer produces (TypeScript is a dialect, not a build system). Design:
+# 2026-10-19__22-11-27__dev-workflow-process__family-type-system-facets-and-grammar.md
+
+[facets.language]
+rank = 0
+exclusive = false
+question = "which language(s); the first is primary"
+
+[facets.runtime]
+rank = 1
+exclusive = true
+question = "where it runs"
+
+[facets.dialect]
+rank = 2
+exclusive = true
+question = "which flavour of the language it is written in"
+
+[facets.build]
+rank = 3
+exclusive = true
+question = "how it is built, bundled or packaged"
+
+[facets.framework]
+rank = 4
+exclusive = false
+question = "what it uses"
+
+[facets.purpose]
+rank = 5
+exclusive = true
+question = "what it is"
+
+# ---------------------------------------------------------------- languages
 
 [languages.python]
 layers = ["languages/python"]
@@ -16,6 +62,61 @@ default = "c-cpp/cmake-app"
 [languages.javascript]
 stub = true
 description = "planned as the js-ts layer (JavaScript and TypeScript together, after the C/C++ layer)"
+
+# ---------------------------------------------------------------- layers
+# Keys are <language>/<name>; the folder is archetypes/<language>/<name>.
+# `implies` names other layers (bare names in the same language, or qualified);
+# every layer implies its language. `overrides` lists paths a layer may write
+# over an earlier layer's file on purpose (the compositions test treats any
+# other same-path write as a collision).
+
+[layers."python/pypi"]
+facet = "build"
+description = "pyproject.toml with a dynamic version, the package (__init__, __main__, cli, _version), tests, and the publish-on-release workflow"
+
+[layers."python/setuppy"]
+facet = "build"
+description = "setup.py and requirements.txt: git-repokit's Python output before the layers"
+
+[layers."python/comfyui"]
+facet = "purpose"
+stub = true
+description = "a ComfyUI custom-node package"
+
+[layers."python/django"]
+facet = "framework"
+stub = true
+description = "a Django project"
+
+[layers."python/qt"]
+facet = "framework"
+stub = true
+description = "a Python Qt app (PySide6 or PyQt)"
+
+[layers."c-cpp/cmake-app"]
+facet = "build"
+description = "CMake + presets + vcpkg manifest + CTest + 3-OS CI (xormove's shape)"
+
+[layers."c-cpp/cmake-lib"]
+facet = "build"
+stub = true
+description = "library with install/export targets and a package config (starts from cmake-app)"
+
+[layers."c-cpp/msbuild"]
+facet = "build"
+description = "Visual Studio solution, Windows only"
+
+[layers."c-cpp/minimal"]
+facet = "build"
+description = "one source file, Makefile + build.bat"
+
+[layers."c-cpp/qt"]
+facet = "framework"
+stub = true
+description = "Qt 6: find_package(Qt6), qt_add_executable, windeployqt"
+
+# ---------------------------------------------------------------- presets
+# `layers` lists layer folders in apply order; `languages` is implied by the key.
 
 [archetypes."python/setuppy"]
 languages = ["python"]

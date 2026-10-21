@@ -1,0 +1,181 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_layers.py",
+      "tests/test_layers_compositions.py"
+    ],
+    "timestamp": "2026-10-20T00:25:48-04:00"
+  },
+  "results": [
+    {
+      "id": "M2",
+      "file": "repokit/layers.py",
+      "note": "unranked facets sort first instead of last",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M3",
+      "file": "repokit/layers.py",
+      "note": "token dedup no longer case-insensitive",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "........................F.......                                         [100%]\n================================== FAILURES ===================================\n_________________ test_resolve_lower_cases_and_dedupes_tokens _________________\n\np3 = {'archetypes': {'c-cpp/cmake-app': {'languages': ['c-cpp'], 'layers': ['archetypes/c-cpp/cmake-app']}, 'js-ts/claude-p...'c-cpp/cmake-lib': {'facet': 'build'}, 'c-cpp/qt': {'facet': 'framework'}, 'js-ts/browser': {'facet': 'runtime'}, ...}}\n\n    def test_resolve_lower_cases_and_dedupes_tokens(p3):\n        r = layers.resolve(p3, [], [\"Claude-Plugin\", \"claude-plugin\"])\n        assert r.archetype == \"js-ts/claude-plugin\" and r.tokens == [\"claude-plugin\"]\n        # the lower-cased form is what is compared, whichever spelling comes first (M3)\n>       assert layers.resolve(p3, [], [\"claude-plugin\", \"Claude-Plugin\"]).tokens == [\"claude-plugin\"]\nE       AssertionError: assert ['claude-plug...laude-plugin'] == ['claude-plugin']\nE         \nE         Left contains one more item: 'claude-plugin'\nE         Use -v to get more diff\n\ntests\\test_layers.py:412: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_resolve_lower_cases_and_dedupes_tokens - As...\n1 failed, 31 passed in 5.77s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_resolve_lower_cases_and_dedupes_tokens"
+      ]
+    },
+    {
+      "id": "M4",
+      "file": "repokit/layers.py",
+      "note": "ambiguity narrowing compares the name instead of the language",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "chosen.append(pair)\n    \n        def add_layer(key: str) -> None:\n            pair = _layer(manifest, key)\n            add_language(key.split(\"/\")[0])\n            if pair not in chosen:\n                chosen.append(pair)\n    \n        # Pass 1: presets and qualified names; bare names that are unique anywhere.\n        # Pass 2: the bare names left, narrowed by the languages now known.\n        deferred: List[str] = []\n        for tok in tokens:\n            if tok in presets:\n                add_preset(tok)\n            elif \"/\" in tok:\n                if tok in layer_table:\n                    add_layer(tok)\n                else:\n                    known = sorted(set(presets) | set(layer_table))\n                    raise LayerError(f\"unknown archetype {tok!r}; known: {', '.join(known) or 'none'}{_suggest(tok, known)}\")\n            else:\n                deferred.append(tok)\n        for tok in deferred:\n            candidates = _bare_candidates(manifest, tok)\n            if not candidates:\n                bare = sorted({k.split('/', 1)[1] for k in list(presets) + list(layer_table) if '/' in k})\n                raise LayerError(f\"unknown name {tok!r}; known: {', '.join(bare) or 'none'}{_suggest(tok, bare + sorted(set(presets) | set(layer_table)))}\")\n            if len(candidates) > 1:\n                narrowed = [c for c in candidates if c.split(\"/\")[1] in langs]\n                if len(narrowed) == 1:\n                    candidates = narrowed\n                else:\n>                   raise LayerError(f\"{tok!r} is ambiguous: {' or '.join(candidates)}\")\nE                   repokit.layers.LayerError: 'qt' is ambiguous: c-cpp/qt or python/qt\n\nrepokit\\layers.py:250: LayerError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_an_unrecognised_composition_carries_the_note_and_narrows_qt_by_language\nFAILED tests/test_layers.py::test_a_bare_name_in_two_languages_is_refused_with_both_forms\n2 failed, 30 passed in 5.78s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_a_bare_name_in_two_languages_is_refused_with_both_forms",
+        "tests/test_layers.py::test_an_unrecognised_composition_carries_the_note_and_narrows_qt_by_language"
+      ]
+    },
+    {
+      "id": "M5",
+      "file": "repokit/layers.py",
+      "note": "ambiguous bare names resolve to first candidate instead of refusing",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".....................F..........                                         [100%]\n================================== FAILURES ===================================\n________ test_a_bare_name_in_two_languages_is_refused_with_both_forms _________\n\np3 = {'archetypes': {'c-cpp/cmake-app': {'languages': ['c-cpp'], 'layers': ['archetypes/c-cpp/cmake-app']}, 'js-ts/claude-p...'c-cpp/cmake-lib': {'facet': 'build'}, 'c-cpp/qt': {'facet': 'framework'}, 'js-ts/browser': {'facet': 'runtime'}, ...}}\n\n    def test_a_bare_name_in_two_languages_is_refused_with_both_forms(p3):\n        \"\"\"AC-5: qt alone names both; with the language listed it resolves.\"\"\"\n        with pytest.raises(layers.LayerError, match=re.escape(\"'qt' is ambiguous: c-cpp/qt or python/qt\")):\n            layers.resolve(p3, [], [\"qt\"])\n        assert layers.resolve(p3, \"c-cpp\", [\"qt\"]).names == [\"c-cpp\", \"c-cpp/qt\"]\n        # both languages listed: the narrowing leaves two, and that is still ambiguous (M5)\n>       with pytest.raises(layers.LayerError, match=\"'qt' is ambiguous\"):\nE       Failed: DID NOT RAISE <class 'repokit.layers.LayerError'>\n\ntests\\test_layers.py:383: Failed\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_a_bare_name_in_two_languages_is_refused_with_both_forms\n1 failed, 31 passed in 5.53s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_a_bare_name_in_two_languages_is_refused_with_both_forms"
+      ]
+    },
+    {
+      "id": "M6",
+      "file": "repokit/layers.py",
+      "note": "exclusivity checked across languages rather than per language",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": " not in chosen:\n                            chosen.append(pair)\n                    else:\n                        raise LayerError(f\"layer {name} implies {imp!r}, which the manifest does not define\")\n            i += 1\n    \n        # Rule 5: exclusivity, per language and facet.\n        seen: Dict[Tuple[str, str], str] = {}\n        for folder, name in chosen:\n            if not name:\n                continue\n            facet = layer_table[name].get(\"facet\")\n            if facet and facet_exclusive(manifest, facet):\n                slot = (\"\", facet)\n                other = seen.get(slot)\n                if other and other != name:\n                    a, b = other.split(\"/\", 1)[1], name.split(\"/\", 1)[1]\n>                   raise LayerError(f\"'{a}' and '{b}' are both a {facet} for {slot[0]}; pick one\")\nE                   repokit.layers.LayerError: 'pypi' and 'setuppy' are both a build for ; pick one\n\nrepokit\\layers.py:286: LayerError\n\nDuring handling of the above exception, another exception occurred:\n\np3 = {'archetypes': {'c-cpp/cmake-app': {'languages': ['c-cpp'], 'layers': ['archetypes/c-cpp/cmake-app']}, 'js-ts/claude-p...'c-cpp/cmake-lib': {'facet': 'build'}, 'c-cpp/qt': {'facet': 'framework'}, 'js-ts/browser': {'facet': 'runtime'}, ...}}\n\n    def test_two_layers_in_one_exclusive_facet_are_refused_naming_the_pair(p3):\n        \"\"\"AC-4: the silent stack C allowed cannot happen.\"\"\"\n>       with pytest.raises(layers.LayerError, match=re.escape(\"'pypi' and 'setuppy' are both a build for python; pick one\")):\nE       AssertionError: Regex pattern did not match.\nE        Regex: \"'pypi'\\\\ and\\\\ 'setuppy'\\\\ are\\\\ both\\\\ a\\\\ build\\\\ for\\\\ python;\\\\ pick\\\\ one\"\nE        Input: \"'pypi' and 'setuppy' are both a build for ; pick one\"\n\ntests\\test_layers.py:371: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_two_layers_in_one_exclusive_facet_are_refused_naming_the_pair\n1 failed, 31 passed in 5.49s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_two_layers_in_one_exclusive_facet_are_refused_naming_the_pair"
+      ]
+    },
+    {
+      "id": "M7",
+      "file": "repokit/layers.py",
+      "note": "every language's default applies, not just the primary",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "......F.........................                                         [100%]\n================================== FAILURES ===================================\n_____ test_resolve_orders_languages_then_archetype_and_implies_languages ______\n\ntmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-13465/test_resolve_orders_languages_0')\n\n    def test_resolve_orders_languages_then_archetype_and_implies_languages(tmp_path):\n        \"\"\"CONSEQUENCE: 8 (behaviour) -- languages in the order given, then the\n        archetype; only the FIRST language's default archetype applies (two\n        defaults would both claim the settings and build files); an archetype\n        implies its language; generic adds nothing.\"\"\"\n        m = layers.load_manifest(_tree(tmp_path))\n        r = layers.resolve(m, \"alpha,beta\")\n        assert r.layers == [\"languages/alpha\", \"languages/beta\", \"archetypes/alpha/app\"]\n        assert r.languages == [\"alpha\", \"beta\"] and r.archetype == \"alpha/app\"\n        r_rev = layers.resolve(m, \"beta,alpha\")             # beta first: it has no default, so none applies\n>       assert r_rev.layers == [\"languages/beta\", \"languages/alpha\"] and r_rev.archetype is None\nE       AssertionError: assert (['languages/b...es/alpha/app'] == ['languages/b...guages/alpha']\nE         \nE         Left contains one more item: 'archetypes/alpha/app'\nE         Use -v to get more diff)\n\ntests\\test_layers.py:135: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_resolve_orders_languages_then_archetype_and_implies_languages\n1 failed, 31 passed in 5.33s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_resolve_orders_languages_then_archetype_and_implies_languages"
+      ]
+    },
+    {
+      "id": "M8",
+      "file": "repokit/layers.py",
+      "note": "preset recognition and NOT_A_PRESET note apply even with no tokens",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".......................F........                                         [100%]\n================================== FAILURES ===================================\n_________ test_the_default_preset_still_applies_when_nothing_is_asked _________\n\np3 = {'archetypes': {'c-cpp/cmake-app': {'languages': ['c-cpp'], 'layers': ['archetypes/c-cpp/cmake-app']}, 'js-ts/claude-p...'c-cpp/cmake-lib': {'facet': 'build'}, 'c-cpp/qt': {'facet': 'framework'}, 'js-ts/browser': {'facet': 'runtime'}, ...}}\n\n    def test_the_default_preset_still_applies_when_nothing_is_asked(p3):\n        \"\"\"AC-2's unit form: --language python alone is python/pypi; a one-token preset\n        is itself; a preset plus an extra layer is a composition with the note.\"\"\"\n        r = layers.resolve(p3, \"python\")\n        assert r.archetype == \"python/pypi\" and r.layers == [\"languages/python\", \"archetypes/python/pypi\"]\n        assert layers.resolve(p3, [], \"python/setuppy\").archetype == \"python/setuppy\"\n        r3 = layers.resolve(p3, [], \"js-ts/web-vite-react,svelte\")\n        assert r3.archetype is None and r3.notes == [layers.NOT_A_PRESET] and r3.names[-1] == \"js-ts/svelte\"\n        # no tokens, no note: the default is not a composition, and generic has nothing to note (M8)\n        assert r.notes == [] and layers.resolve(p3, \"python,c-cpp\").notes == []\n>       assert layers.resolve(p3, \"generic\").notes == [] and layers.resolve(p3, []).notes == []\nE       AssertionError: assert (['assembled f...ested preset'] == []\nE         \nE         Left contains one more item: 'assembled from layers; not a tested preset'\nE         Use -v to get more diff)\n\ntests\\test_layers.py:405: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_the_default_preset_still_applies_when_nothing_is_asked\n1 failed, 31 passed in 5.65s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_the_default_preset_still_applies_when_nothing_is_asked"
+      ]
+    },
+    {
+      "id": "M9",
+      "file": "repokit/layers.py",
+      "note": "within a facet rank, order given is reversed",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".......................F........                                         [100%]\n================================== FAILURES ===================================\n_________ test_the_default_preset_still_applies_when_nothing_is_asked _________\n\np3 = {'archetypes': {'c-cpp/cmake-app': {'languages': ['c-cpp'], 'layers': ['archetypes/c-cpp/cmake-app']}, 'js-ts/claude-p...'c-cpp/cmake-lib': {'facet': 'build'}, 'c-cpp/qt': {'facet': 'framework'}, 'js-ts/browser': {'facet': 'runtime'}, ...}}\n\n    def test_the_default_preset_still_applies_when_nothing_is_asked(p3):\n        \"\"\"AC-2's unit form: --language python alone is python/pypi; a one-token preset\n        is itself; a preset plus an extra layer is a composition with the note.\"\"\"\n        r = layers.resolve(p3, \"python\")\n        assert r.archetype == \"python/pypi\" and r.layers == [\"languages/python\", \"archetypes/python/pypi\"]\n        assert layers.resolve(p3, [], \"python/setuppy\").archetype == \"python/setuppy\"\n        r3 = layers.resolve(p3, [], \"js-ts/web-vite-react,svelte\")\n>       assert r3.archetype is None and r3.notes == [layers.NOT_A_PRESET] and r3.names[-1] == \"js-ts/svelte\"\nE       AssertionError: assert (None is None and ['assembled f...ested preset'] == ['assembled f...ested preset']\nE        +  where None = Resolution(layers=['languages/js-ts', 'archetypes/js-ts/browser', 'archetypes/js-ts/ts', 'archetypes/js-ts/vite', 'arc...owser', 'js-ts/ts', 'js-ts/vite', 'js-ts/svelte', 'js-ts/react'], notes=['assembled from layers; not a tested preset']).archetype\nE         \nE         Use -v to get more diff and 'js-ts/react' == 'js-ts/svelte'\nE         \nE         - js-ts/svelte\nE         + js-ts/react)\n\ntests\\test_layers.py:402: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_the_default_preset_still_applies_when_nothing_is_asked\n1 failed, 31 passed in 5.77s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_the_default_preset_still_applies_when_nothing_is_asked"
+      ]
+    },
+    {
+      "id": "M10",
+      "file": "repokit/layers.py",
+      "note": "preset recognised by subset rather than equality of the whole request",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".......................F........                                         [100%]\n================================== FAILURES ===================================\n_________ test_the_default_preset_still_applies_when_nothing_is_asked _________\n\np3 = {'archetypes': {'c-cpp/cmake-app': {'languages': ['c-cpp'], 'layers': ['archetypes/c-cpp/cmake-app']}, 'js-ts/claude-p...'c-cpp/cmake-lib': {'facet': 'build'}, 'c-cpp/qt': {'facet': 'framework'}, 'js-ts/browser': {'facet': 'runtime'}, ...}}\n\n    def test_the_default_preset_still_applies_when_nothing_is_asked(p3):\n        \"\"\"AC-2's unit form: --language python alone is python/pypi; a one-token preset\n        is itself; a preset plus an extra layer is a composition with the note.\"\"\"\n        r = layers.resolve(p3, \"python\")\n        assert r.archetype == \"python/pypi\" and r.layers == [\"languages/python\", \"archetypes/python/pypi\"]\n        assert layers.resolve(p3, [], \"python/setuppy\").archetype == \"python/setuppy\"\n        r3 = layers.resolve(p3, [], \"js-ts/web-vite-react,svelte\")\n>       assert r3.archetype is None and r3.notes == [layers.NOT_A_PRESET] and r3.names[-1] == \"js-ts/svelte\"\nE       AssertionError: assert ('js-ts/web-vite-react' is None)\nE        +  where 'js-ts/web-vite-react' = Resolution(layers=['languages/js-ts', 'archetypes/js-ts/browser', 'archetypes/js-ts/ts', 'archetypes/js-ts/vite', 'arc...react', 'svelte'], names=['js-ts', 'js-ts/browser', 'js-ts/ts', 'js-ts/vite', 'js-ts/react', 'js-ts/svelte'], notes=[]).archetype\n\ntests\\test_layers.py:402: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_the_default_preset_still_applies_when_nothing_is_asked\n1 failed, 31 passed in 5.52s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_the_default_preset_still_applies_when_nothing_is_asked"
+      ]
+    },
+    {
+      "id": "M11",
+      "file": "repokit/layers.py",
+      "note": "a layer is preferred over a preset of the same name",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M12",
+      "file": "repokit/layers.py",
+      "note": "qualified implies entries get wrongly re-prefixed",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "  for tok in deferred:\n            candidates = _bare_candidates(manifest, tok)\n            if not candidates:\n                bare = sorted({k.split('/', 1)[1] for k in list(presets) + list(layer_table) if '/' in k})\n                raise LayerError(f\"unknown name {tok!r}; known: {', '.join(bare) or 'none'}{_suggest(tok, bare + sorted(set(presets) | set(layer_table)))}\")\n            if len(candidates) > 1:\n                narrowed = [c for c in candidates if c.split(\"/\")[0] in langs]\n                if len(narrowed) == 1:\n                    candidates = narrowed\n                else:\n                    raise LayerError(f\"{tok!r} is ambiguous: {' or '.join(candidates)}\")\n            key = candidates[0]\n            if key in presets:\n                add_preset(key)\n            else:\n                add_layer(key)\n    \n        # Rule 4: imply, transitively (a layer implies its language; its entry may imply more).\n        i = 0\n        while i < len(chosen):\n            folder, name = chosen[i]\n            if name:\n                lang_name = name.split(\"/\")[0]\n                for imp in layer_table[name].get(\"implies\", []):\n                    target = f\"{lang_name}/{imp}\"\n                    if target in table:              # a language\n                        add_language(target)\n                    elif target in layer_table:\n                        pair = _layer(manifest, target)\n                        if pair not in chosen:\n                            chosen.append(pair)\n                    else:\n>                       raise LayerError(f\"layer {name} implies {imp!r}, which the manifest does not define\")\nE                       repokit.layers.LayerError: layer js-ts/comfyui-frontend implies 'js-ts/vite', which the manifest does not define\n\nrepokit\\layers.py:272: LayerError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_an_implies_entry_may_be_qualified - repokit...\n1 failed, 31 passed in 5.61s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_an_implies_entry_may_be_qualified"
+      ]
+    }
+  ],
+  "summary": {
+    "survived": 2,
+    "killed": 9
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_layers.py::test_a_bare_name_in_two_languages_is_refused_with_both_forms": [
+        "M4",
+        "M5"
+      ],
+      "tests/test_layers.py::test_an_implies_entry_may_be_qualified": [
+        "M12"
+      ],
+      "tests/test_layers.py::test_an_unrecognised_composition_carries_the_note_and_narrows_qt_by_language": [
+        "M4"
+      ],
+      "tests/test_layers.py::test_resolve_lower_cases_and_dedupes_tokens": [
+        "M3"
+      ],
+      "tests/test_layers.py::test_resolve_orders_languages_then_archetype_and_implies_languages": [
+        "M7"
+      ],
+      "tests/test_layers.py::test_the_default_preset_still_applies_when_nothing_is_asked": [
+        "M10",
+        "M8",
+        "M9"
+      ],
+      "tests/test_layers.py::test_two_layers_in_one_exclusive_facet_are_refused_naming_the_pair": [
+        "M6"
+      ]
+    },
+    "identical": [],
+    "contained": [
+      [
+        "tests/test_layers.py::test_an_unrecognised_composition_carries_the_note_and_narrows_qt_by_language",
+        "tests/test_layers.py::test_a_bare_name_in_two_languages_is_refused_with_both_forms"
+      ]
+    ],
+    "killed_without_names": []
+  }
+}

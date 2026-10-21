@@ -31,11 +31,12 @@ The manifest (repokit/templates/layers/manifest.toml):
     description = "setup.py and requirements.txt (git-repokit's output before 0.7)"
 """
 
+import difflib
 import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from .template_engine import TemplateEngine, RK_TOKEN
 
@@ -44,6 +45,9 @@ APPEND = ".rkappend"
 WORKFLOWS = ".github/workflows/"
 GENERIC = "generic"          # no code-type layers at all
 LAYERS_DIR = "layers"        # under the templates directory
+ARCHETYPES_DIR = "archetypes"
+NOT_A_PRESET = "assembled from layers; not a tested preset"
+UNRANKED = 99                # a layer folder with no [layers] entry sorts last, in the order given
 
 
 class LayerError(Exception):
@@ -54,9 +58,12 @@ class LayerError(Exception):
 
 @dataclass
 class Resolution:
-    layers: List[str] = field(default_factory=list)
+    layers: List[str] = field(default_factory=list)       # layer folders in apply order
     languages: List[str] = field(default_factory=list)
-    archetype: Optional[str] = None
+    archetype: Optional[str] = None                       # the preset the request equals, or None
+    tokens: List[str] = field(default_factory=list)       # what --with asked for, as given
+    names: List[str] = field(default_factory=list)        # qualified layer names in apply order
+    notes: List[str] = field(default_factory=list)        # e.g. NOT_A_PRESET
 
 
 def _load_toml(path: Path) -> Dict[str, Any]:
@@ -87,6 +94,8 @@ def load_manifest(root: Path) -> Dict[str, Any]:
     data = _load_toml(root / MANIFEST)
     data.setdefault("languages", {})
     data.setdefault("archetypes", {})
+    data.setdefault("layers", {})
+    data.setdefault("facets", {})
     return data
 
 
@@ -96,7 +105,27 @@ def known_languages(manifest: Dict[str, Any]) -> List[str]:
 
 
 def known_archetypes(manifest: Dict[str, Any]) -> List[str]:
+    """The presets: what --with <lang>/<name> expands to."""
     return sorted(manifest["archetypes"])
+
+
+def known_layers(manifest: Dict[str, Any]) -> List[str]:
+    """Every [layers] entry, qualified (stubs included)."""
+    return sorted(manifest["layers"])
+
+
+def layer_folder(manifest: Dict[str, Any], key: str) -> str:
+    """The folder a [layers] entry stands for: archetypes/<lang>/<name>, by convention."""
+    return f"{ARCHETYPES_DIR}/{key}"
+
+
+def facet_rank(manifest: Dict[str, Any], facet: Optional[str]) -> int:
+    f = manifest["facets"].get(facet or "", {})
+    return f.get("rank", UNRANKED)
+
+
+def facet_exclusive(manifest: Dict[str, Any], facet: Optional[str]) -> bool:
+    return bool(manifest["facets"].get(facet or "", {}).get("exclusive", False))
 
 
 def parse_languages(value) -> List[str]:
@@ -111,57 +140,245 @@ def parse_languages(value) -> List[str]:
     return items
 
 
-def resolve(manifest: Dict[str, Any], languages, archetype: Optional[str] = None) -> Resolution:
-    """The ordered layers for these languages and this archetype.
+def _suggest(token: str, choices: List[str]) -> str:
+    close = difflib.get_close_matches(token, choices, n=3, cutoff=0.6)
+    return f"; did you mean {', '.join(close)}?" if close else ""
 
-    Each language's layers in the order given, then the archetype's; an
-    archetype implies its languages; without one, the FIRST language's default
-    archetype (when it names one) is used -- the first language is the
-    project's primary one, and two archetypes would both claim the project's
-    settings file and build files. generic means no layers. Unknown names and
-    stubs raise LayerError naming what is known.
+
+def _check_language(manifest: Dict[str, Any], name: str) -> None:
+    entry = manifest["languages"].get(name)
+    if entry is None:
+        raise LayerError(f"unknown language {name!r}; known: {', '.join(known_languages(manifest))}")
+    if entry.get("stub"):
+        raise LayerError(f"language {name} is not built yet: {entry.get('description', '')}".rstrip(": "))
+
+
+def _preset_layers(manifest: Dict[str, Any], key: str) -> List[Tuple[str, Optional[str]]]:
+    """A preset's (folder, qualified layer name or None) pairs, after the stub check."""
+    preset = manifest["archetypes"][key]
+    if preset.get("stub"):
+        raise LayerError(f"archetype {key} is not built yet: {preset.get('description', '')}".rstrip(": "))
+    out = []
+    for folder in preset.get("layers", []):
+        name = folder[len(ARCHETYPES_DIR) + 1:] if folder.startswith(ARCHETYPES_DIR + "/") else None
+        out.append((folder, name if name in manifest["layers"] else None))
+    return out
+
+
+def _layer(manifest: Dict[str, Any], key: str) -> Tuple[str, str]:
+    entry = manifest["layers"][key]
+    if entry.get("stub"):
+        raise LayerError(f"layer {key} is not built yet: {entry.get('description', '')}".rstrip(": "))
+    return layer_folder(manifest, key), key
+
+
+def resolve(manifest: Dict[str, Any], languages, with_tokens=None, _recognise: bool = True) -> Resolution:
+    """The ordered layers for these languages and these --with tokens.
+
+    The eight rules (Phase 3 design, D2): tokens are split on commas and
+    lower-cased; a preset (an [archetypes] key) expands to its layers; a bare
+    name is looked up across layers and presets, narrowed by the languages
+    listed or already implied, and refused with every qualified form when it
+    stays ambiguous; every layer implies its language and whatever its entry
+    `implies`, transitively; two layers in one exclusive facet of one language
+    are refused naming the pair and the facet; layers are ordered by facet
+    rank, then by the order given, after the languages' own layers; a list
+    that equals a preset's expansion is reported as that preset, any other
+    list carries the NOT_A_PRESET note; with no tokens the FIRST language's
+    default preset applies (the first language is the project's primary one);
+    stubs refuse with their description; an unknown name suggests close ones.
+    generic means no layers.
     """
-    langs = [name for name in parse_languages(languages) if name != GENERIC]
     table = manifest["languages"]
-    arches = manifest["archetypes"]
-
-    arch_entry = None
-    if archetype:
-        arch_entry = arches.get(archetype)
-        if arch_entry is None:
-            raise LayerError(f"unknown archetype {archetype!r}; known: {', '.join(known_archetypes(manifest)) or 'none'}")
-        if arch_entry.get("stub"):
-            raise LayerError(f"archetype {archetype} is not built yet: {arch_entry.get('description', '')}".rstrip(": "))
-        for name in arch_entry.get("languages", []):
-            if name not in langs:
-                langs.append(name)
-
+    presets = manifest["archetypes"]
+    layer_table = manifest["layers"]
+    langs = [name for name in parse_languages(languages) if name != GENERIC]
+    tokens: List[str] = []
+    for t in parse_languages(with_tokens):
+        if t.lower() not in tokens:
+            tokens.append(t.lower())
     for name in langs:
-        entry = table.get(name)
-        if entry is None:
-            raise LayerError(f"unknown language {name!r}; known: {', '.join(known_languages(manifest))}")
-        if entry.get("stub"):
-            raise LayerError(f"language {name} is not built yet: {entry.get('description', '')}".rstrip(": "))
+        _check_language(manifest, name)
+    res = Resolution(languages=langs, tokens=list(tokens))
 
-    res = Resolution(languages=langs, archetype=archetype)
-    order: List[str] = []
-    for name in langs:
-        order += table[name].get("layers", [])
-    if arch_entry is None:
+    chosen: List[Tuple[str, Optional[str]]] = []      # (folder, qualified name or None), in the order given
+    presets_used: List[str] = []
+
+    def add_language(name: str) -> None:
+        if name not in langs:
+            _check_language(manifest, name)
+            langs.append(name)
+
+    def add_preset(key: str) -> None:
+        presets_used.append(key)
+        for lang_name in presets[key].get("languages", []) or [key.split("/")[0]]:
+            add_language(lang_name)
+        for pair in _preset_layers(manifest, key):
+            if pair not in chosen:
+                chosen.append(pair)
+
+    def add_layer(key: str) -> None:
+        pair = _layer(manifest, key)
+        add_language(key.split("/")[0])
+        if pair not in chosen:
+            chosen.append(pair)
+
+    # Pass 1: presets and qualified names; bare names that are unique anywhere.
+    # Pass 2: the bare names left, narrowed by the languages now known.
+    deferred: List[str] = []
+    for tok in tokens:
+        if tok in presets:
+            add_preset(tok)
+        elif "/" in tok:
+            if tok in layer_table:
+                add_layer(tok)
+            else:
+                known = sorted(set(presets) | set(layer_table))
+                raise LayerError(f"unknown archetype {tok!r}; known: {', '.join(known) or 'none'}{_suggest(tok, known)}")
+        else:
+            deferred.append(tok)
+    for tok in deferred:
+        candidates = _bare_candidates(manifest, tok)
+        if not candidates:
+            bare = sorted({k.split('/', 1)[1] for k in list(presets) + list(layer_table) if '/' in k})
+            raise LayerError(f"unknown name {tok!r}; known: {', '.join(bare) or 'none'}{_suggest(tok, bare + sorted(set(presets) | set(layer_table)))}")
+        if len(candidates) > 1:
+            narrowed = [c for c in candidates if c.split("/")[0] in langs]
+            if len(narrowed) == 1:
+                candidates = narrowed
+            else:
+                raise LayerError(f"{tok!r} is ambiguous: {' or '.join(candidates)}")
+        key = candidates[0]
+        if key in presets:
+            add_preset(key)
+        else:
+            add_layer(key)
+
+    # Rule 4: imply, transitively (a layer implies its language; its entry may imply more).
+    i = 0
+    while i < len(chosen):
+        folder, name = chosen[i]
+        if name:
+            lang_name = name.split("/")[0]
+            for imp in layer_table[name].get("implies", []):
+                target = imp if "/" in imp else f"{lang_name}/{imp}"
+                if target in table:              # a language
+                    add_language(target)
+                elif target in layer_table:
+                    pair = _layer(manifest, target)
+                    if pair not in chosen:
+                        chosen.append(pair)
+                else:
+                    raise LayerError(f"layer {name} implies {imp!r}, which the manifest does not define")
+        i += 1
+
+    # Rule 5: exclusivity, per language and facet.
+    seen: Dict[Tuple[str, str], str] = {}
+    for folder, name in chosen:
+        if not name:
+            continue
+        facet = layer_table[name].get("facet")
+        if facet and facet_exclusive(manifest, facet):
+            slot = (name.split("/")[0], facet)
+            other = seen.get(slot)
+            if other and other != name:
+                a, b = other.split("/", 1)[1], name.split("/", 1)[1]
+                raise LayerError(f"'{a}' and '{b}' are both a {facet} for {slot[0]}; pick one")
+            seen[slot] = name
+
+    # Rule 7 (default) when nothing was asked.
+    if not tokens:
         for name in langs[:1]:   # the primary language's default only
             default = table[name].get("default")
             if default:
-                entry = arches.get(default)
+                entry = presets.get(default)
                 if entry is None or entry.get("stub"):
                     raise LayerError(f"language {name} names default archetype {default!r}, which is {'unknown' if entry is None else 'a stub'}")
-                order += entry.get("layers", [])
+                add_preset(default)
                 res.archetype = default
-    else:
-        order += arch_entry.get("layers", [])
-    for layer in order:
-        if layer not in res.layers:
-            res.layers.append(layer)
+
+    # Rule 6: order -- the languages' own layers first (in the order given), then by facet rank, then as given.
+    order: List[Tuple[str, Optional[str]]] = []
+    for name in langs:
+        for folder in table[name].get("layers", []):
+            order.append((folder, name))
+    ranked = sorted(enumerate(chosen), key=lambda ic: (facet_rank(manifest, layer_table.get(ic[1][1] or "", {}).get("facet")), ic[0]))
+    order += [pair for _, pair in ranked]
+    for folder, name in order:
+        if folder not in res.layers:
+            res.layers.append(folder)
+            res.names.append(name or folder)
+    res.languages = langs
+
+    # Rule 8: recognise a preset -- the WHOLE request must equal the preset's
+    # expansion, languages included (`--language python --with minimal` is a
+    # two-language composition no preset vouches for, even though `minimal`
+    # alone is one).
+    if tokens and _recognise:
+        for key in presets_used + [k for k in presets if k not in presets_used]:
+            if presets[key].get("stub"):
+                continue
+            try:
+                expansion = resolve(manifest, [], [key], _recognise=False).layers
+            except LayerError:
+                continue
+            if expansion == res.layers:
+                res.archetype = key
+                break
+        if res.archetype is None:
+            res.notes.append(NOT_A_PRESET)
     return res
+
+
+def catalogue_lines(manifest: Dict[str, Any], language: Optional[str] = None) -> List[str]:
+    """`repokit list [LANG]`: per language, the presets (name = layers; planned
+    ones marked), then each facet with its choices and one-of / any-of."""
+    table = manifest["languages"]
+    if language and language not in table:
+        raise LayerError(f"unknown language {language!r}; known: {', '.join(known_languages(manifest))}")
+    facets = sorted(manifest["facets"].items(), key=lambda kv: kv[1].get("rank", UNRANKED))
+    lines: List[str] = []
+    for lang in sorted(table):
+        if language and lang != language:
+            continue
+        entry = table[lang]
+        head = f"{lang}:" + (f"  (planned: {entry.get('description', '')})" if entry.get("stub") else "")
+        lines.append(head)
+        default = entry.get("default")
+        for key in sorted(k for k in manifest["archetypes"] if k.startswith(lang + "/")):
+            preset = manifest["archetypes"][key]
+            if preset.get("stub"):
+                lines.append(f"  {key:28} (planned: {preset.get('description', '')})")
+            else:
+                parts = [f.split("/", 2)[-1] for f in preset.get("layers", [])]
+                mark = "  <- default" if key == default else ""
+                lines.append(f"  {key:28} = {', '.join(parts)}{mark}")
+        for facet, spec in facets:
+            if facet == "language":
+                continue
+            names = []
+            for key, l_entry in manifest["layers"].items():
+                if key.startswith(lang + "/") and l_entry.get("facet") == facet:
+                    names.append(key.split("/", 1)[1] + (" (planned)" if l_entry.get("stub") else ""))
+            if names:
+                pick = "one of" if spec.get("exclusive") else "any of"
+                lines.append(f"  {facet:10} {pick}: {', '.join(sorted(names))}")
+    return lines
+
+
+def _bare_candidates(manifest: Dict[str, Any], tok: str) -> List[str]:
+    """Qualified keys whose bare name is tok: one per language, a preset
+    preferred over a layer of the same name (the preset is the tested one)."""
+    by_lang: Dict[str, str] = {}
+    for key in manifest["layers"]:
+        lang, name = key.split("/", 1)
+        if name == tok:
+            by_lang.setdefault(lang, key)
+    for key in manifest["archetypes"]:
+        lang, name = key.split("/", 1)
+        if name == tok:
+            by_lang[lang] = key
+    return [by_lang[l] for l in sorted(by_lang)]
 
 
 def _is_text(data: bytes) -> bool:

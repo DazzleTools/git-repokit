@@ -1,4 +1,4 @@
-"""`repokit create` with the code-type layers: --language as a list, --archetype,
+"""`repokit create` with the code-type layers: --language as a list, --with,
 failure before anything is created, and the wiring with the structure
 (the vault's ignore lines survive the layers' appends).
 
@@ -40,11 +40,11 @@ def _tokens_left(root):
 class TestLanguageLayers(RepoKitTestCase):
 
     def test_setuppy_keeps_todays_output_and_the_vaults_ignore_lines(self):
-        """U3.2's pin at the CLI: --archetype python/setuppy still produces setup.py
+        """U3.2's pin at the CLI: --with python/setuppy still produces setup.py
         and requirements.txt with the project's names (the output a bare --language
         python gave before 0.7.0); the Python ignore lines are appended and the
         vault's lines, written after the layers, are still there."""
-        self.assert_repokit_success(["create", "demo", "--archetype", "python/setuppy", "--no-push"])
+        self.assert_repokit_success(["create", "demo", "--with", "python/setuppy", "--no-push"])
         repo = Path(self.test_dir, "demo")
         setup = (repo / "setup.py").read_text(encoding="utf-8")
         self.assertIn('name="demo"', setup)
@@ -130,7 +130,7 @@ class TestLanguageLayers(RepoKitTestCase):
         self.assertEqual((meta2["languages"], meta2["archetype"]), (["python", "c-cpp"], "python/pypi"))
 
     def test_an_archetype_implies_its_language_and_shares_the_guids(self):
-        self.assert_repokit_success(["create", "demo", "--archetype", "c-cpp/msbuild", "--no-push"])
+        self.assert_repokit_success(["create", "demo", "--with", "c-cpp/msbuild", "--no-push"])
         repo = Path(self.test_dir, "demo")
         sln = (repo / "demo.sln").read_text(encoding="utf-8", errors="replace")
         vcx = (repo / "demo.vcxproj").read_text(encoding="utf-8", errors="replace")
@@ -145,8 +145,8 @@ class TestLanguageLayers(RepoKitTestCase):
         cases = [
             (["--language", "cobol"], "unknown language 'cobol'; known: generic, c-cpp, javascript, python"),
             (["--language", "javascript"], "language javascript is not built yet"),
-            (["--archetype", "python/django"], "archetype python/django is not built yet"),
-            (["--archetype", "python/nope"], "unknown archetype 'python/nope'; known:"),
+            (["--with", "python/django"], "archetype python/django is not built yet"),
+            (["--with", "python/nope"], "unknown archetype 'python/nope'; known:"),
         ]
         for extra, message in cases:
             rc, out, err = self.run_repokit(["create", "demo", *extra, "--no-push"])
@@ -194,7 +194,7 @@ class TestLanguageLayers(RepoKitTestCase):
         self.assertIn("ctest", c_runs)
         self.assertIn("ci-c-cpp.yml/badge.svg", (cm / "README.md").read_text(encoding="utf-8"))
 
-        self.assert_repokit_success(["create", "ms", "--archetype", "c-cpp/msbuild", "--no-push"])
+        self.assert_repokit_success(["create", "ms", "--with", "c-cpp/msbuild", "--no-push"])
         ms = Path(self.test_dir, "ms")
         self.assertFalse((ms / ".github" / "workflows").exists())
         self.assertNotIn("workflows/", (ms / "README.md").read_text(encoding="utf-8"))
@@ -208,3 +208,78 @@ class TestLanguageLayers(RepoKitTestCase):
         self.assertTrue((repo / ".gitattributes").is_file() and (repo / "CHANGELOG.md").is_file())
         meta = json.loads((repo / ".repokit.json").read_text(encoding="utf-8"))
         self.assertEqual((meta["languages"], meta["archetype"]), (["generic"], None))
+        self.assertEqual(meta["layers"], [])
+
+
+class TestWithList(RepoKitTestCase):
+    """Phase 3, unit 3: `--with` as a list, the metadata's `layers`, and `repokit list`.
+    Design: 2026-10-19__22-11-27__dev-workflow-process__family-type-system-facets-and-grammar.md."""
+
+    def test_the_common_case_is_unchanged_and_records_its_layers(self):
+        """AC-2: --language python alone is still python/pypi in two tokens; .repokit.json
+        now also lists every layer in apply order."""
+        self.assert_repokit_success(["create", "demo", "--language", "python", "--no-push"])
+        meta = json.loads(Path(self.test_dir, "demo", ".repokit.json").read_text(encoding="utf-8"))
+        self.assertEqual(meta["archetype"], "python/pypi")
+        self.assertEqual(meta["layers"], ["python", "python/pypi"])
+
+    def test_two_layers_in_one_exclusive_facet_are_refused_before_anything_exists(self):
+        """AC-4."""
+        rc, out, err = self.run_repokit(["create", "x", "--with", "pypi,setuppy", "--no-push"])
+        self.assertNotEqual(rc, 0)
+        self.assertIn("'pypi' and 'setuppy' are both a build for python; pick one", out + err)
+        self.assertFalse(os.path.exists(os.path.join(self.test_dir, "x")))
+
+    def test_a_bare_name_in_two_languages_is_refused_with_both_forms(self):
+        """AC-5: qt is a stub in both languages, so the ambiguity is reported first."""
+        rc, out, err = self.run_repokit(["create", "x", "--with", "qt", "--no-push"])
+        self.assertNotEqual(rc, 0)
+        self.assertIn("'qt' is ambiguous: c-cpp/qt or python/qt", out + err)
+
+    def test_a_bare_preset_name_and_a_composition_both_resolve(self):
+        """AC-7 (bare preset name when unique) and AC-8 (a composition carries one note
+        and no preset). setuppy is unique across languages; python's language layer
+        plus setuppy equals the python/setuppy preset. c-cpp's minimal plus its
+        language layer with the python language listed is a two-language composition
+        no preset equals."""
+        self.assert_repokit_success(["create", "s", "--with", "setuppy", "--no-push"])
+        meta = json.loads(Path(self.test_dir, "s", ".repokit.json").read_text(encoding="utf-8"))
+        self.assertEqual(meta["archetype"], "python/setuppy")
+        self.assertTrue(Path(self.test_dir, "s", "setup.py").is_file())
+
+        out, err = self.assert_repokit_success(["create", "m", "--language", "python", "--with", "minimal", "--no-push"])
+        self.assertEqual(out.count("not a tested preset"), 1, out)
+        meta = json.loads(Path(self.test_dir, "m", ".repokit.json").read_text(encoding="utf-8"))
+        self.assertIsNone(meta["archetype"])
+        self.assertEqual(meta["layers"], ["python", "c-cpp", "c-cpp/minimal"])
+        self.assertEqual(meta["languages"], ["python", "c-cpp"])
+        self.assertEqual(_tokens_left(Path(self.test_dir, "m")), [])
+
+    def test_a_typo_suggests_the_close_name(self):
+        """AC-13."""
+        rc, out, err = self.run_repokit(["create", "x", "--with", "pypii", "--no-push"])
+        self.assertNotEqual(rc, 0)
+        self.assertIn("did you mean", out + err)
+        self.assertIn("pypi", out + err)
+
+    def test_list_fits_a_screen_and_names_presets_and_facets(self):
+        """AC-10: one block per language; presets then facets; stubs marked planned."""
+        out, err = self.assert_repokit_success(["list"])
+        lines = out.splitlines()
+        self.assertLessEqual(len(lines), 40, out)
+        self.assertIn("python:", lines)
+        self.assertTrue(any("python/pypi" in ln and "<- default" in ln for ln in lines), out)
+        self.assertTrue(any(ln.strip().startswith("build") and "one of" in ln for ln in lines), out)
+        self.assertTrue(any("(planned" in ln for ln in lines), out)
+        out_py, _ = self.assert_repokit_success(["list", "python"])
+        self.assertLessEqual(len(out_py.splitlines()), 15, out_py)
+        self.assertNotIn("c-cpp:", out_py)
+        rc, out, err = self.run_repokit(["list", "cobol"])
+        self.assertNotEqual(rc, 0)
+        self.assertIn("unknown language 'cobol'", out + err)
+
+    def test_the_old_flag_is_gone(self):
+        """AC-11's second half: --archetype is not an alias; argparse refuses it."""
+        rc, out, err = self.run_repokit(["create", "x", "--archetype", "python/pypi", "--no-push"])
+        self.assertNotEqual(rc, 0)
+        self.assertIn("unrecognized arguments", out + err)

@@ -1,0 +1,56 @@
+$ npx --yes create-react-router@latest --help
+(exit 0)
+
+[47m [30mcreate-react-router[39m [49m 
+
+[1mUsage[22m:
+
+[2m$[22m [92mcreate-react-router[39m [93m<projectDir>[39m [93m<...options>[39m
+
+[1mValues[22m:
+
+[93mprojectDir[39m          [2mThe React Router project directory[22m
+
+[1mOptions[22m:
+
+[93m--help, -h[39m          [2mPrint this help message and exit[22m
+[93m--version, -V[39m       [2mPrint the CLI version and exit[22m
+[93m--no-color[39m          [2mDisable ANSI colors in console output[22m
+[93m--no-motion[39m         [2mDisable animations in console output[22m
+
+[93m--template <name>[39m   [2mThe project template to use[22m
+[93m--[no-]install[39m      [2mWhether or not to install dependencies after creation[22m
+[93m--package-manager[39m   [2mThe package manager to use[22m
+[93m--show-install-output[39m   [2mWhether to show the output of the install process[22m
+[93m--[no-]agent-skills[39m [2mWhether or not to include the React Router agent skill[22m
+[93m--[no-]git-init[39m     [2mWhether or not to initialize a Git repository[22m
+[93m--yes, -y[39m           [2mSkip all option prompts and run setup[22m
+[93m--react-router-version, -v[39m     [2mThe version of React Router to use[22m
+
+[1mCreating a new project[22m:
+
+React Router projects are created from templates. A template can be:
+
+- a GitHub repo shorthand, :username/:repo or :username/:repo/:directory
+- the URL of a GitHub repo (or directory within it)
+- the URL of a tarball
+- a file path to a directory of files
+- a file path to a tarball
+
+[2m$[22m [92mcreate-react-router[39m my-app [93m--template remix-run/react-router/templates/basic[39m
+[2m$[22m [92mcreate-react-router[39m my-app [93m--template remix-run/react-router/examples/basic[39m
+[2m$[22m [92mcreate-react-router[39m my-app [93m--template :username/:repo[39m
+[2m$[22m [92mcreate-react-router[39m my-app [93m--template :username/:repo/:directory[39m
+[2m$[22m [92mcreate-react-router[39m my-app [93m--template https://github.com/:username/:repo[39m
+[2m$[22m [92mcreate-react-router[39m my-app [93m--template https://github.com/:username/:repo/tree/:branch[39m
+[2m$[22m [92mcreate-react-router[39m my-app [93m--template https://github.com/:username/:repo/tree/:branch/:directory[39m
+[2m$[22m [92mcreate-react-router[39m my-app [93m--template https://github.com/:username/:repo/archive/refs/tags/:tag.tar.gz[39m
+[2m$[22m [92mcreate-react-router[39m my-app [93m--template https://example.com/template.tar.gz[39m
+[2m$[22m [92mcreate-react-router[39m my-app [93m--template ./path/to/template[39m
+[2m$[22m [92mcreate-react-router[39m my-app [93m--template ./path/to/template.tar.gz[39m
+
+To create a new project from a template in a private GitHub repo,
+pass the `token` flag with a personal access token with access
+to that repo.
+
+

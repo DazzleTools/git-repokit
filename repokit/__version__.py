@@ -1,4 +1,4 @@
 """Version information for RepoKit."""
 
-__version__ = "0.7.3"
+__version__ = "0.8.0"
 __version_info__ = tuple(int(part) for part in __version__.split("."))

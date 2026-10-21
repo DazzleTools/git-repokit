@@ -72,7 +72,7 @@ class TestCCppLayer(RepoKitTestCase):
     def test_cmake_lib_and_qt_stubs_announce_themselves(self):
         """U4 stubs: naming an unbuilt archetype stops before anything is created."""
         for arch in ("c-cpp/cmake-lib", "c-cpp/qt"):
-            rc, out, err = self.run_repokit(["create", "demo", "--archetype", arch, "--no-push"])
+            rc, out, err = self.run_repokit(["create", "demo", "--with", arch, "--no-push"])
             self.assertNotEqual(rc, 0, arch)
             self.assertIn(f"archetype {arch} is not built yet", out + err)
             self.assertFalse(os.path.exists(os.path.join(self.test_dir, "demo")), arch)
@@ -122,7 +122,7 @@ class TestCCppLayer(RepoKitTestCase):
     @needs_toolchain
     def test_msbuild_archetype_builds(self):
         """U4.3: the Visual Studio solution builds and the binary runs."""
-        repo = self._create("my-tool", "--archetype", "c-cpp/msbuild")
+        repo = self._create("my-tool", "--with", "c-cpp/msbuild")
         r = _run([str(MSBUILD), str(repo / "my-tool.sln"), "-nologo", "-v:minimal",
                   "-p:Configuration=Release", "-p:Platform=x64"], repo)
         self.assertEqual(r.returncode, 0, r.stdout[-3000:] + r.stderr[-3000:])
@@ -135,7 +135,7 @@ class TestCCppLayer(RepoKitTestCase):
     @needs_toolchain
     def test_minimal_archetype_builds_with_cl(self):
         """U4.3: build.bat compiles the one source file with rc and cl under vcvars64."""
-        repo = self._create("my-tool", "--archetype", "c-cpp/minimal")
+        repo = self._create("my-tool", "--with", "c-cpp/minimal")
         wrapper = repo.parent / "run_min.cmd"
         # .\ because NoDefaultCurrentDirectoryInExePath may be set; CRLF for cmd
         wrapper.write_bytes(f'@call "{VCVARS}" >nul\r\n@cd /d "{repo}"\r\n@call .\\build.bat\r\n'.encode())

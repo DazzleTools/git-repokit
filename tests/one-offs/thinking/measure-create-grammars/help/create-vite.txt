@@ -1,0 +1,26 @@
+$ npx --yes create-vite@latest --help
+(exit 0)
+Usage: create-vite [OPTION]... [DIRECTORY]
+
+Create a new Vite project in JavaScript or TypeScript.
+When running in TTY, the CLI will start in interactive mode.
+
+Options:
+  -t, --template NAME                   use a specific template
+  -i, --immediate / --no-immediate      install dependencies and start dev
+  --eslint / --no-eslint                use ESLint instead of Oxlint (only for React templates)
+  --overwrite                           remove existing files if target directory is not empty
+  --interactive / --no-interactive      force interactive / non-interactive mode
+  -h, --help                            display this help message
+
+Available templates:
+vanilla-ts          vanilla
+vue-ts              vue
+react-ts            react
+react-compiler-ts   react-compiler
+preact-ts           preact
+lit-ts              lit
+svelte-ts           svelte
+solid-ts            solid
+qwik-ts             qwik
+

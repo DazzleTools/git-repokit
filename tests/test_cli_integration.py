@@ -61,7 +61,7 @@ class TestCLICommands(RepoKitTestCase):
 
         # Check Python-specific files: since 0.7.1 a bare --language python is
         # the pypi archetype (pyproject.toml and a package); setup.py and
-        # requirements.txt are --archetype python/setuppy (tests/test_layers_cli.py)
+        # requirements.txt are --with python/setuppy (tests/test_layers_cli.py)
         self.assert_file_exists(project_dir, "pyproject.toml")
         self.assert_file_exists(os.path.join(project_dir, "test_create_basic"), "_version.py")
         

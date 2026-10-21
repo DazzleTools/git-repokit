@@ -813,15 +813,16 @@ class RepoManager:
         if getattr(self, "_layer_resolution", None) is not None:
             return self._layer_resolution
         languages = self.config.get("languages") or [self.config.get("language") or layers.GENERIC]
-        archetype = self.config.get("archetype")
+        with_tokens = self.config.get("with")
         root = layers.layers_root(self.template_engine)
         if root is None:
-            if [l for l in layers.parse_languages(languages) if l != layers.GENERIC] or archetype:
+            if [l for l in layers.parse_languages(languages) if l != layers.GENERIC] or with_tokens:
                 self.logger.warning("No code-type layers found with the templates; only the structure was written")
             return None
-        resolution = layers.resolve(layers.load_manifest(root), languages, archetype)
+        resolution = layers.resolve(layers.load_manifest(root), languages, with_tokens)
         self.config["languages"] = resolution.languages
-        self.config["archetype"] = resolution.archetype
+        self.config["archetype"] = resolution.archetype     # the preset the request equals, or None
+        self.config["layers"] = list(resolution.names)      # every layer, qualified, in apply order
         self.config["language"] = resolution.languages[0] if resolution.languages else layers.GENERIC
         self._layer_resolution = (root, resolution)
         return self._layer_resolution
@@ -862,6 +863,9 @@ class RepoManager:
             logger=self.logger,
         )
         self.logger.info(f"Code-type layers {', '.join(resolution.layers)}: {len(written)} files")
+        for note in resolution.notes:
+            # Once, to the person: a composition no preset vouches for.
+            print(f"Note: {note} ({', '.join(resolution.tokens)})")
 
         # A layer may ship .repokit-common.toml (or a pyproject table) of its
         # own; in the private-branch model the settings written at vendoring
@@ -2499,6 +2503,7 @@ exit 0
             "language": self.config.get("language", "generic"),
             "languages": self.config.get("languages") or [self.config.get("language", "generic")],
             "archetype": self.config.get("archetype"),
+            "layers": self.config.get("layers") or [],
             "branch_strategy": self.config.get("branch_strategy", "standard"),
             "private_branch": self.config.get("private_branch", "private"),
             "private_mode": self.private_mode,
