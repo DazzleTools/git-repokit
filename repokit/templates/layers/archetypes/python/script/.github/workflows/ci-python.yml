@@ -1,0 +1,43 @@
+name: CI (Python script)
+
+# A plain script: no package to install, no wheel to build. Every top-level
+# .py file must compile and answer --version; tests/ runs when it exists.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ['3.9', '3.11', '3.12']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Compile and answer --version
+      shell: bash
+      run: |
+        python -m py_compile *.py
+        for f in *.py; do python "$f" --version; done
+
+    - name: Run tests
+      shell: bash
+      run: |
+        if [ -d tests ]; then
+          python -m pip install --upgrade pip pytest
+          python -m pytest tests/ -v
+        else
+          echo "no tests/ folder; nothing to run"
+        fi

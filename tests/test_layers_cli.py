@@ -278,6 +278,41 @@ class TestWithList(RepoKitTestCase):
         self.assertNotEqual(rc, 0)
         self.assertIn("unknown language 'cobol'", out + err)
 
+    def test_the_script_floor_is_one_module_and_a_version_file(self):
+        """AC-12 (Phase 3 slice 2): python/script is the simple-projects floor --
+        one module reading VERSION, no packaging, its own small CI; `script` is a
+        build-facet choice (design addendum 2), so pypi,script is refused."""
+        self.assert_repokit_success(["create", "t", "--with", "python/script", "--no-push"])
+        t = Path(self.test_dir, "t")
+        for rel in ("pyproject.toml", "setup.py", "requirements.txt", ".github/workflows/release.yml"):
+            self.assertFalse((t / rel).exists(), rel)
+        self.assertTrue((t / "t.py").is_file() and (t / "VERSION").is_file() and (t / "tests" / "test_version.py").is_file())
+        r = subprocess.run([sys.executable, "t.py", "--version"], cwd=t, capture_output=True, text=True)
+        self.assertEqual((r.returncode, r.stdout.strip()), (0, "0.1.0"), r.stderr)
+        self.assertEqual([p.name for p in (t / ".github" / "workflows").iterdir()], ["ci-python.yml"])
+        ci = (t / ".github" / "workflows" / "ci-python.yml").read_text(encoding="utf-8")
+        self.assertNotIn("python -m build", ci)
+        self.assertIn("--version", ci)
+        settings = (t / ".repokit-common.toml").read_text(encoding="utf-8")
+        self.assertIn('version-source = "VERSION"', settings)
+        self.assertIn('languages = ["python"]', settings)
+        self.assertIn("private-patterns", settings)
+        meta = json.loads((t / ".repokit.json").read_text(encoding="utf-8"))
+        self.assertEqual((meta["archetype"], meta["layers"]), ("python/script", ["python", "python/script"]))
+        self.assertEqual(_tokens_left(t), [])
+        tool = t / "scripts" / "repokit-common" / "sync-versions.py"
+        if tool.exists():
+            r = subprocess.run([sys.executable, str(tool), "--check"], cwd=t, capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+        self.assert_repokit_success(["create", "s", "--with", "script", "--no-push"])
+        meta = json.loads(Path(self.test_dir, "s", ".repokit.json").read_text(encoding="utf-8"))
+        self.assertEqual(meta["archetype"], "python/script")
+
+        rc, out, err = self.run_repokit(["create", "x", "--with", "pypi,script", "--no-push"])
+        self.assertNotEqual(rc, 0)
+        self.assertIn("'pypi' and 'script' are both a build for python; pick one", out + err)
+
     def test_the_old_flag_is_gone(self):
         """AC-11's second half: --archetype is not an alias; argparse refuses it."""
         rc, out, err = self.run_repokit(["create", "x", "--archetype", "python/pypi", "--no-push"])

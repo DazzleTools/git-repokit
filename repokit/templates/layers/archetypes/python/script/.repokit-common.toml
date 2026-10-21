@@ -1,0 +1,14 @@
+# git-repokit-common settings for __RK_PROJECT__.
+#
+# A plain script has no pyproject.toml, so the vendored tooling at
+# scripts/repokit-common/ reads its settings from this file instead. The
+# version lives in VERSION (one line); the hooks keep it, CHANGELOG.md and
+# the tags in step.
+
+[tool.repokit-common]
+version-source = "VERSION"
+changelog = "CHANGELOG.md"
+repo-url = "https://github.com/__RK_ORG__/__RK_PROJECT__"
+tag-prefix = "v"
+languages = ["python"]
+private-patterns = ["private/", "local/", ".env"]

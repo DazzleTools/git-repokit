@@ -78,6 +78,11 @@ description = "pyproject.toml with a dynamic version, the package (__init__, __m
 facet = "build"
 description = "setup.py and requirements.txt: git-repokit's Python output before the layers"
 
+[layers."python/script"]
+facet = "build"
+overrides = [".github/workflows/ci-python.yml"]
+description = "a local tool: one module reading VERSION, no packaging, no publish workflow (the simple-projects floor)"
+
 [layers."python/comfyui"]
 facet = "purpose"
 stub = true
@@ -127,6 +132,11 @@ description = "setup.py and requirements.txt: git-repokit's Python output before
 languages = ["python"]
 layers = ["archetypes/python/pypi"]
 description = "pyproject.toml with a dynamic version, the package (__init__, __main__, cli, _version), tests, and the publish-on-release workflow: the shape of git-repokit-template's projects"
+
+[archetypes."python/script"]
+languages = ["python"]
+layers = ["archetypes/python/script"]
+description = "a local tool: one module reading VERSION, no packaging, no publish workflow (the simple-projects floor)"
 
 [archetypes."python/comfyui"]
 stub = true

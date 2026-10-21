@@ -5,6 +5,14 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-10-21
+
+### Added
+- **`python/script`, the simple-projects floor.** `repokit create NAME --with python/script` (or `--with script`) makes a project that is one module, `NAME.py`, answering `--version` from a plain `VERSION` file beside it, with a two-test `tests/` folder, a `.repokit-common.toml` that points the vendored version tool at `VERSION`, and its own small CI (compile every top-level `.py`, run each with `--version`, run `tests/` when present). No `pyproject.toml`, no `setup.py`, no publish workflow: a local tool that is run, not installed.
+
+### Changed
+- `script` is a **build** choice (how the project is packaged: not at all), exclusive with `pypi` and `setuppy`, so `--with pypi,script` is refused as a collision rather than assembled. The design had placed it under purpose; the facet rule (named by the question the person answers) put it here.
+
 ## [0.8.0] - 2026-10-20
 
 The 0.8 line gives the code-type templates their type system below the language, and builds the language git-repokit's revival was started for. Through 0.7, a project was a language and one archetype within it. In 0.8 a project is named by the choices the person makes -- where it runs, which dialect it is written in, how it is built or packaged, what it uses, what it is -- each a layer with a facet, composed on the command line or taken whole as a tested preset, so that a Claude Code plugin, a Node package, a Vite site or a plain script are each a few tokens away and none needs a hand-customised template afterwards. 0.8.0 lays down the facets, the resolver and the `--with` grammar with Python and C/C++ unchanged; 0.8.1 adds the plain Python script as a shape; 0.8.2 and 0.8.3 add JavaScript/TypeScript with Node, TypeScript, the npm package and the Claude Code plugin.
