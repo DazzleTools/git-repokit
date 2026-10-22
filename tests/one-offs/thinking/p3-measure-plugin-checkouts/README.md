@@ -1,0 +1,12 @@
+# Measure: the Claude Code plugin checkouts (2026-10-22)
+
+Question: before `js-ts/claude-plugin` is written, what do the plugin repositories on this machine look like, and does the nested shape djdarcy described ("we keep the plugin in a SUBFOLDER and have all our tooling external to that ... two READMEs one for Github and one for Claude's marketplace") match them? `measure.py` is read-only; `results.md` holds the raw listing.
+
+| Checkout | Where the plugin is | Manifests | Language | Version | Tests |
+|---|---|---|---|---|---|
+| claude-bookmarks | `plugin/` (nested) | root `.claude-plugin/marketplace.json` (the family: `./plugin` plus two plugins by URL); `plugin/.claude-plugin/plugin.json` with 15 keys (displayName, userConfig, the policy URLs, `types`) | TypeScript (`tsconfig.json`, `hooks/register.tsx`, no `package.json`) | root `version.py` as source; `plugin/.claude-plugin/plugin.json` an extra target; `tag-format = "human"` | Python at the root, `*.test.ts` in the plugin |
+| Claude-Session-Backup | the repository root | root `.claude-plugin/{marketplace.json, plugin.json}`, marketplace source `./` | Python (`pyproject.toml`, hook scripts) | `_version.py`; `tag-format = "pep440"` | Python at the root |
+| claude-session-logger | `github/` (an old two-folder layout) | `plugin.json` with `commands` | Python scripts | none (no repokit-common) | checklists, snapshots |
+| dazzle-claude-plugins | none: a pure marketplace | root `marketplace.json` listing three plugins by URL and `git-subdir` | -- | `metadata.version` 0.1.1, by hand | `check_marketplace.py` |
+
+Reading for the preset: the nested shape is claude-bookmarks', the newest and the one djdarcy named, so the preset writes `plugin/` with its own `.claude-plugin/plugin.json`, `hooks/hooks.json` with one script, `tests/` and a marketplace README, and a root `.claude-plugin/marketplace.json` listing `./plugin`; the root README stays the GitHub one the structure writes. `ts` is not part of the preset (one of three plugins has it; `--with js-ts/claude-plugin,ts` adds it); `register.tsx` is a mod-API file particular to bookmarks and is not generated. The version lives in `VERSION` with two JSON extra targets (`package.json` from the node layer, `plugin/.claude-plugin/plugin.json`), and `tag-format = "human"` so tags match what Claude Code reads from the manifest. Because a key appended after node's `[[extra-targets]]` table would belong to that table in TOML, the plugin layer carries the whole settings file and declares the override.

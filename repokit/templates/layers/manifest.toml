@@ -145,9 +145,9 @@ description = "an npm package: exports map, src/index.ts, node:test tests, publi
 
 [layers."js-ts/claude-plugin"]
 facet = "purpose"
-stub = true
 implies = ["node"]
-description = "a Claude Code plugin in a subfolder, with its marketplace manifest at the root (0.8.3)"
+overrides = [".repokit-common.toml"]
+description = "a Claude Code plugin in plugin/ (manifest, hooks, tests, its marketplace README) with the marketplace manifest at the root; VERSION kept in step with both manifests"
 
 [layers."js-ts/obsidian-plugin"]
 facet = "purpose"
@@ -230,8 +230,9 @@ layers = ["archetypes/js-ts/node", "archetypes/js-ts/script"]
 description = "a plain script run with node: one .js file reading VERSION, no build step (the simple-projects floor)"
 
 [archetypes."js-ts/claude-plugin"]
-stub = true
-description = "a Claude Code plugin in a subfolder with its marketplace manifest at the root (0.8.3)"
+languages = ["js-ts"]
+layers = ["archetypes/js-ts/node", "archetypes/js-ts/claude-plugin"]
+description = "a Claude Code plugin in plugin/ (manifest, a SessionStart hook, node:test tests, the marketplace README) with the marketplace manifest at the root; add ts for TypeScript"
 
 [archetypes."js-ts/web-vite-react"]
 stub = true

@@ -101,8 +101,41 @@ class TestJsTsLayer(RepoKitTestCase):
         meta = json.loads(Path(self.test_dir, "y", ".repokit.json").read_text(encoding="utf-8"))
         self.assertEqual(meta["archetype"], "js-ts/script")
 
+    def test_the_claude_plugin_is_nested_with_two_manifests(self):
+        """Phase 3 slice 4 (AC-7 end to end): --with claude-plugin (bare, unique)
+        makes the nested shape djdarcy keeps: the plugin in plugin/ with its own
+        manifest, a SessionStart hook, node:test tests and the marketplace README;
+        the marketplace manifest and the GitHub README at the root; VERSION kept
+        in step with package.json and plugin.json; human tags."""
+        self.assert_repokit_success(["create", "my-plugin", "--with", "claude-plugin", "--no-push"])
+        d = Path(self.test_dir, "my-plugin")
+        for rel in (".claude-plugin/marketplace.json", "plugin/.claude-plugin/plugin.json", "plugin/hooks/hooks.json",
+                    "plugin/hooks/scripts/session-start.mjs", "plugin/tests/manifest.test.js", "plugin/README.md",
+                    "README.md", "VERSION", "package.json", ".repokit-common.toml", ".github/workflows/ci-js-ts.yml"):
+            self.assertTrue((d / rel).is_file(), rel)
+        self.assertFalse((d / "tsconfig.json").exists())            # ts is not in the preset
+        self.assertFalse((d / ".github" / "workflows" / "release.yml").exists())
+        plugin = json.loads((d / "plugin" / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+        market = json.loads((d / ".claude-plugin" / "marketplace.json").read_text(encoding="utf-8"))
+        self.assertEqual((plugin["name"], plugin["version"]), ("my-plugin", "0.1.0"))
+        self.assertEqual(market["plugins"][0]["source"], "./plugin")
+        settings = (d / ".repokit-common.toml").read_text(encoding="utf-8")
+        self.assertIn('tag-format = "human"', settings)
+        self.assertEqual(settings.count("[[tool.repokit-common.extra-targets]]"), 2, settings)
+        self.assertIn('path = "plugin/.claude-plugin/plugin.json"', settings)
+        meta = json.loads((d / ".repokit.json").read_text(encoding="utf-8"))
+        self.assertEqual((meta["archetype"], meta["layers"]), ("js-ts/claude-plugin", ["js-ts", "js-ts/node", "js-ts/claude-plugin"]))
+        self.assertEqual(_tokens_left(d), [])
+        tool = d / "scripts" / "repokit-common" / "sync-versions.py"
+        if tool.exists():
+            r = subprocess.run([sys.executable, str(tool), "--check"], cwd=d, capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        if NODE:
+            r = subprocess.run([NODE, "--test"], cwd=d, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=120)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
     def test_the_planned_flavours_refuse_with_their_description(self):
-        for preset in ("js-ts/claude-plugin", "js-ts/web-vite-react", "js-ts/obsidian-plugin"):
+        for preset in ("js-ts/web-vite-react", "js-ts/obsidian-plugin", "js-ts/browser-extension"):
             rc, out, err = self.run_repokit(["create", "x", "--with", preset, "--no-push"])
             self.assertNotEqual(rc, 0, preset)
             self.assertIn(f"archetype {preset} is not built yet", out + err)

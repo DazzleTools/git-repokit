@@ -5,6 +5,14 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.3] - 2026-10-22
+
+### Added
+- **`js-ts/claude-plugin`: a Claude Code plugin, nested.** `repokit create NAME --with claude-plugin` makes the shape claude-bookmarks keeps: the plugin in `plugin/` with its own `.claude-plugin/plugin.json`, a `hooks/hooks.json` with one SessionStart hook and its script, `node:test` tests that check the manifests agree with `VERSION` and the hook answers, and the plugin's own README written for the marketplace; at the repository root, `.claude-plugin/marketplace.json` listing `./plugin`, the GitHub README, the tooling. `VERSION` is the source and the vendored version tool keeps `package.json` and the plugin manifest in step; tags are `v0.1.0`-style so they match what Claude Code reads from the manifest. TypeScript is not part of the preset (`--with claude-plugin,ts` adds it); the measure of the plugin checkouts on the development machine (`tests/one-offs/thinking/p3-measure-plugin-checkouts/`) found one of three in TypeScript.
+
+### Changed
+- The claude-plugin layer carries the whole `.repokit-common.toml` rather than appending to the language layer's: in TOML a key appended after a `[[table]]` belongs to that table, so `tag-format` could not follow the node layer's extra-target append. The override is declared in the manifest.
+
 ## [0.8.2] - 2026-10-22
 
 ### Added

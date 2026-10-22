@@ -1,0 +1,20 @@
+{
+  "name": "__RK_PROJECT__",
+  "owner": {
+    "name": "__RK_ORG__",
+    "url": "https://github.com/__RK_ORG__"
+  },
+  "metadata": {
+    "description": "__RK_DESCRIPTION__",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "__RK_PROJECT__",
+      "description": "__RK_DESCRIPTION__",
+      "source": "./plugin",
+      "homepage": "https://github.com/__RK_ORG__/__RK_PROJECT__",
+      "tags": []
+    }
+  ]
+}

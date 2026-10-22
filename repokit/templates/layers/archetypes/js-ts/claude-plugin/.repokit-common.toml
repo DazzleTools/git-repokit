@@ -1,0 +1,25 @@
+# git-repokit-common settings for __RK_PROJECT__, a Claude Code plugin.
+#
+# The plugin lives in plugin/ with its own README for the marketplace; this
+# root holds the repository's tooling. The version lives in VERSION; the
+# vendored tool at scripts/repokit-common/ keeps package.json and the plugin
+# manifest in step. "human" tags (v0.1.0) match the version Claude Code reads
+# from plugin/.claude-plugin/plugin.json.
+
+[tool.repokit-common]
+version-source = "VERSION"
+changelog = "CHANGELOG.md"
+repo-url = "https://github.com/__RK_ORG__/__RK_PROJECT__"
+tag-prefix = "v"
+tag-format = "human"
+private-patterns = ["private/", "local/", ".env"]
+
+[[tool.repokit-common.extra-targets]]
+path = "package.json"
+type = "json"
+field = "version"
+
+[[tool.repokit-common.extra-targets]]
+path = "plugin/.claude-plugin/plugin.json"
+type = "json"
+field = "version"

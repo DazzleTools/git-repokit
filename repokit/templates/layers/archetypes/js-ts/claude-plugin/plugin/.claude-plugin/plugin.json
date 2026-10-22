@@ -1,0 +1,14 @@
+{
+  "name": "__RK_PROJECT__",
+  "displayName": "__RK_PROJECT__",
+  "description": "__RK_DESCRIPTION__",
+  "version": "0.1.0",
+  "author": {
+    "name": "__RK_AUTHOR__",
+    "email": "__RK_EMAIL__"
+  },
+  "homepage": "https://github.com/__RK_ORG__/__RK_PROJECT__",
+  "repository": "https://github.com/__RK_ORG__/__RK_PROJECT__",
+  "documentationUrl": "https://github.com/__RK_ORG__/__RK_PROJECT__/blob/main/plugin/README.md",
+  "keywords": []
+}
