@@ -196,6 +196,11 @@ class RepoKitTestCase(unittest.TestCase):
         if TestConfig.GITHUB_TOKEN:
             env['GITHUB_TOKEN'] = TestConfig.GITHUB_TOKEN
             
+        # stdin closed: `repokit create` asks for a git identity on stdin when
+        # it finds none in the temporary HOME, and an inherited pipe that
+        # never closes makes that prompt wait forever (a suite hung for ten
+        # minutes on 2026-10-22). With EOF the prompt falls back and the
+        # create continues; the hooks' identity comes from GIT_CONFIG_*.
         result = subprocess.run(
             cmd,
             cwd=cwd or self.test_dir,
@@ -203,7 +208,9 @@ class RepoKitTestCase(unittest.TestCase):
             text=True,
             encoding='utf-8',
             errors='replace',
-            env=env
+            env=env,
+            stdin=subprocess.DEVNULL,
+            timeout=600,
         )
         
         return result.returncode, result.stdout, result.stderr

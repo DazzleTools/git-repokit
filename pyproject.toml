@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "repokit"
-version = "0.8.1"
+version = "0.8.2"
 description = "A tool for creating standardized Git repositories with complex branching and worktree workflows"
 readme = "README.md"
 requires-python = ">=3.7"

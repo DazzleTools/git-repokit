@@ -419,6 +419,22 @@ def test_an_implies_entry_may_be_qualified(p3):
     assert r.names == ["js-ts", "js-ts/browser", "js-ts/vite", "js-ts/comfyui-frontend"]
 
 
+# --- Phase 3, slice 3: no layer file may be swallowed by git's ignore rules -----
+
+def test_no_layer_file_is_ignored_by_git():
+    """Found 2026-10-22 at the ship gate: `*config*.json` in .gitignore swallowed
+    the ts layer's tsconfig.json, so the layer would have been complete in this
+    checkout and broken in every clone. Every file under templates/layers must
+    be one git will track."""
+    root = layers.layers_root(ENGINE)
+    if not (REPO / ".git").exists():
+        pytest.skip("not a git checkout")
+    r = subprocess.run(["git", "status", "--porcelain", "--ignored", "--", str(root)],
+                       cwd=str(REPO), capture_output=True, text=True)
+    ignored = [ln[3:] for ln in r.stdout.splitlines() if ln.startswith("!!") and "__pycache__" not in ln]
+    assert ignored == [], ignored
+
+
 # --- Phase 3, unit 1: every layer has a facet -----------------------------------
 
 def test_every_layer_folder_has_a_manifest_entry_with_a_known_facet():

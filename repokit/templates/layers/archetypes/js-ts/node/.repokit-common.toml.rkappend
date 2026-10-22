@@ -1,0 +1,6 @@
+
+# package.json carries the same version; the version tool keeps it in step.
+[[tool.repokit-common.extra-targets]]
+path = "package.json"
+type = "json"
+field = "version"

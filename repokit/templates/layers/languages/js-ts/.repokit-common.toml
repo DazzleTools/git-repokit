@@ -1,0 +1,15 @@
+# git-repokit-common settings for __RK_PROJECT__.
+#
+# A JavaScript/TypeScript project keeps its version in package.json; the
+# vendored tooling at scripts/repokit-common/ treats the plain VERSION file as
+# the source and package.json (and any other manifest a layer adds) as a
+# target it keeps in step, so one bump moves every copy. The product
+# languages are not listed here on purpose: the hooks detect them from the
+# root (package.json -> javascript, tsconfig.json -> typescript).
+
+[tool.repokit-common]
+version-source = "VERSION"
+changelog = "CHANGELOG.md"
+repo-url = "https://github.com/__RK_ORG__/__RK_PROJECT__"
+tag-prefix = "v"
+private-patterns = ["private/", "local/", ".env"]

@@ -126,6 +126,9 @@ out/
 credentials.json
 *auth*.json
 *config*.json
+# ...but never a template: the ts layer's tsconfig.json was swallowed by the
+# rule above (found 2026-10-22); tests/test_layers.py checks the whole tree
+!repokit/templates/**/*config*.json
 
 # Project-specific directories
 /log/

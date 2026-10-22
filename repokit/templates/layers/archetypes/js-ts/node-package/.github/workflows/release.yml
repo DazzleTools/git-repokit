@@ -1,0 +1,39 @@
+name: Publish to npm
+
+# Triggered when a GitHub Release is PUBLISHED -- not on tag push -- so that
+# "publish a release" is the single deliberate ship action. The release event
+# checks out the release's tag, so the right version is built. Needs an
+# NPM_TOKEN secret (an automation token) on the repository.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Install
+      shell: bash
+      run: |
+        if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
+    - name: Test
+      run: npm test
+
+    - name: Publish
+      run: npm publish --provenance --access public
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -5,6 +5,21 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - 2026-10-22
+
+### Added
+- **The `js-ts` language**, with its first layers and presets. `repokit create NAME --language js-ts` makes an npm package in TypeScript (`js-ts/node-package`, the default): a `package.json` with an exports map and ES modules, `tsconfig.json` (strict, ES2022, NodeNext), `src/index.ts`, `node:test` tests compiled with the sources, a `VERSION` file the vendored version tool keeps in step with `package.json`, `.editorconfig`, the JavaScript ignore lines, a CI workflow (install with the lockfile when there is one, type-check when there is a `tsconfig.json`, `npm test`) and a publish-on-release workflow for npm. `--with js-ts/script` is the floor for this language: one `.js` file run with node, reading `VERSION`, no build step, no dependencies, two `node:test` tests. The layers below the language: `node` (runtime), `ts` (dialect), `script` (build), `node-package` (purpose); `browser`, `vite`, `react`, `svelte` and the flavours `claude-plugin` (next version), `web-vite-react`, `obsidian-plugin`, `browser-extension` and `comfyui-frontend` are announced and refuse with a description until built.
+- The shape follows a measure of the eleven Node checkouts on the development machine (`tests/one-offs/thinking/p3-measure-node-checkouts/`): ES modules, npm, `engines` rather than `.nvmrc`, TypeScript common but not universal, Vite with Vitest as the web stack (a later version).
+
+### Changed
+- The `javascript` stub in the layers' manifest is now the `js-ts` language; `repokit list` and the known-languages line say `js-ts`.
+- A project's settings file for the vendored tooling no longer names `languages` for js-ts: the hooks detect `javascript` and `typescript` from `package.json` and `tsconfig.json`, so one file serves a JavaScript or a TypeScript project.
+- Several layers may each want `package.json`, and JSON cannot be appended to, so a later layer that needs more in it carries a whole `package.json` for the stack it implies and declares the override (`node`, then `ts`, then `node-package`).
+- The test suite runs `repokit` with stdin closed: `create` asks for a git identity when it finds none, and an inherited pipe made that prompt wait forever once.
+
+### Fixed
+- git-repokit's own `.gitignore` rule `*config*.json` (a credentials guard) swallowed the ts layer's `tsconfig.json`, so the layer was whole in the developer's checkout and would have been missing in every clone. The rule now excludes the template tree, and a test checks that no layer file is ignored.
+
 ## [0.8.1] - 2026-10-21
 
 ### Added

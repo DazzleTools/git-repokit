@@ -143,8 +143,8 @@ class TestLanguageLayers(RepoKitTestCase):
     def test_unknown_names_and_stubs_fail_before_anything_is_created(self):
         """U2.4: the failure names what is known and leaves no folder behind."""
         cases = [
-            (["--language", "cobol"], "unknown language 'cobol'; known: generic, c-cpp, javascript, python"),
-            (["--language", "javascript"], "language javascript is not built yet"),
+            (["--language", "cobol"], "unknown language 'cobol'; known: generic, c-cpp, js-ts, python"),
+            (["--with", "js-ts/web-vite-react"], "archetype js-ts/web-vite-react is not built yet"),
             (["--with", "python/django"], "archetype python/django is not built yet"),
             (["--with", "python/nope"], "unknown archetype 'python/nope'; known:"),
         ]
@@ -305,7 +305,9 @@ class TestWithList(RepoKitTestCase):
             r = subprocess.run([sys.executable, str(tool), "--check"], cwd=t, capture_output=True, text=True)
             self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
-        self.assert_repokit_success(["create", "s", "--with", "script", "--no-push"])
+        # bare `script` names two languages' floors since js-ts arrived (0.8.2), so
+        # the language narrows it (tests/test_layers_js_ts.py asserts the ambiguity)
+        self.assert_repokit_success(["create", "s", "--language", "python", "--with", "script", "--no-push"])
         meta = json.loads(Path(self.test_dir, "s", ".repokit.json").read_text(encoding="utf-8"))
         self.assertEqual(meta["archetype"], "python/script")
 

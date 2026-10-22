@@ -59,9 +59,9 @@ default = "python/pypi"
 layers = ["languages/c-cpp"]
 default = "c-cpp/cmake-app"
 
-[languages.javascript]
-stub = true
-description = "planned as the js-ts layer (JavaScript and TypeScript together, after the C/C++ layer)"
+[languages.js-ts]
+layers = ["languages/js-ts"]
+default = "js-ts/node-package"
 
 # ---------------------------------------------------------------- layers
 # Keys are <language>/<name>; the folder is archetypes/<language>/<name>.
@@ -97,6 +97,75 @@ description = "a Django project"
 facet = "framework"
 stub = true
 description = "a Python Qt app (PySide6 or PyQt)"
+
+# js-ts: several layers want package.json, and JSON cannot be appended to, so
+# each later layer that needs more in it carries a whole package.json for the
+# stack it implies and declares the override (node -> ts -> node-package).
+
+[layers."js-ts/node"]
+facet = "runtime"
+description = "runs under Node: package.json (ES modules, engines), the version tool keeps its version"
+
+[layers."js-ts/browser"]
+facet = "runtime"
+stub = true
+description = "runs in a browser: index.html, a bundler expected"
+
+[layers."js-ts/ts"]
+facet = "dialect"
+overrides = ["package.json"]
+description = "TypeScript: tsconfig.json (strict, ES2022, NodeNext), build and type-check scripts"
+
+[layers."js-ts/script"]
+facet = "build"
+implies = ["node"]
+description = "a plain script: one .js file run with node, reading VERSION; no build step, no dependencies"
+
+[layers."js-ts/vite"]
+facet = "build"
+stub = true
+implies = ["browser"]
+description = "Vite bundler and dev server"
+
+[layers."js-ts/react"]
+facet = "framework"
+stub = true
+description = "React"
+
+[layers."js-ts/svelte"]
+facet = "framework"
+stub = true
+description = "Svelte"
+
+[layers."js-ts/node-package"]
+facet = "purpose"
+implies = ["node", "ts"]
+overrides = ["package.json"]
+description = "an npm package: exports map, src/index.ts, node:test tests, publish-on-release"
+
+[layers."js-ts/claude-plugin"]
+facet = "purpose"
+stub = true
+implies = ["node"]
+description = "a Claude Code plugin in a subfolder, with its marketplace manifest at the root (0.8.3)"
+
+[layers."js-ts/obsidian-plugin"]
+facet = "purpose"
+stub = true
+implies = ["browser"]
+description = "an Obsidian plugin: manifest.json + versions.json, esbuild"
+
+[layers."js-ts/browser-extension"]
+facet = "purpose"
+stub = true
+implies = ["browser"]
+description = "a WebExtension: manifest v3, a bundler, store packaging"
+
+[layers."js-ts/comfyui-frontend"]
+facet = "purpose"
+stub = true
+implies = ["browser"]
+description = "a ComfyUI frontend extension"
 
 [layers."c-cpp/cmake-app"]
 facet = "build"
@@ -149,6 +218,36 @@ description = "a Django project"
 [archetypes."python/qt"]
 stub = true
 description = "a Python Qt app (PySide6 or PyQt)"
+
+[archetypes."js-ts/node-package"]
+languages = ["js-ts"]
+layers = ["archetypes/js-ts/node", "archetypes/js-ts/ts", "archetypes/js-ts/node-package"]
+description = "an npm package in TypeScript: exports map, src/index.ts, node:test tests, publish-on-release"
+
+[archetypes."js-ts/script"]
+languages = ["js-ts"]
+layers = ["archetypes/js-ts/node", "archetypes/js-ts/script"]
+description = "a plain script run with node: one .js file reading VERSION, no build step (the simple-projects floor)"
+
+[archetypes."js-ts/claude-plugin"]
+stub = true
+description = "a Claude Code plugin in a subfolder with its marketplace manifest at the root (0.8.3)"
+
+[archetypes."js-ts/web-vite-react"]
+stub = true
+description = "a Vite + React + TypeScript site"
+
+[archetypes."js-ts/obsidian-plugin"]
+stub = true
+description = "an Obsidian plugin (manifest.json + versions.json, esbuild)"
+
+[archetypes."js-ts/browser-extension"]
+stub = true
+description = "a WebExtension (manifest v3)"
+
+[archetypes."js-ts/comfyui-frontend"]
+stub = true
+description = "a ComfyUI frontend extension"
 
 [archetypes."c-cpp/cmake-app"]
 languages = ["c-cpp"]
