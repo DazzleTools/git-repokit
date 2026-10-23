@@ -400,8 +400,11 @@ def test_the_default_preset_still_applies_when_nothing_is_asked(p3):
     assert layers.resolve(p3, [], "python/setuppy").archetype == "python/setuppy"
     r3 = layers.resolve(p3, [], "js-ts/web-vite-react,svelte")
     assert r3.archetype is None and r3.notes == [layers.NOT_A_PRESET] and r3.names[-1] == "js-ts/svelte"
-    # no tokens, no note: the default is not a composition, and generic has nothing to note (M8)
-    assert r.notes == [] and layers.resolve(p3, "python,c-cpp").notes == []
+    # no tokens, no composition note: the default is not a composition, and generic has nothing to note (M8);
+    # a second language left without a preset gets the hint instead (0.9.1, Q261022-02)
+    assert r.notes == []
+    assert layers.resolve(p3, "python,c-cpp").notes == [
+        "c-cpp got no preset of its own; add --with c-cpp/<name> (see `repokit list c-cpp`)"]
     assert layers.resolve(p3, "generic").notes == [] and layers.resolve(p3, []).notes == []
 
 
@@ -502,7 +505,11 @@ def test_the_wheel_ships_every_layer_file_including_dotfiles(tmp_path):
     # The suite points HOME at a temp dir, which sends pip's cache to a `pip/`
     # folder under the working directory (seen once, 2026-10-09); keep it here.
     env = dict(os.environ, PIP_CACHE_DIR=str(tmp_path / "pip-cache"))
-    r = subprocess.run([sys.executable, "-m", "build", "--wheel", "--outdir", str(tmp_path), str(REPO)],
+    # No --wheel: `build` makes the sdist, then the wheel FROM the unpacked sdist
+    # in a temp dir, so the checkout's own build/lib/ (which setuptools reuses,
+    # and which keeps files a later commit moved away) never reaches the wheel;
+    # and the sdist's completeness is proved on the way (2026-10-23).
+    r = subprocess.run([sys.executable, "-m", "build", "--outdir", str(tmp_path), str(REPO)],
                        capture_output=True, text=True, env=env)
     assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
     whl = next(tmp_path.glob("*.whl"))

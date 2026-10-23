@@ -13,6 +13,9 @@ repo-url = "https://github.com/__RK_ORG__/__RK_PROJECT__"
 tag-prefix = "v"
 tag-format = "human"
 private-patterns = ["private/", "local/", ".env"]
+# What a push runs: npm test, once the dependencies are installed (see the
+# js-ts language layer's settings for why the guard is there).
+test-command = "if [ -d node_modules ] || ! grep -q devDependencies package.json; then npm test; else echo dependencies not installed: run npm install and the push will run npm test; fi"
 
 [[tool.repokit-common.extra-targets]]
 path = "package.json"

@@ -100,8 +100,14 @@ def load_manifest(root: Path) -> Dict[str, Any]:
 
 
 def known_languages(manifest: Dict[str, Any]) -> List[str]:
-    """Every language the manifest names (stubs included), plus generic."""
-    return [GENERIC] + sorted(manifest["languages"])
+    """Every language the manifest names (stubs included), plus generic. A
+    pseudo-language (`pseudo = true`, such as `any`, which holds layer files
+    shared by several languages) is not a language a project can have."""
+    return [GENERIC] + sorted(k for k, v in manifest["languages"].items() if not v.get("pseudo"))
+
+
+def is_pseudo(manifest: Dict[str, Any], name: str) -> bool:
+    return bool(manifest["languages"].get(name, {}).get("pseudo"))
 
 
 def known_archetypes(manifest: Dict[str, Any]) -> List[str]:
@@ -199,6 +205,8 @@ def resolve(manifest: Dict[str, Any], languages, with_tokens=None, _recognise: b
             tokens.append(t.lower())
     for name in langs:
         _check_language(manifest, name)
+        if is_pseudo(manifest, name):
+            raise LayerError(f"{name!r} holds layers shared by several languages; it is not a project language")
     res = Resolution(languages=langs, tokens=list(tokens))
 
     chosen: List[Tuple[str, Optional[str]]] = []      # (folder, qualified name or None), in the order given
@@ -207,6 +215,8 @@ def resolve(manifest: Dict[str, Any], languages, with_tokens=None, _recognise: b
     def add_language(name: str) -> None:
         if name not in langs:
             _check_language(manifest, name)
+            if is_pseudo(manifest, name):
+                return          # a shared layer's folder prefix, never a project language
             langs.append(name)
 
     def add_preset(key: str) -> None:
@@ -244,8 +254,15 @@ def resolve(manifest: Dict[str, Any], languages, with_tokens=None, _recognise: b
             raise LayerError(f"unknown name {tok!r}; known: {', '.join(bare) or 'none'}{_suggest(tok, bare + sorted(set(presets) | set(layer_table)))}")
         if len(candidates) > 1:
             narrowed = [c for c in candidates if c.split("/")[0] in langs]
+            # With no language named at all, a candidate marked `primary` in the
+            # manifest settles a bare name (js-ts is the primary shape of a Claude
+            # plugin; the Python one is supported, not the default -- djdarcy,
+            # 2026-10-22). A named language that does not narrow stays ambiguous.
+            primary = [c for c in candidates if (presets.get(c) or layer_table.get(c) or {}).get("primary")]
             if len(narrowed) == 1:
                 candidates = narrowed
+            elif not langs and len(primary) == 1:
+                candidates = primary
             else:
                 raise LayerError(f"{tok!r} is ambiguous: {' or '.join(candidates)}")
         key = candidates[0]
@@ -327,6 +344,15 @@ def resolve(manifest: Dict[str, Any], languages, with_tokens=None, _recognise: b
                 break
         if res.archetype is None:
             res.notes.append(NOT_A_PRESET)
+
+    # A language with a default preset that ended up with no layer of its own
+    # (the second of two languages and no --with, or a --with naming only the
+    # other language's layers) is said out loud rather than left bare
+    # (Q261022-02, answered 2026-10-22: the person refines; no second default).
+    for name in langs:
+        default = table[name].get("default")
+        if default and not any(f.startswith(f"{ARCHETYPES_DIR}/{name}/") for f in res.layers):
+            res.notes.append(f"{name} got no preset of its own; add --with {name}/<name> (see `repokit list {name}`)")
     return res
 
 
@@ -342,6 +368,8 @@ def catalogue_lines(manifest: Dict[str, Any], language: Optional[str] = None) ->
         if language and lang != language:
             continue
         entry = table[lang]
+        if entry.get("pseudo"):
+            continue
         head = f"{lang}:" + (f"  (planned: {entry.get('description', '')})" if entry.get("stub") else "")
         lines.append(head)
         default = entry.get("default")
@@ -372,7 +400,7 @@ def _bare_candidates(manifest: Dict[str, Any], tok: str) -> List[str]:
     by_lang: Dict[str, str] = {}
     for key in manifest["layers"]:
         lang, name = key.split("/", 1)
-        if name == tok:
+        if name == tok and not is_pseudo(manifest, lang):
             by_lang.setdefault(lang, key)
     for key in manifest["archetypes"]:
         lang, name = key.split("/", 1)

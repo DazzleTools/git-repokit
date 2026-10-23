@@ -5,6 +5,19 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-10-23
+
+### Added
+- **`python/claude-plugin`: a Claude Code plugin whose hooks are Python.** `repokit create NAME --language python --with claude-plugin` makes the shape claude-session-logger keeps, nested like the js-ts one: `plugin/hooks/hooks.json` runs a SessionStart hook written in Python through a small node launcher (`plugin/hooks/scripts/run-hook.mjs`, because Claude Code always has node but the shell a hook runs under differs by platform), pytest tests that check the manifests agree with `VERSION` and that the hook answers both directly and through the launcher, a CI workflow that compiles the hooks and runs those tests, and a push that runs them. No `pyproject.toml`: a plugin, not a package.
+- **A shared layer for what both plugin shapes have in common.** The marketplace manifest, the plugin manifest and the plugin's marketplace README now live in one place that both the js-ts and the Python plugin pull in, so the two cannot drift apart. The js-ts plugin's output is byte-for-byte what 0.9.0 wrote. JavaScript/TypeScript stays the primary shape: a bare `--with claude-plugin` with no language named is the js-ts plugin, as before; with `--language python` it is the Python one; with both languages named it asks which.
+- **A second language left without a preset is said out loud.** `--language python,js-ts` with nothing else gives python its default and now prints `js-ts got no preset of its own; add --with js-ts/<name> (see repokit list js-ts)` rather than leaving js-ts as a bare language layer silently. The same note appears when `--with` names only the other language's layers.
+
+### Changed
+- A JavaScript/TypeScript project's push runs its tests. The settings the js-ts layers write name a `test-command` that runs `npm test` once the dependencies are installed and otherwise says to run `npm install`; before this, the vendored hook's default test step looked for Python tests and ran nothing in a js-ts project.
+
+### Fixed
+- The wheel test built through the checkout's own `build/` folder, which setuptools reuses, so a file moved away by a later commit stayed in the wheel until someone deleted the folder by hand. It now builds the sdist first and the wheel from it, in a temporary folder, which also proves the sdist is complete.
+
 ## [0.9.0] - 2026-10-23
 
 The 0.9.x line makes `repokit create` produce everything the old route produced: first the file tree of git-repokit-template, then what the `/create-project`, `/github-issues-setup` and `/obsidian-init` skills and `dz private-init` added by hand around it. Every piece is optional and configurable, so the house style lives in one person's global config and nobody else's defaults change; Python is built first because the old route for Python is the measured golden, and each piece lands for every language the tool builds, by the mechanism that owns its kind of question. **This version is the milestone: template parity.** A `repokit create NAME --language python` with the licence and the extras named reproduces git-repokit-template's project tree, and the same licence and extras land for C/C++ and JavaScript/TypeScript. That was git-repokit's original goal, and the versions after this one are the perfecting.

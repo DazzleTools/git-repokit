@@ -13,3 +13,7 @@ changelog = "CHANGELOG.md"
 repo-url = "https://github.com/__RK_ORG__/__RK_PROJECT__"
 tag-prefix = "v"
 private-patterns = ["private/", "local/", ".env"]
+# What a push runs: npm test, once the dependencies are installed (a fresh
+# create has none, and a TypeScript test needs tsc). Without this the hook's
+# default test step looks for Python tests and runs nothing here.
+test-command = "if [ -d node_modules ] || ! grep -q devDependencies package.json; then npm test; else echo dependencies not installed: run npm install and the push will run npm test; fi"

@@ -29,16 +29,19 @@ import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[4]
-TAG = "31f2d18"   # v0.8.3's commit; the tag itself is djdarcy's and was not yet made on 2026-10-23
+TAG = "v0.9.0"
+# Since v0.9.0 both trees take the licence and extras flags (v0.8.3 took none,
+# so against it they went on the new side only).
 NEW_ONLY = ["--license", "none", "--no-extras"]
+BOTH = NEW_ONLY
 REQUESTS = [
     # name, old flags, new flags
-    ("py-default", ["--language", "python"], ["--language", "python", *NEW_ONLY]),
-    ("py-script", ["--language", "python", "--with", "script"], ["--language", "python", "--with", "script", *NEW_ONLY]),
-    ("cpp-default", ["--language", "c-cpp"], ["--language", "c-cpp", *NEW_ONLY]),
-    ("js-default", ["--language", "js-ts"], ["--language", "js-ts", *NEW_ONLY]),
-    ("js-plugin", ["--language", "js-ts", "--with", "claude-plugin"], ["--language", "js-ts", "--with", "claude-plugin", *NEW_ONLY]),
-    ("generic", ["--language", "generic"], ["--language", "generic", *NEW_ONLY]),
+    ("py-default", ["--language", "python", *BOTH], ["--language", "python", *NEW_ONLY]),
+    ("py-script", ["--language", "python", "--with", "script", *BOTH], ["--language", "python", "--with", "script", *NEW_ONLY]),
+    ("cpp-default", ["--language", "c-cpp", *BOTH], ["--language", "c-cpp", *NEW_ONLY]),
+    ("js-default", ["--language", "js-ts", *BOTH], ["--language", "js-ts", *NEW_ONLY]),
+    ("js-plugin", ["--language", "js-ts", "--with", "claude-plugin", *BOTH], ["--language", "js-ts", "--with", "claude-plugin", *NEW_ONLY]),
+    ("generic", ["--language", "generic", *BOTH], ["--language", "generic", *NEW_ONLY]),
 ]
 IGNORE_JSON_KEYS = ('"version"', '"created_at"', '"layers"', '"license"', '"extras"')
 

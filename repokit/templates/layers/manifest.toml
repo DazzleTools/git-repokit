@@ -63,6 +63,16 @@ default = "c-cpp/cmake-app"
 layers = ["languages/js-ts"]
 default = "js-ts/node-package"
 
+# A pseudo-language: the folder prefix for layer files several languages share
+# (the Claude plugin's manifests and marketplace README). Never a project
+# language: --language refuses it, `repokit list` and the bare-name lookup do
+# not show it, and a layer that implies one of its layers adds no language.
+# Proved 2026-10-22 (tests/one-offs/thinking/p4-poc-neutral-purpose/).
+[languages.any]
+pseudo = true
+layers = []
+description = "layer files shared by several languages"
+
 # ---------------------------------------------------------------- layers
 # Keys are <language>/<name>; the folder is archetypes/<language>/<name>.
 # `implies` names other layers (bare names in the same language, or qualified);
@@ -82,6 +92,16 @@ description = "setup.py and requirements.txt: git-repokit's Python output before
 facet = "build"
 overrides = [".github/workflows/ci-python.yml"]
 description = "a local tool: one module reading VERSION, no packaging, no publish workflow (the simple-projects floor)"
+
+[layers."python/claude-plugin"]
+facet = "purpose"
+implies = ["any/claude-plugin"]
+overrides = [".github/workflows/ci-python.yml", ".repokit-common.toml", "VERSION"]
+description = "a Claude Code plugin in plugin/ whose hooks are Python, launched through a small node script (Claude Code runs hooks with node); pytest for its tests; VERSION kept in step with the manifest"
+
+[layers."any/claude-plugin"]
+facet = "purpose"
+description = "the language-neutral half of a Claude Code plugin: the marketplace manifest at the root, the plugin manifest and the marketplace README in plugin/"
 
 [layers."python/comfyui"]
 facet = "purpose"
@@ -145,7 +165,7 @@ description = "an npm package: exports map, src/index.ts, node:test tests, publi
 
 [layers."js-ts/claude-plugin"]
 facet = "purpose"
-implies = ["node"]
+implies = ["node", "any/claude-plugin"]
 overrides = [".repokit-common.toml"]
 description = "a Claude Code plugin in plugin/ (manifest, hooks, tests, its marketplace README) with the marketplace manifest at the root; VERSION kept in step with both manifests"
 
@@ -207,6 +227,11 @@ languages = ["python"]
 layers = ["archetypes/python/script"]
 description = "a local tool: one module reading VERSION, no packaging, no publish workflow (the simple-projects floor)"
 
+[archetypes."python/claude-plugin"]
+languages = ["python"]
+layers = ["archetypes/python/claude-plugin", "archetypes/any/claude-plugin"]
+description = "a Claude Code plugin with Python hooks in plugin/ (manifest, a SessionStart hook behind a node launcher, pytest tests, the marketplace README) with the marketplace manifest at the root; the shape claude-session-logger keeps, nested"
+
 [archetypes."python/comfyui"]
 stub = true
 description = "a ComfyUI custom-node package (the template holds its pyproject shape; the node skeleton is not written yet)"
@@ -231,7 +256,8 @@ description = "a plain script run with node: one .js file reading VERSION, no bu
 
 [archetypes."js-ts/claude-plugin"]
 languages = ["js-ts"]
-layers = ["archetypes/js-ts/node", "archetypes/js-ts/claude-plugin"]
+primary = true          # a bare --with claude-plugin, with no language named, is this one
+layers = ["archetypes/js-ts/node", "archetypes/js-ts/claude-plugin", "archetypes/any/claude-plugin"]
 description = "a Claude Code plugin in plugin/ (manifest, a SessionStart hook, node:test tests, the marketplace README) with the marketplace manifest at the root; add ts for TypeScript"
 
 [archetypes."js-ts/web-vite-react"]

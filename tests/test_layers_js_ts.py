@@ -124,7 +124,9 @@ class TestJsTsLayer(RepoKitTestCase):
         self.assertEqual(settings.count("[[tool.repokit-common.extra-targets]]"), 2, settings)
         self.assertIn('path = "plugin/.claude-plugin/plugin.json"', settings)
         meta = json.loads((d / ".repokit.json").read_text(encoding="utf-8"))
-        self.assertEqual((meta["archetype"], meta["layers"]), ("js-ts/claude-plugin", ["js-ts", "js-ts/node", "js-ts/claude-plugin"]))
+        # 0.9.1: the manifests and the marketplace README come from the shared any/claude-plugin layer
+        self.assertEqual((meta["archetype"], meta["layers"]),
+                         ("js-ts/claude-plugin", ["js-ts", "js-ts/node", "js-ts/claude-plugin", "any/claude-plugin"]))
         self.assertEqual(_tokens_left(d), [])
         tool = d / "scripts" / "repokit-common" / "sync-versions.py"
         if tool.exists():

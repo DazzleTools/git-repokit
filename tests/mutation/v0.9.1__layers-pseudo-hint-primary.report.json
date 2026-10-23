@@ -1,0 +1,148 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "-m",
+      "not integration",
+      "tests/test_layers.py",
+      "tests/test_layers_claude_plugin.py",
+      "tests/test_layers_compositions.py"
+    ],
+    "timestamp": "2026-10-23T09:24:31-04:00"
+  },
+  "results": [
+    {
+      "id": "P1",
+      "file": "repokit/layers.py",
+      "note": "a stub is taken for a pseudo-language and the pseudo is not",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "..............................FF.........                                [100%]\n================================== FAILURES ===================================\n_____________________ test_any_is_not_a_project_language ______________________\n\n    def test_any_is_not_a_project_language():\n        m = _m()\n>       with pytest.raises(layers.LayerError, match=\"not a project language\"):\nE       Failed: DID NOT RAISE <class 'repokit.layers.LayerError'>\n\ntests\\test_layers_claude_plugin.py:42: Failed\n_ test_two_languages_and_a_bare_purpose_stay_ambiguous_between_the_real_ones __\n\n    def test_two_languages_and_a_bare_purpose_stay_ambiguous_between_the_real_ones():\n        with pytest.raises(layers.LayerError) as e:\n            layers.resolve(_m(), [\"python\", \"js-ts\"], [\"claude-plugin\"])\n        assert \"ambiguous\" in str(e.value)\n        assert \"js-ts/claude-plugin\" in str(e.value) and \"python/claude-plugin\" in str(e.value)\n>       assert \"any/\" not in str(e.value)\nE       assert 'any/' not in \"'claude-plu...laude-plugin\"\nE         \nE         'any/' is contained here:\nE           'claude-plugin' is ambiguous: any/claude-plugin or js-ts/claude-plugin or python/claude-plugin\nE         ?                               ++++\n\ntests\\test_layers_claude_plugin.py:55: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers_claude_plugin.py::test_any_is_not_a_project_language\nFAILED tests/test_layers_claude_plugin.py::test_two_languages_and_a_bare_purpose_stay_ambiguous_between_the_real_ones\n2 failed, 39 passed, 4 deselected in 1.48s\n",
+      "killed_by": [
+        "tests/test_layers_claude_plugin.py::test_any_is_not_a_project_language",
+        "tests/test_layers_claude_plugin.py::test_two_languages_and_a_bare_purpose_stay_ambiguous_between_the_real_ones"
+      ]
+    },
+    {
+      "id": "P2",
+      "file": "repokit/layers.py",
+      "note": "a direct any/ token adds `any` to the project's languages",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "..............................F..........                                [100%]\n================================== FAILURES ===================================\n_____________________ test_any_is_not_a_project_language ______________________\n\n    def test_any_is_not_a_project_language():\n        m = _m()\n        with pytest.raises(layers.LayerError, match=\"not a project language\"):\n            layers.resolve(m, [\"any\"], None)\n        assert \"any\" not in layers.known_languages(m)\n        assert not any(line.startswith(\"any:\") for line in layers.catalogue_lines(m))\n        # implied through a language, the shared layer adds no language either\n>       assert layers.resolve(m, [\"python\"], [\"any/claude-plugin\"]).languages == [\"python\"]\nE       AssertionError: assert ['python', 'any'] == ['python']\nE         \nE         Left contains one more item: 'any'\nE         Use -v to get more diff\n\ntests\\test_layers_claude_plugin.py:47: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers_claude_plugin.py::test_any_is_not_a_project_language\n1 failed, 40 passed, 4 deselected in 5.85s\n",
+      "killed_by": [
+        "tests/test_layers_claude_plugin.py::test_any_is_not_a_project_language"
+      ]
+    },
+    {
+      "id": "P3",
+      "file": "repokit/layers.py",
+      "note": "--language any is accepted",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "..............................F..........                                [100%]\n================================== FAILURES ===================================\n_____________________ test_any_is_not_a_project_language ______________________\n\n    def test_any_is_not_a_project_language():\n        m = _m()\n>       with pytest.raises(layers.LayerError, match=\"not a project language\"):\nE       Failed: DID NOT RAISE <class 'repokit.layers.LayerError'>\n\ntests\\test_layers_claude_plugin.py:42: Failed\n=========================== short test summary info ===========================\nFAILED tests/test_layers_claude_plugin.py::test_any_is_not_a_project_language\n1 failed, 40 passed, 4 deselected in 1.40s\n",
+      "killed_by": [
+        "tests/test_layers_claude_plugin.py::test_any_is_not_a_project_language"
+      ]
+    },
+    {
+      "id": "P4",
+      "file": "repokit/layers.py",
+      "note": "the bare-name lookup offers the pseudo layer",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "...............................F.........                                [100%]\n================================== FAILURES ===================================\n_ test_two_languages_and_a_bare_purpose_stay_ambiguous_between_the_real_ones __\n\n    def test_two_languages_and_a_bare_purpose_stay_ambiguous_between_the_real_ones():\n        with pytest.raises(layers.LayerError) as e:\n            layers.resolve(_m(), [\"python\", \"js-ts\"], [\"claude-plugin\"])\n        assert \"ambiguous\" in str(e.value)\n        assert \"js-ts/claude-plugin\" in str(e.value) and \"python/claude-plugin\" in str(e.value)\n>       assert \"any/\" not in str(e.value)\nE       assert 'any/' not in \"'claude-plu...laude-plugin\"\nE         \nE         'any/' is contained here:\nE           'claude-plugin' is ambiguous: any/claude-plugin or js-ts/claude-plugin or python/claude-plugin\nE         ?                               ++++\n\ntests\\test_layers_claude_plugin.py:55: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers_claude_plugin.py::test_two_languages_and_a_bare_purpose_stay_ambiguous_between_the_real_ones\n1 failed, 40 passed, 4 deselected in 1.55s\n",
+      "killed_by": [
+        "tests/test_layers_claude_plugin.py::test_two_languages_and_a_bare_purpose_stay_ambiguous_between_the_real_ones"
+      ]
+    },
+    {
+      "id": "P5",
+      "file": "repokit/layers.py",
+      "note": "repokit list shows an any: section",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "..............................F..........                                [100%]\n================================== FAILURES ===================================\n_____________________ test_any_is_not_a_project_language ______________________\n\n    def test_any_is_not_a_project_language():\n        m = _m()\n        with pytest.raises(layers.LayerError, match=\"not a project language\"):\n            layers.resolve(m, [\"any\"], None)\n        assert \"any\" not in layers.known_languages(m)\n>       assert not any(line.startswith(\"any:\") for line in layers.catalogue_lines(m))\nE       assert not True\nE        +  where True = any(<generator object test_any_is_not_a_project_language.<locals>.<genexpr> at 0x0000025E1B36CEE0>)\n\ntests\\test_layers_claude_plugin.py:45: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers_claude_plugin.py::test_any_is_not_a_project_language\n1 failed, 40 passed, 4 deselected in 1.67s\n",
+      "killed_by": [
+        "tests/test_layers_claude_plugin.py::test_any_is_not_a_project_language"
+      ]
+    },
+    {
+      "id": "P6",
+      "file": "repokit/layers.py",
+      "note": "the primary wins even when named languages leave the name ambiguous",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "...............................F.........                                [100%]\n================================== FAILURES ===================================\n_ test_two_languages_and_a_bare_purpose_stay_ambiguous_between_the_real_ones __\n\n    def test_two_languages_and_a_bare_purpose_stay_ambiguous_between_the_real_ones():\n>       with pytest.raises(layers.LayerError) as e:\nE       Failed: DID NOT RAISE <class 'repokit.layers.LayerError'>\n\ntests\\test_layers_claude_plugin.py:51: Failed\n=========================== short test summary info ===========================\nFAILED tests/test_layers_claude_plugin.py::test_two_languages_and_a_bare_purpose_stay_ambiguous_between_the_real_ones\n1 failed, 40 passed, 4 deselected in 1.62s\n",
+      "killed_by": [
+        "tests/test_layers_claude_plugin.py::test_two_languages_and_a_bare_purpose_stay_ambiguous_between_the_real_ones"
+      ]
+    },
+    {
+      "id": "P7",
+      "file": "repokit/layers.py",
+      "note": "any language's layer silences every language's hint",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "s a composition with the note.\"\"\"\n        r = layers.resolve(p3, \"python\")\n        assert r.archetype == \"python/pypi\" and r.layers == [\"languages/python\", \"archetypes/python/pypi\"]\n        assert layers.resolve(p3, [], \"python/setuppy\").archetype == \"python/setuppy\"\n        r3 = layers.resolve(p3, [], \"js-ts/web-vite-react,svelte\")\n        assert r3.archetype is None and r3.notes == [layers.NOT_A_PRESET] and r3.names[-1] == \"js-ts/svelte\"\n        # no tokens, no composition note: the default is not a composition, and generic has nothing to note (M8);\n        # a second language left without a preset gets the hint instead (0.9.1, Q261022-02)\n        assert r.notes == []\n>       assert layers.resolve(p3, \"python,c-cpp\").notes == [\n            \"c-cpp got no preset of its own; add --with c-cpp/<name> (see `repokit list c-cpp`)\"]\nE       AssertionError: assert [] == ['c-cpp got n...list c-cpp`)']\nE         \nE         Right contains one more item: 'c-cpp got no preset of its own; add --with c-cpp/<name> (see `repokit list c-cpp`)'\nE         Use -v to get more diff\n\ntests\\test_layers.py:406: AssertionError\n______________ test_a_second_language_left_bare_is_said_out_loud ______________\n\n    def test_a_second_language_left_bare_is_said_out_loud():\n        r = layers.resolve(_m(), [\"python\", \"js-ts\"], None)\n        assert r.archetype == \"python/pypi\"\n>       assert any(n.startswith(\"js-ts got no preset of its own\") and \"repokit list js-ts\" in n for n in r.notes)\nE       assert False\nE        +  where False = any(<generator object test_a_second_language_left_bare_is_said_out_loud.<locals>.<genexpr> at 0x000002BBEB6E9BE0>)\n\ntests\\test_layers_claude_plugin.py:69: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_the_default_preset_still_applies_when_nothing_is_asked\nFAILED tests/test_layers_claude_plugin.py::test_a_second_language_left_bare_is_said_out_loud\n2 failed, 39 passed, 4 deselected in 1.51s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_the_default_preset_still_applies_when_nothing_is_asked",
+        "tests/test_layers_claude_plugin.py::test_a_second_language_left_bare_is_said_out_loud"
+      ]
+    },
+    {
+      "id": "P8",
+      "file": "repokit/layers.py",
+      "note": "the primary language is never hinted, even when only the other language's layers were named",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    }
+  ],
+  "summary": {
+    "killed": 7,
+    "survived": 1
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_layers.py::test_the_default_preset_still_applies_when_nothing_is_asked": [
+        "P7"
+      ],
+      "tests/test_layers_claude_plugin.py::test_a_second_language_left_bare_is_said_out_loud": [
+        "P7"
+      ],
+      "tests/test_layers_claude_plugin.py::test_any_is_not_a_project_language": [
+        "P1",
+        "P2",
+        "P3",
+        "P5"
+      ],
+      "tests/test_layers_claude_plugin.py::test_two_languages_and_a_bare_purpose_stay_ambiguous_between_the_real_ones": [
+        "P1",
+        "P4",
+        "P6"
+      ]
+    },
+    "identical": [
+      [
+        "tests/test_layers.py::test_the_default_preset_still_applies_when_nothing_is_asked",
+        "tests/test_layers_claude_plugin.py::test_a_second_language_left_bare_is_said_out_loud"
+      ]
+    ],
+    "contained": [],
+    "killed_without_names": []
+  }
+}

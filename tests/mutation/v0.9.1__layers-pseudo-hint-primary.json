@@ -1,0 +1,13 @@
+{
+  "test_command": ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "-m", "not integration", "tests/test_layers.py", "tests/test_layers_claude_plugin.py", "tests/test_layers_compositions.py"],
+  "mutations": [
+    {"id": "P1", "file": "repokit/layers.py", "original": "    return bool(manifest[\"languages\"].get(name, {}).get(\"pseudo\"))", "mutated": "    return bool(manifest[\"languages\"].get(name, {}).get(\"stub\"))", "note": "a stub is taken for a pseudo-language and the pseudo is not"},
+    {"id": "P2", "file": "repokit/layers.py", "original": "            if is_pseudo(manifest, name):\n                return          # a shared layer's folder prefix, never a project language", "mutated": "            if False:\n                return", "note": "a direct any/ token adds `any` to the project's languages"},
+    {"id": "P3", "file": "repokit/layers.py", "original": "        if is_pseudo(manifest, name):\n            raise LayerError", "mutated": "        if False:\n            raise LayerError", "note": "--language any is accepted"},
+    {"id": "P4", "file": "repokit/layers.py", "original": "        if name == tok and not is_pseudo(manifest, lang):", "mutated": "        if name == tok:", "note": "the bare-name lookup offers the pseudo layer"},
+    {"id": "P5", "file": "repokit/layers.py", "original": "        if entry.get(\"pseudo\"):\n            continue\n        head =", "mutated": "        if False:\n            continue\n        head =", "note": "repokit list shows an any: section"},
+    {"id": "P6", "file": "repokit/layers.py", "original": "            elif not langs and len(primary) == 1:", "mutated": "            elif len(primary) == 1:", "note": "the primary wins even when named languages leave the name ambiguous"},
+    {"id": "P7", "file": "repokit/layers.py", "original": "        if default and not any(f.startswith(f\"{ARCHETYPES_DIR}/{name}/\") for f in res.layers):", "mutated": "        if default and not any(f.startswith(f\"{ARCHETYPES_DIR}/\") for f in res.layers):", "note": "any language's layer silences every language's hint"},
+    {"id": "P8", "file": "repokit/layers.py", "original": "    for name in langs:\n        default = table[name].get(\"default\")", "mutated": "    for name in langs[1:]:\n        default = table[name].get(\"default\")", "note": "the primary language is never hinted, even when only the other language's layers were named"}
+  ]
+}

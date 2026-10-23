@@ -94,7 +94,9 @@ def _check_one(root, m, lang, tokens, dest):
 
 def _languages():
     _, m = _manifest()
-    return [lang for lang, e in m["languages"].items() if not e.get("stub")]
+    # A pseudo-language (`any`) is never a project language; its layers are
+    # reached through the languages that imply them.
+    return [lang for lang, e in m["languages"].items() if not e.get("stub") and not e.get("pseudo")]
 
 
 @pytest.mark.parametrize("lang", _languages())

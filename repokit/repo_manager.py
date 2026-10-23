@@ -958,8 +958,10 @@ class RepoManager:
         )
         self.logger.info(f"Code-type layers {', '.join(resolution.layers)}: {len(written)} files")
         for note in resolution.notes:
-            # Once, to the person: a composition no preset vouches for.
-            print(f"Note: {note} ({', '.join(resolution.tokens)})")
+            # Once, to the person: a composition no preset vouches for (with
+            # the tokens it was assembled from), or a language left bare.
+            tokens = f" ({', '.join(resolution.tokens)})" if resolution.tokens and note == layers.NOT_A_PRESET else ""
+            print(f"Note: {note}{tokens}")
 
         # A layer may ship .repokit-common.toml (or a pyproject table) of its
         # own; in the private-branch model the settings written at vendoring

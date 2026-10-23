@@ -1,0 +1,44 @@
+name: CI (Claude Code plugin, Python hooks)
+
+# The plugin has no package to install: every hook script must compile, the
+# node launcher must parse, and the plugin's tests run with pytest.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ['3.10', '3.12']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Compile the hooks and check the launcher
+      shell: bash
+      run: |
+        python -m py_compile plugin/hooks/scripts/*.py
+        node --check plugin/hooks/scripts/run-hook.mjs
+
+    - name: Run the plugin's tests
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip pytest
+        python -m pytest plugin/tests -v
