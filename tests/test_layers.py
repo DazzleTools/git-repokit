@@ -511,5 +511,8 @@ def test_the_wheel_ships_every_layer_file_including_dotfiles(tmp_path):
     on_disk = {p.relative_to(REPO / "repokit/templates/layers").as_posix()
                for p in (REPO / "repokit/templates/layers").rglob("*") if p.is_file()}
     assert on_disk <= in_wheel, sorted(on_disk - in_wheel)
+    # The reverse too: a stale build/lib/ makes setuptools ship files the tree
+    # no longer has (found 2026-10-22: the pre-0.7.3 ci.yml rode along for two weeks).
+    assert in_wheel <= on_disk, sorted(in_wheel - on_disk)
     assert "languages/python/.gitignore.rkappend" in in_wheel
-    assert "archetypes/c-cpp/cmake-app/.github/workflows/ci.yml" in in_wheel
+    assert "archetypes/c-cpp/cmake-app/.github/workflows/ci-c-cpp.yml" in in_wheel

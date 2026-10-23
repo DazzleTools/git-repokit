@@ -1,0 +1,216 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_licenses.py",
+      "tests/test_license_cli.py",
+      "tests/test_extras_cli.py"
+    ],
+    "timestamp": "2026-10-23T01:08:16-04:00"
+  },
+  "results": [
+    {
+      "id": "L1",
+      "file": "repokit/licenses/__init__.py",
+      "note": "the year token is left in the text",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "-language\", \"python\", \"--license\", \"MIT\",\n                                     \"--user-name\", \"Ada Example\", \"--no-push\"])\n        text = (Path(self.test_dir, \"demo\") / \"LICENSE\").read_text(encoding=\"utf-8\")\n        self.assertTrue(text.startswith(\"MIT License\"))\n>       self.assertIn(f\"Copyright (c) {datetime.date.today().year} Ada Example\", text)\nE       AssertionError: 'Copyright (c) 2026 Ada Example' not found in 'MIT License\\n\\nCopyright (c) __RK_YEAR__ Ada Example\\n\\nPermission is hereby granted, free of charge, to any person obtaining a copy\\nof this software and associated documentation files (the \"Software\"), to deal\\nin the Software without restriction, including without limitation the rights\\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\\ncopies of the Software, and to permit persons to whom the Software is\\nfurnished to do so, subject to the following conditions:\\n\\nThe above copyright notice and this permission notice shall be included in all\\ncopies or substantial portions of the Software.\\n\\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\\nSOFTWARE.\\n'\n\ntests\\test_license_cli.py:28: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_licenses.py::test_every_id_renders_with_holder_and_year_and_no_token_left\nFAILED tests/test_license_cli.py::TestLicenseFlag::test_a_catalogue_id_renders_holder_and_year\n2 failed, 16 passed in 64.88s (0:01:04)\n",
+      "killed_by": [
+        "tests/test_license_cli.py::TestLicenseFlag::test_a_catalogue_id_renders_holder_and_year",
+        "tests/test_licenses.py::test_every_id_renders_with_holder_and_year_and_no_token_left"
+      ]
+    },
+    {
+      "id": "L2",
+      "file": "repokit/licenses/__init__.py",
+      "note": "license_private ignored for a private repository",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "ave received a copy of the GNU General Public License\\n    along with this program.  If not, see <https://www.gnu.org/licenses/>.\\n\\nAlso add information on how to contact you by electronic and paper mail.\\n\\n  If the program does terminal interaction, make it output a short\\nnotice like this when it starts in an interactive mode:\\n\\n    <program>  Copyright (C) <year>  <name of author>\\n    This program comes with ABSOLUTELY NO WARRANTY; for details type `show w\\'.\\n    This is free software, and you are welcome to redistribute it\\n    under certain conditions; type `show c\\' for details.\\n\\nThe hypothetical commands `show w\\' and `show c\\' should show the appropriate\\nparts of the General Public License.  Of course, your program\\'s commands\\nmight be different; for a GUI interface, you would use an \"about box\".\\n\\n  You should also get your employer (if you work as a programmer) or school,\\nif any, to sign a \"copyright disclaimer\" for the program, if necessary.\\nFor more information on this, and how to apply and follow the GNU GPL, see\\n<https://www.gnu.org/licenses/>.\\n\\n  The GNU General Public License does not permit incorporating your program\\ninto proprietary programs.  If your program is a subroutine library, you\\nmay consider it more useful to permit linking proprietary applications with\\nthe library.  If this is what you want to do, use the GNU Lesser General\\nPublic License instead of this License.  But first, please read\\n<https://www.gnu.org/licenses/why-not-lgpl.html>.\\n'\n\ntests\\test_license_cli.py:77: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_licenses.py::test_resolve_order_flag_then_config_then_refusal\nFAILED tests/test_license_cli.py::TestLicenseFlag::test_the_global_config_names_the_default_and_the_private_default\n2 failed, 16 passed in 64.20s (0:01:04)\n",
+      "killed_by": [
+        "tests/test_license_cli.py::TestLicenseFlag::test_the_global_config_names_the_default_and_the_private_default",
+        "tests/test_licenses.py::test_resolve_order_flag_then_config_then_refusal"
+      ]
+    },
+    {
+      "id": "L3",
+      "file": "repokit/licenses/__init__.py",
+      "note": "the config beats the flag",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "t_licenses.py:55: AssertionError\n_ TestLicenseFlag.test_the_global_config_names_the_default_and_the_private_default _\n\nself = <tests.test_license_cli.TestLicenseFlag testMethod=test_the_global_config_names_the_default_and_the_private_default>\n\n    def test_the_global_config_names_the_default_and_the_private_default(self):\n        home = Path(self.test_dir, \"home\")\n        (home / \".repokit\").mkdir(parents=True)\n        (home / \".repokit\" / \"config.json\").write_text(\n            json.dumps({\"license\": \"gpl-3.0\", \"license_private\": \"all-rights-reserved\"}), encoding=\"utf-8\")\n        with mock.patch.dict(os.environ, {\"HOME\": str(home), \"USERPROFILE\": str(home)}):\n            os.environ.pop(\"REPOKIT_LICENSE\", None)\n            self.assert_repokit_success([\"create\", \"pub\", \"--language\", \"generic\", \"--no-push\"])\n            self.assert_repokit_success([\"create\", \"priv\", \"--language\", \"generic\", \"--private-repo\", \"--no-push\"])\n            self.assert_repokit_success([\"create\", \"flag\", \"--language\", \"generic\", \"--private-repo\",\n                                         \"--license\", \"mit\", \"--no-push\"])\n        self.assertIn(\"GNU GENERAL PUBLIC LICENSE\", (Path(self.test_dir, \"pub\") / \"LICENSE\").read_text(encoding=\"utf-8\"))\n        self.assertIn(\"All rights reserved\", (Path(self.test_dir, \"priv\") / \"LICENSE\").read_text(encoding=\"utf-8\"))\n>       self.assertTrue((Path(self.test_dir, \"flag\") / \"LICENSE\").read_text(encoding=\"utf-8\").startswith(\"MIT License\"))\nE       AssertionError: False is not true\n\ntests\\test_license_cli.py:78: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_licenses.py::test_resolve_order_flag_then_config_then_refusal\nFAILED tests/test_license_cli.py::TestLicenseFlag::test_the_global_config_names_the_default_and_the_private_default\n2 failed, 16 passed in 64.35s (0:01:04)\n",
+      "killed_by": [
+        "tests/test_license_cli.py::TestLicenseFlag::test_the_global_config_names_the_default_and_the_private_default",
+        "tests/test_licenses.py::test_resolve_order_flag_then_config_then_refusal"
+      ]
+    },
+    {
+      "id": "L4",
+      "file": "repokit/licenses/__init__.py",
+      "note": "the file form is not recognised",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "-by-4.0, cc-by-sa-4.0, cc0-1.0, epl-2.0, gpl-2.0, gpl-3.0, isc, lgpl-2.1, lgpl-3.0, mit, mpl-2.0, unlicense, agpl-3.0-or-later, gpl-3.0-or-later, lgpl-3.0-or-later; or --license file=<path>\n\nrepokit\\licenses\\__init__.py:113: LicenseError\n_______________ TestLicenseFlag.test_file_form_copies_the_bytes _______________\n\nself = <tests.test_license_cli.TestLicenseFlag testMethod=test_file_form_copies_the_bytes>\n\n    def test_file_form_copies_the_bytes(self):\n        src = Path(self.test_dir, \"custom.txt\")\n        src.write_bytes(b\"Custom terms.\\r\\nNo warranty.\\r\\n\")\n>       self.assert_repokit_success([\"create\", \"demo\", \"--language\", \"generic\", \"--license\", f\"file={src}\", \"--no-push\"])\n\ntests\\test_license_cli.py:41: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\ntests\\test_utils.py:223: in assert_repokit_success\n    self.fail(f\"RepoKit command failed: {' '.join(args)}\\n\"\nE   AssertionError: RepoKit command failed: create demo --language generic --license file=C:\\Users\\Extreme\\AppData\\Local\\Temp\\repokit_test_44ehc9qs\\custom.txt --no-push\nE   Exit code: 1\nE   Stdout: \nE   Stderr: 2026-10-23 00:59:20 - ERROR - repokit - Error setting up repository: unknown licence 'file=C:\\\\Users\\\\Extreme\\\\AppData\\\\Local\\\\Temp\\\\repokit_test_44ehc9qs\\\\custom.txt'; the catalogue has: 0bsd, agpl-3.0, all-rights-reserved, apache-2.0, bsd-2-clause, bsd-3-clause, bsl-1.0, cc-by-4.0, cc-by-sa-4.0, cc0-1.0, epl-2.0, gpl-2.0, gpl-3.0, isc, lgpl-2.1, lgpl-3.0, mit, mpl-2.0, unlicense, agpl-3.0-or-later, gpl-3.0-or-later, lgpl-3.0-or-later; or --license file=<path>\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_licenses.py::test_resolve_order_flag_then_config_then_refusal\nFAILED tests/test_license_cli.py::TestLicenseFlag::test_file_form_copies_the_bytes\n2 failed, 16 passed in 66.76s (0:01:06)\n",
+      "killed_by": [
+        "tests/test_license_cli.py::TestLicenseFlag::test_file_form_copies_the_bytes",
+        "tests/test_licenses.py::test_resolve_order_flag_then_config_then_refusal"
+      ]
+    },
+    {
+      "id": "L5",
+      "file": "repokit/licenses/__init__.py",
+      "note": "an or-later variant loses its notice",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "ls.\\n\\n    You should have received a copy of the GNU General Public License\\n    along with this program.  If not, see <https://www.gnu.org/licenses/>.\\n\\nAlso add information on how to contact you by electronic and paper mail.\\n\\n  If the program does terminal interaction, make it output a short\\nnotice like this when it starts in an interactive mode:\\n\\n    <program>  Copyright (C) <year>  <name of author>\\n    This program comes with ABSOLUTELY NO WARRANTY; for details type `show w\\'.\\n    This is free software, and you are welcome to redistribute it\\n    under certain conditions; type `show c\\' for details.\\n\\nThe hypothetical commands `show w\\' and `show c\\' should show the appropriate\\nparts of the General Public License.  Of course, your program\\'s commands\\nmight be different; for a GUI interface, you would use an \"about box\".\\n\\n  You should also get your employer (if you work as a programmer) or school,\\nif any, to sign a \"copyright disclaimer\" for the program, if necessary.\\nFor more information on this, and how to apply and follow the GNU GPL, see\\n<https://www.gnu.org/licenses/>.\\n\\n  The GNU General Public License does not permit incorporating your program\\ninto proprietary programs.  If your program is a subroutine library, you\\nmay consider it more useful to permit linking proprietary applications with\\nthe library.  If this is what you want to do, use the GNU Lesser General\\nPublic License instead of this License.  But first, please read\\n<https://www.gnu.org/licenses/why-not-lgpl.html>.\\n'\n\ntests\\test_license_cli.py:35: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_licenses.py::test_the_or_later_variants_share_the_base_body\nFAILED tests/test_license_cli.py::TestLicenseFlag::test_an_or_later_variant_carries_its_notice\n2 failed, 16 passed in 68.58s (0:01:08)\n",
+      "killed_by": [
+        "tests/test_license_cli.py::TestLicenseFlag::test_an_or_later_variant_carries_its_notice",
+        "tests/test_licenses.py::test_the_or_later_variants_share_the_base_body"
+      ]
+    },
+    {
+      "id": "L6",
+      "file": "repokit/licenses/__init__.py",
+      "note": "an unknown id is accepted",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "_path):\n        assert licenses.resolve(\"MIT\", \"gpl-3.0\", False, None) == (\"catalogue\", \"mit\")\n        assert licenses.resolve(None, \"gpl-3.0\", False, None) == (\"catalogue\", \"gpl-3.0\")\n        assert licenses.resolve(None, \"gpl-3.0\", True, \"all-rights-reserved\") == (\"catalogue\", \"all-rights-reserved\")\n        assert licenses.resolve(None, \"gpl-3.0\", True, None) == (\"catalogue\", \"gpl-3.0\")\n        assert licenses.resolve(\"none\", \"gpl-3.0\", False, None) == (\"none\", None)\n        f = tmp_path / \"LICENSE.custom\"\n        f.write_text(\"custom\\n\")\n        assert licenses.resolve(f\"file={f}\", None, False, None) == (\"file\", str(f))\n        with pytest.raises(licenses.LicenseError, match=\"no licence named\"):\n            licenses.resolve(None, None, False, None)\n>       with pytest.raises(licenses.LicenseError, match=\"unknown licence\"):\nE       Failed: DID NOT RAISE <class 'repokit.licenses.LicenseError'>\n\ntests\\test_licenses.py:65: Failed\n_____ TestLicenseFlag.test_an_unknown_id_is_refused_naming_the_catalogue ______\n\nself = <tests.test_license_cli.TestLicenseFlag testMethod=test_an_unknown_id_is_refused_naming_the_catalogue>\n\n    def test_an_unknown_id_is_refused_naming_the_catalogue(self):\n        code, out, err = self.run_repokit([\"create\", \"demo\", \"--language\", \"generic\", \"--license\", \"wtfpl\", \"--no-push\"])\n        self.assertNotEqual(code, 0)\n        self.assertIn(\"unknown licence 'wtfpl'\", out + err)\n>       self.assertFalse(Path(self.test_dir, \"demo\").exists())\nE       AssertionError: True is not false\n\ntests\\test_license_cli.py:63: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_licenses.py::test_resolve_order_flag_then_config_then_refusal\nFAILED tests/test_license_cli.py::TestLicenseFlag::test_an_unknown_id_is_refused_naming_the_catalogue\n2 failed, 16 passed in 70.59s (0:01:10)\n",
+      "killed_by": [
+        "tests/test_license_cli.py::TestLicenseFlag::test_an_unknown_id_is_refused_naming_the_catalogue",
+        "tests/test_licenses.py::test_resolve_order_flag_then_config_then_refusal"
+      ]
+    },
+    {
+      "id": "R1",
+      "file": "repokit/repo_manager.py",
+      "note": "all writes nothing",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".............F....                                                       [100%]\n================================== FAILURES ===================================\n_________ TestExtrasFlag.test_all_writes_every_extra_and_records_them _________\n\nself = <tests.test_extras_cli.TestExtrasFlag testMethod=test_all_writes_every_extra_and_records_them>\n\n    def test_all_writes_every_extra_and_records_them(self):\n        self.assert_repokit_success([\"create\", \"demo\", \"--language\", \"generic\", \"--extras\", \"all\", \"--no-push\"])\n        repo = Path(self.test_dir, \"demo\")\n        for rel in ALL_FILES:\n>           self.assertTrue((repo / rel).exists(), rel)\nE           AssertionError: False is not true : .github/FUNDING.yml\n\ntests\\test_extras_cli.py:40: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_extras_cli.py::TestExtrasFlag::test_all_writes_every_extra_and_records_them\n1 failed, 17 passed in 66.78s (0:01:06)\n",
+      "killed_by": [
+        "tests/test_extras_cli.py::TestExtrasFlag::test_all_writes_every_extra_and_records_them"
+      ]
+    },
+    {
+      "id": "R2",
+      "file": "repokit/repo_manager.py",
+      "note": "the table's order is not applied",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "...............F..                                                       [100%]\n================================== FAILURES ===================================\n__________ TestExtrasFlag.test_named_extras_only_in_the_tables_order __________\n\nself = <tests.test_extras_cli.TestExtrasFlag testMethod=test_named_extras_only_in_the_tables_order>\n\n    def test_named_extras_only_in_the_tables_order(self):\n        self.assert_repokit_success([\"create\", \"demo\", \"--language\", \"generic\", \"--extras\", \"stale,funding\", \"--no-push\"])\n        repo = Path(self.test_dir, \"demo\")\n        self.assertTrue((repo / \".github/stale.yml\").exists())\n        self.assertTrue((repo / \".github/FUNDING.yml\").exists())\n        self.assertFalse((repo / \".github/dependabot.yml\").exists())\n>       self.assertEqual(self._meta(\"demo\")[\"extras\"], [\"funding\", \"stale\"])\nE       AssertionError: Lists differ: ['stale', 'funding'] != ['funding', 'stale']\nE       \nE       First differing element 0:\nE       'stale'\nE       'funding'\nE       \nE       - ['stale', 'funding']\nE       + ['funding', 'stale']\n\ntests\\test_extras_cli.py:53: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_extras_cli.py::TestExtrasFlag::test_named_extras_only_in_the_tables_order\n1 failed, 17 passed in 65.50s (0:01:05)\n",
+      "killed_by": [
+        "tests/test_extras_cli.py::TestExtrasFlag::test_named_extras_only_in_the_tables_order"
+      ]
+    },
+    {
+      "id": "R3",
+      "file": "repokit/repo_manager.py",
+      "note": "an unknown extra is silently dropped",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "..............F...                                                       [100%]\n================================== FAILURES ===================================\n_______________ TestExtrasFlag.test_an_unknown_extra_is_refused _______________\n\nself = <tests.test_extras_cli.TestExtrasFlag testMethod=test_an_unknown_extra_is_refused>\n\n    def test_an_unknown_extra_is_refused(self):\n        code, out, err = self.run_repokit([\"create\", \"demo\", \"--language\", \"generic\", \"--extras\", \"sponsors\", \"--no-push\"])\n>       self.assertNotEqual(code, 0)\nE       AssertionError: 0 == 0\n\ntests\\test_extras_cli.py:71: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_extras_cli.py::TestExtrasFlag::test_an_unknown_extra_is_refused\n1 failed, 17 passed in 68.66s (0:01:08)\n",
+      "killed_by": [
+        "tests/test_extras_cli.py::TestExtrasFlag::test_an_unknown_extra_is_refused"
+      ]
+    },
+    {
+      "id": "R4",
+      "file": "repokit/repo_manager.py",
+      "note": ".repokit.json loses the file's name",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".........F........                                                       [100%]\n================================== FAILURES ===================================\n_______________ TestLicenseFlag.test_file_form_copies_the_bytes _______________\n\nself = <tests.test_license_cli.TestLicenseFlag testMethod=test_file_form_copies_the_bytes>\n\n    def test_file_form_copies_the_bytes(self):\n        src = Path(self.test_dir, \"custom.txt\")\n        src.write_bytes(b\"Custom terms.\\r\\nNo warranty.\\r\\n\")\n        self.assert_repokit_success([\"create\", \"demo\", \"--language\", \"generic\", \"--license\", f\"file={src}\", \"--no-push\"])\n        self.assertEqual((Path(self.test_dir, \"demo\") / \"LICENSE\").read_bytes(), src.read_bytes())\n>       self.assertEqual(self._meta(\"demo\")[\"license\"], \"file:custom.txt\")\nE       AssertionError: 'file' != 'file:custom.txt'\nE       - file\nE       + file:custom.txt\n\ntests\\test_license_cli.py:43: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_license_cli.py::TestLicenseFlag::test_file_form_copies_the_bytes\n1 failed, 17 passed in 65.68s (0:01:05)\n",
+      "killed_by": [
+        "tests/test_license_cli.py::TestLicenseFlag::test_file_form_copies_the_bytes"
+      ]
+    },
+    {
+      "id": "R5",
+      "file": "repokit/repo_manager.py",
+      "note": "the flag no longer beats license_private",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "                          [100%]\n================================== FAILURES ===================================\n_ TestLicenseFlag.test_the_global_config_names_the_default_and_the_private_default _\n\nself = <tests.test_license_cli.TestLicenseFlag testMethod=test_the_global_config_names_the_default_and_the_private_default>\n\n    def test_the_global_config_names_the_default_and_the_private_default(self):\n        home = Path(self.test_dir, \"home\")\n        (home / \".repokit\").mkdir(parents=True)\n        (home / \".repokit\" / \"config.json\").write_text(\n            json.dumps({\"license\": \"gpl-3.0\", \"license_private\": \"all-rights-reserved\"}), encoding=\"utf-8\")\n        with mock.patch.dict(os.environ, {\"HOME\": str(home), \"USERPROFILE\": str(home)}):\n            os.environ.pop(\"REPOKIT_LICENSE\", None)\n            self.assert_repokit_success([\"create\", \"pub\", \"--language\", \"generic\", \"--no-push\"])\n            self.assert_repokit_success([\"create\", \"priv\", \"--language\", \"generic\", \"--private-repo\", \"--no-push\"])\n            self.assert_repokit_success([\"create\", \"flag\", \"--language\", \"generic\", \"--private-repo\",\n                                         \"--license\", \"mit\", \"--no-push\"])\n        self.assertIn(\"GNU GENERAL PUBLIC LICENSE\", (Path(self.test_dir, \"pub\") / \"LICENSE\").read_text(encoding=\"utf-8\"))\n        self.assertIn(\"All rights reserved\", (Path(self.test_dir, \"priv\") / \"LICENSE\").read_text(encoding=\"utf-8\"))\n>       self.assertTrue((Path(self.test_dir, \"flag\") / \"LICENSE\").read_text(encoding=\"utf-8\").startswith(\"MIT License\"))\nE       AssertionError: False is not true\n\ntests\\test_license_cli.py:78: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_license_cli.py::TestLicenseFlag::test_the_global_config_names_the_default_and_the_private_default\n1 failed, 17 passed in 64.60s (0:01:04)\n",
+      "killed_by": [
+        "tests/test_license_cli.py::TestLicenseFlag::test_the_global_config_names_the_default_and_the_private_default"
+      ]
+    }
+  ],
+  "summary": {
+    "killed": 11
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_extras_cli.py::TestExtrasFlag::test_all_writes_every_extra_and_records_them": [
+        "R1"
+      ],
+      "tests/test_extras_cli.py::TestExtrasFlag::test_an_unknown_extra_is_refused": [
+        "R3"
+      ],
+      "tests/test_extras_cli.py::TestExtrasFlag::test_named_extras_only_in_the_tables_order": [
+        "R2"
+      ],
+      "tests/test_license_cli.py::TestLicenseFlag::test_a_catalogue_id_renders_holder_and_year": [
+        "L1"
+      ],
+      "tests/test_license_cli.py::TestLicenseFlag::test_an_or_later_variant_carries_its_notice": [
+        "L5"
+      ],
+      "tests/test_license_cli.py::TestLicenseFlag::test_an_unknown_id_is_refused_naming_the_catalogue": [
+        "L6"
+      ],
+      "tests/test_license_cli.py::TestLicenseFlag::test_file_form_copies_the_bytes": [
+        "L4",
+        "R4"
+      ],
+      "tests/test_license_cli.py::TestLicenseFlag::test_the_global_config_names_the_default_and_the_private_default": [
+        "L2",
+        "L3",
+        "R5"
+      ],
+      "tests/test_licenses.py::test_every_id_renders_with_holder_and_year_and_no_token_left": [
+        "L1"
+      ],
+      "tests/test_licenses.py::test_resolve_order_flag_then_config_then_refusal": [
+        "L2",
+        "L3",
+        "L4",
+        "L6"
+      ],
+      "tests/test_licenses.py::test_the_or_later_variants_share_the_base_body": [
+        "L5"
+      ]
+    },
+    "identical": [
+      [
+        "tests/test_license_cli.py::TestLicenseFlag::test_a_catalogue_id_renders_holder_and_year",
+        "tests/test_licenses.py::test_every_id_renders_with_holder_and_year_and_no_token_left"
+      ],
+      [
+        "tests/test_license_cli.py::TestLicenseFlag::test_an_or_later_variant_carries_its_notice",
+        "tests/test_licenses.py::test_the_or_later_variants_share_the_base_body"
+      ]
+    ],
+    "contained": [
+      [
+        "tests/test_license_cli.py::TestLicenseFlag::test_an_unknown_id_is_refused_naming_the_catalogue",
+        "tests/test_licenses.py::test_resolve_order_flag_then_config_then_refusal"
+      ]
+    ],
+    "killed_without_names": []
+  }
+}

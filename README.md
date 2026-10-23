@@ -180,6 +180,16 @@ main
 
 `--no-common` skips git-repokit-common; `--private-mode branch` keeps private work on a private branch only.
 
+`--license <id>` writes `LICENSE` from the catalogue (the SPDX set GitHub and GitLab offer, plus `gpl-3.0-or-later` and the like, and `all-rights-reserved`), `--license file=<path>` copies a text as it is, `--license none` writes none; a licence is required, so with no flag the global config must name `license` (and `license_private` for `--private-repo`), and otherwise the create refuses and lists the catalogue. `--extras funding,dependabot,stale,pr-template,release-template,roadmap,platform-support,vscode-settings,placeholders` (or `all`) adds the optional files the old template carried; they are off unless named here or in the global config's `extras` list, and `--no-extras` turns them off. The house style, then, is a `~/.repokit/config.json` such as:
+
+```json
+{"license": "gpl-3.0", "license_private": "all-rights-reserved",
+ "extras": ["funding", "dependabot", "stale", "pr-template", "release-template", "roadmap", "placeholders"],
+ "github": {"username": "you", "organization": "your-org"}}
+```
+
+With it, `repokit create NAME --language python` reproduces the project tree git-repokit-template gave, which `tests/test_template_parity.py` keeps true; the same licence and extras land for `--language c-cpp` and `--language js-ts`.
+
 ### The private-branch model
 
 These keep your working history on a local-only `private` branch (repository in `<name>/local/`, `main` in `<name>/github/`) and move finished work to the public branches -- squashed, fast-forwarded, or selectively. A valid workflow, and RepoKit's original one, but more involved: hooks refuse private files on public branches to keep mistakes from leaking. See [docs/Branch-Strategies.md](docs/Branch-Strategies.md).
@@ -299,7 +309,7 @@ python tests/run_tests.py --github      # GitHub API tests (live; requires token
 python tests/run_tests.py --check
 ```
 
-Every run is isolated from your git config, home directory and tokens; see `tests/README.md` (and `python -m pytest` works too).
+Every run is isolated from your git config, home directory and tokens; see `tests/README.md` (and `python -m pytest` works too). A `git push` runs the unit class through the vendored pre-push hook (`test-command` in `pyproject.toml`, about four seconds); the complete suite runs in CI, and before a tag run it yourself: `python -m pytest -q` (about seven minutes).
 
 ## 📚 Documentation
 

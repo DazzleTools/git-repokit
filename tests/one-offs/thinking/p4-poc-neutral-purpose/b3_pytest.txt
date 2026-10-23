@@ -1,0 +1,41 @@
+..........................s..F...................                        [100%]
+================================== FAILURES ===================================
+__________ test_the_wheel_ships_every_layer_file_including_dotfiles ___________
+
+tmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-13540/test_the_wheel_ships_every_lay0')
+
+    @pytest.mark.integration
+    def test_the_wheel_ships_every_layer_file_including_dotfiles(tmp_path):
+        """CONSEQUENCE: 8 (safety) -- measured 2026-10-09: "templates/**/*" alone
+        dropped every dotfile and dot-directory; the built wheel must hold the
+        whole layer tree, .gitignore.rkappend and .github/ included."""
+        pytest.importorskip("build")
+        # The suite points HOME at a temp dir, which sends pip's cache to a `pip/`
+        # folder under the working directory (seen once, 2026-10-09); keep it here.
+        env = dict(os.environ, PIP_CACHE_DIR=str(tmp_path / "pip-cache"))
+        r = subprocess.run([sys.executable, "-m", "build", "--wheel", "--outdir", str(tmp_path), str(REPO)],
+                           capture_output=True, text=True, env=env)
+        assert r.returncode == 0, r.stdout[-2000:] + r.stderr[-2000:]
+        whl = next(tmp_path.glob("*.whl"))
+        in_wheel = {n.split("repokit/templates/layers/", 1)[1] for n in zipfile.ZipFile(whl).namelist()
+                    if "repokit/templates/layers/" in n}
+        on_disk = {p.relative_to(REPO / "repokit/templates/layers").as_posix()
+                   for p in (REPO / "repokit/templates/layers").rglob("*") if p.is_file()}
+>       assert on_disk <= in_wheel, sorted(on_disk - in_wheel)
+E       AssertionError: ['archetypes/c-cpp/cmake-app/.github/workflows/ci-c-cpp.yml', 'archetypes/c-cpp/cmake-app/.repokit-common.toml.rkappen...s/claude-plugin/plugin/.claude-plugin/plugin.json', 'archetypes/js-ts/node-package/.github/workflows/release.yml', ...]
+E       assert {'archetypes/...ain.cpp', ...} <= {'archetypes/...kg.json', ...}
+E         
+E         Extra items in the left set:
+E         'languages/c-cpp/.repokit-common.toml'
+E         'languages/js-ts/.repokit-common.toml'
+E         'archetypes/python/script/.repokit-common.toml'
+E         'archetypes/js-ts/node-package/.github/workflows/release.yml'
+E         'archetypes/python/pypi/.github/workflows/release.yml'...
+E         
+E         ...Full output truncated (13 lines hidden), use '-vv' to show
+
+tests\test_layers.py:513: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_layers.py::test_the_wheel_ships_every_layer_file_including_dotfiles
+1 failed, 47 passed, 1 skipped in 85.66s (0:01:25)
+exit 1

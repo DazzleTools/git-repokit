@@ -1,0 +1,13 @@
+# These are supported funding model platforms
+
+github: $github_user
+ko_fi: $github_user
+buy_me_a_coffee: $github_user
+
+open_collective:
+tidelift:
+community_bridge:
+liberapay:
+issuehunt:
+otechie:
+lfx_crowdfunding:

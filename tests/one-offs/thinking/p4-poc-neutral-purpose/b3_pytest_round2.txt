@@ -1,0 +1,4 @@
+E       AssertionError: assert 'archetypes/c-cpp/cmake-app/.github/workflows/ci.yml' in {'archetypes/c-cpp/cmake-app/.github/workflows/ci-c-cpp.yml', 'archetypes/c-cpp/cmake-app/.repokit-common.toml.rkappen...ePresets.json', 'archetypes/c-cpp/cmake-app/cmake/GenerateStamp.cmake', 'archetypes/c-cpp/cmake-app/src/main.cpp', ...}
+
+tests\test_layers.py:515: AssertionError
+1 failed, 48 passed in 106.14s (0:01:46)

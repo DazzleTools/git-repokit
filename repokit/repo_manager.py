@@ -12,7 +12,7 @@ import json
 import shutil
 import logging
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 
 from .template_engine import TemplateEngine
 from .defaults import (
@@ -127,6 +127,12 @@ class RepoManager:
         """
         try:
             self.logger.info(f"Setting up repository: {self.project_name}")
+
+            # The licence is a parameter and is required: settle it before a
+            # single file is written, so a refusal leaves nothing behind.
+            self._license = self._resolve_license()
+            # The extras too: an unknown name is refused before anything is written
+            self.config["extras"] = self.extras_names(self.config.get("extras"))
 
             # Create project directory structure
             self._create_directory_structure()
@@ -691,6 +697,12 @@ class RepoManager:
             "description": self.config.get("description", ""),
             "badges": self._generate_badges(language),
             "github_user": github_user,
+            # the owner of the repository on GitHub: the organisation when one is
+            # named (--org, or github.organization in the config), else the user
+            "github_org": self.config.get("organization")
+                          or (github_config.get("organization") if isinstance(github_config, dict) else None)
+                          or github_user,
+            "package_name": self.project_name.replace("-", "_"),
             "date": datetime.date.today().isoformat(),
         }
         
@@ -735,6 +747,12 @@ class RepoManager:
             category="common"
         )
 
+        # LICENSE: the parameter settled in setup_repository (0.9.0)
+        self._write_license(context)
+
+        # The optional structure files the global config or --extras named (0.9.0)
+        self._write_extras(context, render_template)
+
         # Line-ending normalisation and the vendored-tooling attribute
         render_template(
             "gitattributes",
@@ -753,6 +771,82 @@ class RepoManager:
         # The structure's .gitignore and launch.json, then the code type on top
         self._write_gitignore_and_launch(context)
         self._apply_layers(context)
+
+    def _resolve_license(self):
+        """What LICENSE this project gets: ("catalogue", id), ("file", path) or
+        ("none", None). --license wins; else the config's `license_private` for
+        a private repository, else `license`; nothing named is a refusal
+        (repokit.licenses.resolve), unless an adopted project already has one."""
+        from . import licenses
+        existing = os.path.join(self.repo_root, "LICENSE")
+        if self.config.get("preserve_existing") and os.path.exists(existing) and not self.config.get("license_cli"):
+            return ("existing", None)
+        spec = self.config.get("license") if self.config.get("license_cli") else None
+        return licenses.resolve(spec, self.config.get("license"),
+                                bool(self.config.get("private_repo")), self.config.get("license_private"))
+
+    # The extras: name -> the files it writes, as (template, destination). The
+    # templates are git-repokit-template's own files, copied in with the OS on
+    # 2026-10-23 (`$GITHUB_USER` became `$github_user` and so on); ROADMAP.md and
+    # platform-support.md are authored here. A gitkeep has no template.
+    EXTRAS: Dict[str, List[Tuple[Optional[str], str]]] = {
+        "funding": [("FUNDING.yml", ".github/FUNDING.yml")],
+        "dependabot": [("dependabot.yml", ".github/dependabot.yml")],
+        "stale": [("stale.yml", ".github/stale.yml")],
+        "pr-template": [("pull_request_template.md", ".github/pull_request_template.md")],
+        "release-template": [("release-template.md", ".github/release-template.md")],
+        "roadmap": [("ROADMAP.md", "ROADMAP.md")],
+        "platform-support": [("platform-support.md", "docs/platform-support.md")],
+        "vscode-settings": [("settings.json", ".vscode/settings.json")],
+        "placeholders": [(None, "docs/.gitkeep"), ("one-offs-README.md", "tests/one-offs/README.md"), (None, "tests/output/.gitkeep")],
+    }
+
+    @classmethod
+    def extras_names(cls, requested) -> List[str]:
+        """The extras to write, in the table's order; `all` means every one;
+        an unknown name is refused naming the table."""
+        wanted = list(requested or [])
+        if "all" in wanted:
+            return list(cls.EXTRAS)
+        unknown = [w for w in wanted if w not in cls.EXTRAS]
+        if unknown:
+            raise ValueError(f"unknown extras {', '.join(unknown)}; known: {', '.join(cls.EXTRAS)}, all")
+        return [name for name in cls.EXTRAS if name in wanted]
+
+    def _write_extras(self, context: Dict[str, Any], render_template) -> None:
+        names = self.extras_names(self.config.get("extras"))
+        self.config["extras"] = names          # what .repokit.json records
+        for name in names:
+            for template, rel in self.EXTRAS[name]:
+                full = os.path.join(self.repo_root, rel)
+                os.makedirs(os.path.dirname(full), exist_ok=True)
+                if template is None:
+                    if not os.path.exists(full):
+                        open(full, "wb").close()
+                else:
+                    render_template(template, full, category="extras")
+        if names:
+            self.logger.info("Extras written: " + ", ".join(names))
+
+    def _write_license(self, context: Dict[str, Any]) -> None:
+        """Write LICENSE from the settled choice; bytes as-is for a file, the
+        catalogue text with holder and year otherwise."""
+        from . import licenses
+        kind, value = getattr(self, "_license", None) or self._resolve_license()
+        path = os.path.join(self.repo_root, "LICENSE")
+        if kind in ("none", "existing"):
+            self.logger.info("LICENSE: " + ("none asked" if kind == "none" else "keeping the project's own"))
+            return
+        if kind == "file":
+            with open(value, "rb") as src, open(path, "wb") as dst:
+                dst.write(src.read())
+            self.logger.info(f"LICENSE copied from {value}")
+            return
+        holder = (self.config.get("user") or {}).get("name") or context.get("author") or "the copyright holder"
+        text = licenses.render(value, holder)
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(text)
+        self.logger.info(f"LICENSE written: {value} ({holder})")
 
     def _write_gitignore_and_launch(self, context: Dict[str, Any]) -> None:
         """The common .gitignore (keeping an adopted project's own patterns) and
@@ -2508,6 +2602,8 @@ exit 0
             "private_branch": self.config.get("private_branch", "private"),
             "private_mode": self.private_mode,
             "repokit_common": self.common_vendored,
+            "license": self._license_record(),
+            "extras": list(self.config.get("extras") or []),
         }
         
         # Add additional config if available
@@ -2526,6 +2622,15 @@ exit 0
             
         except Exception as e:
             self.logger.warning(f"Failed to generate RepoKit configuration: {str(e)}")
+
+    def _license_record(self) -> str:
+        """What .repokit.json says about the licence: the id, `file:<name>`, `none` or `existing`."""
+        kind, value = getattr(self, "_license", None) or ("none", None)
+        if kind == "catalogue":
+            return value
+        if kind == "file":
+            return "file:" + os.path.basename(value)
+        return kind
 
     def _generate_badges(self, language: str) -> str:
         """Generate GitHub workflow badges based on language and configuration."""

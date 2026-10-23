@@ -73,6 +73,16 @@ class ConfigManager:
             "sensitive_patterns": DEFAULT_SENSITIVE_PATTERNS.copy(),
             "private_branch": BRANCH_STRATEGIES[DEFAULT_BRANCH_STRATEGY]["private_branch"],
             "github": True,
+            # The licence is REQUIRED: --license, else `license` here (or in the
+            # global file), else `license_private` for a private repository;
+            # with none, create refuses and names the catalogue (0.9.0).
+            "license": None,
+            "license_private": None,
+            # The structure's optional files, by name (0.9.0): funding,
+            # dependabot, stale, pr-template, release-template, roadmap,
+            # platform-support, vscode-settings, placeholders. Off unless
+            # the global config or --extras names them.
+            "extras": [],
             "use_github_noreply": True,  # Add GitHub no-reply setting
             "user": {"name": "", "email": ""},
             # Branch configuration enhancements

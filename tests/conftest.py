@@ -85,6 +85,11 @@ def pytest_configure(config):
     _set("PYTHONPATH", os.pathsep.join(p for p in (str(REPO_ROOT), pythonpath) if p))
     _set("PYTHONIOENCODING", "utf-8")
 
+    # The licence is a required parameter of `repokit create` (0.9.0): the
+    # suite names one once, here, through the config's environment layer;
+    # the tests of the refusal itself remove this variable.
+    _set("REPOKIT_LICENSE", "mit")
+
     if not live_github_enabled():
         for name in TOKEN_VARS:
             _set(name, "")

@@ -5,6 +5,22 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-10-23
+
+The 0.9.x line makes `repokit create` produce everything the old route produced: first the file tree of git-repokit-template, then what the `/create-project`, `/github-issues-setup` and `/obsidian-init` skills and `dz private-init` added by hand around it. Every piece is optional and configurable, so the house style lives in one person's global config and nobody else's defaults change; Python is built first because the old route for Python is the measured golden, and each piece lands for every language the tool builds, by the mechanism that owns its kind of question. **This version is the milestone: template parity.** A `repokit create NAME --language python` with the licence and the extras named reproduces git-repokit-template's project tree, and the same licence and extras land for C/C++ and JavaScript/TypeScript. That was git-repokit's original goal, and the versions after this one are the perfecting.
+
+### Added
+- **The licence is a parameter.** `--license <id>` writes `LICENSE` from a catalogue of the SPDX set GitHub and GitLab offer (MIT, Apache-2.0, GPL-2.0/3.0, LGPL, AGPL, MPL-2.0, BSD-2/3-Clause, 0BSD, ISC, BSL-1.0, EPL-2.0, Unlicense, CC0-1.0, CC-BY-4.0, CC-BY-SA-4.0) with the holder and the year filled from the git identity and the clock; `gpl-3.0-or-later`, `lgpl-3.0-or-later` and `agpl-3.0-or-later` add the notice line that the text itself cannot carry; `all-rights-reserved` is a plain notice for a private project; `--license file=<path>` copies any text as it is; `--license none` writes no file. The texts come from `github/choosealicense.com` at one pinned commit and `repokit/licenses/LICENSES.md` records the commit and each file's fingerprint, so a changed text shows. A licence is **required**: with none on the command line and none in the global config (`license`, and `license_private` for `--private-repo`), the create refuses before writing anything and names the catalogue. `.repokit.json` records the choice.
+- **The extras**: the optional files git-repokit-template carried and the old route wrote by hand, each behind a name in the global config's `extras` list or `--extras`: `funding` (`.github/FUNDING.yml`), `dependabot`, `stale`, `pr-template`, `release-template`, `roadmap` (`ROADMAP.md`, pointing at the repository's first issue), `platform-support` (`docs/platform-support.md`), `vscode-settings` (`.vscode/settings.json`), `placeholders` (`docs/.gitkeep`, `tests/one-offs/README.md`, `tests/output/.gitkeep`); `all` means every one, `--no-extras` none. The five `.github` files are the template repository's own, copied in unchanged apart from their placeholders. Off unless named, and recorded in `.repokit.json`.
+- `tests/test_template_parity.py`: the regression that keeps the milestone. It replays git-repokit-template's setup workflow on the local checkout, creates a project with the tool, and asserts the only differences are a declared list: `ci.yml` only in the template (the tool's CI is the language layer's), and a few files only in the tool (`.gitattributes`, `CHANGELOG.md`, `CLAUDE.md`, the layer's CI, `launch.json`, the preset's `cli.py`, the two hand-written extras). The copied extras must stay identical to the template's; wording differences in shared files are declared and anything new fails.
+
+### Changed
+- git-repokit's own push runs the unit class of its suite (about four seconds) through the vendored pre-push hook; the complete suite (about seven minutes) runs in CI and before a tag. The `test-command` setting in `pyproject.toml` says so.
+- The structure's template context gains `package_name` and `github_org` (the organisation from `--org` or the config's `github.organization`, else the user), which the extras' URLs use.
+
+### Fixed
+- The wheel test asserted a workflow file name from before 0.7.3 and passed only because a stale `build/lib/` directory still held that file, which setuptools carried into every wheel built from the checkout, along with stale bytecode under the layer tree. The test now checks both inclusions (every file on disk is in the wheel, and nothing in the wheel is missing from disk) and names the current file; release wheels are built from a clean tree.
+
 ## [0.8.3] - 2026-10-22
 
 ### Added

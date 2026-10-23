@@ -1,0 +1,16 @@
+{
+  "test_command": ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests/test_licenses.py", "tests/test_license_cli.py", "tests/test_extras_cli.py"],
+  "mutations": [
+    {"id": "L1", "file": "repokit/licenses/__init__.py", "original": "    return body(lid).replace(HOLDER, holder).replace(YEAR, str(year))", "mutated": "    return body(lid).replace(HOLDER, holder)", "note": "the year token is left in the text"},
+    {"id": "L2", "file": "repokit/licenses/__init__.py", "original": "    chosen = spec or (config_private if private and config_private else config_license)", "mutated": "    chosen = spec or config_license", "note": "license_private ignored for a private repository"},
+    {"id": "L3", "file": "repokit/licenses/__init__.py", "original": "    chosen = spec or (config_private if private and config_private else config_license)", "mutated": "    chosen = (config_private if private and config_private else config_license) or spec", "note": "the config beats the flag"},
+    {"id": "L4", "file": "repokit/licenses/__init__.py", "original": "    if chosen.lower().startswith(\"file=\"):", "mutated": "    if False and chosen.lower().startswith(\"file=\"):", "note": "the file form is not recognised"},
+    {"id": "L5", "file": "repokit/licenses/__init__.py", "original": "        return notice + body(base)", "mutated": "        return body(base)", "note": "an or-later variant loses its notice"},
+    {"id": "L6", "file": "repokit/licenses/__init__.py", "original": "    if lid not in known():", "mutated": "    if False:", "note": "an unknown id is accepted"},
+    {"id": "R1", "file": "repokit/repo_manager.py", "original": "        if \"all\" in wanted:\n            return list(cls.EXTRAS)", "mutated": "        if \"all\" in wanted:\n            return []", "note": "all writes nothing"},
+    {"id": "R2", "file": "repokit/repo_manager.py", "original": "        return [name for name in cls.EXTRAS if name in wanted]", "mutated": "        return wanted", "note": "the table's order is not applied"},
+    {"id": "R3", "file": "repokit/repo_manager.py", "original": "        if unknown:\n            raise ValueError", "mutated": "        if False:\n            raise ValueError", "note": "an unknown extra is silently dropped"},
+    {"id": "R4", "file": "repokit/repo_manager.py", "original": "        if kind == \"file\":\n            return \"file:\" + os.path.basename(value)", "mutated": "        if kind == \"file\":\n            return \"file\"", "note": ".repokit.json loses the file's name"},
+    {"id": "R5", "file": "repokit/repo_manager.py", "original": "        spec = self.config.get(\"license\") if self.config.get(\"license_cli\") else None", "mutated": "        spec = None", "note": "the flag no longer beats license_private"}
+  ]
+}

@@ -189,6 +189,31 @@ Recipe: Microservice
     )
 
     create_parser.add_argument(
+        "--license",
+        metavar="ID|file=PATH|none",
+        help="The LICENSE to write: a catalogue id (mit, gpl-3.0, gpl-3.0-or-later, apache-2.0, "
+             "all-rights-reserved, ...; `repokit list` shows them), file=PATH to copy a text as is, or "
+             "none. Required unless the global config names `license` (or `license_private` for "
+             "--private-repo); holder and year come from the git identity and the clock."
+    )
+
+    create_parser.add_argument(
+        "--extras",
+        dest="extras",
+        action="append",
+        metavar="NAME[,NAME...]",
+        help="The structure's optional files, by name: funding, dependabot, stale, pr-template, "
+             "release-template, roadmap, platform-support, vscode-settings, placeholders, or all. "
+             "Off unless named here or in the global config's `extras` list."
+    )
+    create_parser.add_argument(
+        "--no-extras",
+        dest="no_extras",
+        action="store_true",
+        help="Write none of the extras, whatever the global config says"
+    )
+
+    create_parser.add_argument(
         "--description", "-d",
         help="Short description of the repository"
     )
@@ -676,7 +701,13 @@ For more detailed documentation, see: docs/Adoption-Guide.md
         help="Presets and layers to lay down without overwriting the project's own files, "
              "as for create (see `repokit list`)"
     )
-    
+
+    adopt_parser.add_argument(
+        "--license",
+        metavar="ID|file=PATH|none",
+        help="The LICENSE to write when the project has none, as for create; an existing LICENSE is kept"
+    )
+
     adopt_parser.add_argument(
         "--description", "-d",
         help="Short description of the repository"
@@ -1613,6 +1644,18 @@ def args_to_config(args: argparse.Namespace) -> Dict[str, Any]:
     if getattr(args, "with_layers", None):
         from .layers import parse_languages
         cli_config["with"] = parse_languages(args.with_layers)
+    if getattr(args, "license", None):
+        cli_config["license"] = args.license
+        cli_config["license_cli"] = True      # the flag beats license_private; a config value does not
+    if getattr(args, "organization", None):
+        cli_config["organization"] = args.organization    # the owner in the extras' URLs
+    if getattr(args, "no_extras", False):
+        cli_config["extras"] = []
+    elif getattr(args, "extras", None):
+        from .layers import parse_languages as _split
+        cli_config["extras"] = _split(args.extras)
+    if getattr(args, "private_repo", False):
+        cli_config["private_repo"] = True
 
     # Handle directory profile configuration
     if hasattr(args, "dir_profile") and args.dir_profile:
@@ -2476,7 +2519,9 @@ def main() -> int:
             if getattr(args, "with_layers", None):
                 from .layers import parse_languages as _parse
                 adopt_config["with"] = _parse(args.with_layers)
-                
+            if getattr(args, "license", None):
+                adopt_config["license"] = args.license
+
             # Override description if specified
             if hasattr(args, 'description') and args.description:
                 adopt_config["description"] = args.description
