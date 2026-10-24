@@ -93,7 +93,9 @@ class TestCreateGithub(GhStubCase):
         call = self.create_call()
         self.assertEqual(call[2], "someorg/demo")
         self.assertIn("--public", call)
-        self.assertNotIn(["api", "user", "-q", ".login"], self.calls())
+        # 0.9.3: the login is read even with --org, for the account check; the
+        # repository is still created under the organisation, never the login
+        self.assertIn(["api", "user", "-q", ".login"], self.calls())
 
     def test_private_branch_model_never_pushes_the_private_branch(self):
         self.assert_repokit_success(["create", "demo", "--branch-strategy", "simple", "--github"])

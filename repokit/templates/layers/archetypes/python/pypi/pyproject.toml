@@ -52,6 +52,10 @@ include = ["__RK_SNAKE__", "__RK_SNAKE__.*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# The package imports from the project root without an install: the vendored
+# pre-push hook runs `python -P -m pytest`, which keeps the root off sys.path,
+# and the first push (`repokit create --github`) comes before any pip install.
+pythonpath = ["."]
 python_files = "test_*.py"
 python_functions = "test_*"
 python_classes = "Test*"

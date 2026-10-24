@@ -1,0 +1,12 @@
+{
+  "test_command": ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests/test_github_setup.py", "-m", "not live"],
+  "mutations": [
+    {"id": "G1", "file": "repokit/github_setup.py", "original": "            if name in have:\n                continue", "mutated": "            if False:\n                continue", "note": "existing labels are created again"},
+    {"id": "G2", "file": "repokit/github_setup.py", "original": "        if all(t in titles for t, _, _ in ISSUES):", "mutated": "        if any(t in titles for t, _, _ in ISSUES):", "note": "one of the two present counts as both"},
+    {"id": "G3", "file": "repokit/github_setup.py", "original": "            if number in pinned:", "mutated": "            if False:", "note": "already-pinned issues are pinned again"},
+    {"id": "G4", "file": "repokit/github_setup.py", "original": "    if archetype not in PUBLISHES_TO_PYPI:", "mutated": "    if archetype in PUBLISHES_TO_PYPI:", "note": "the pypi environment for the wrong presets"},
+    {"id": "G5", "file": "repokit/github_setup.py", "original": "    if \"all\" in wanted:\n        return list(STEPS)", "mutated": "    if \"all\" in wanted:\n        return []", "note": "all runs nothing"},
+    {"id": "G6", "file": "repokit/github_setup.py", "original": "            args += [\"--add-topic\", t]", "mutated": "            args += [\"--add-topic\", topics[0]]", "note": "every topic is the first one"},
+    {"id": "G7", "file": "repokit/github_setup.py", "original": "            return [\"topics: none named (--topics a,b)\"]", "mutated": "            pass", "note": "an empty topic list still edits the repository"}
+  ]
+}

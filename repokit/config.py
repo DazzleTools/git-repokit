@@ -83,6 +83,11 @@ class ConfigManager:
             # platform-support, vscode-settings, placeholders. Off unless
             # the global config or --extras names them.
             "extras": [],
+            # What --github sets up on the new repository (0.9.3): labels,
+            # issues, pin, discussions, topics, pypi-environment, traffic, all.
+            # Off unless the global config or --github-setup names them.
+            "github_setup": [],
+            "topics": [],
             "use_github_noreply": True,  # Add GitHub no-reply setting
             "user": {"name": "", "email": ""},
             # Branch configuration enhancements

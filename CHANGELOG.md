@@ -5,6 +5,15 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2026-10-24
+
+### Added
+- **The GitHub half of a new project.** With `--github`, `--github-setup STEP[,STEP...]` (or the global config's `github_setup` list) sets up what the old route did by hand once the repository existed: `labels` (pinned, evergreen, roadmap, scratchpad, architecture, epic, ideas, CurrentTask, NextTask), `issues` (a Roadmap and a Quick Notes issue, created as #1 and #2), `pin` (both pinned at the top of the Issues tab), `discussions`, `topics` (from `--topics a,b`), `pypi-environment` (the `pypi` environment PyPI's trusted publishing needs, for the pypi preset only), and `traffic` (prints the ghtraf commands, since ghtraf creates gists and needs a secret only the person can set); `all` means every one. The labels and the two issues are made **before the first push**, so a pull request Dependabot opens on that push cannot take issue number 1. Every step skips what is already there, so running it twice creates nothing new, and the issues step refuses on a repository that already has issues rather than giving them later numbers. The bodies of the two issues are also kept in the vault's `private/claude/issues/`. Afterwards the create prints what has no API: watching the first CI run, Sponsorships, Pages.
+- `--github` refuses when `gh` is logged into a different account from the config's `github.username`, before anything is created.
+
+### Fixed
+- **The first push of a Python package created with `--github` was blocked.** The vendored pre-push hook runs the tests with `python -P -m pytest`, which keeps the project root off the import path, and the pypi preset's tests import the package, which nobody has installed at that point. The preset's `pyproject.toml` now tells pytest to put the project root on the path (`pythonpath = ["."]`). The earlier GitHub tests had used `--no-common`, so they never ran the hook.
+
 ## [0.9.2] - 2026-10-23
 
 ### Added

@@ -1,0 +1,138 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_github_setup.py",
+      "-m",
+      "not live"
+    ],
+    "timestamp": "2026-10-24T01:51:55-04:00"
+  },
+  "results": [
+    {
+      "id": "G1",
+      "file": "repokit/github_setup.py",
+      "note": "existing labels are created again",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "F........                                                                [100%]\n================================== FAILURES ===================================\n________ test_labels_creates_the_missing_ones_and_a_second_run_nothing ________\n\n    def test_labels_creates_the_missing_ones_and_a_second_run_nothing():\n        fake = FakeGh(labels={\"pinned\", \"bug\"})\n>       assert _setup(fake).labels()[0].startswith(\"labels: created evergreen\")\nE       AssertionError: assert False\nE        +  where False = <built-in method startswith of str object at 0x000001F2301AF7D0>('labels: created evergreen')\nE        +    where <built-in method startswith of str object at 0x000001F2301AF7D0> = 'labels: created pinned, evergreen, roadmap, scratchpad, architecture, epic, ideas, CurrentTask, NextTask'.startswith\n\ntests\\test_github_setup.py:64: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_github_setup.py::test_labels_creates_the_missing_ones_and_a_second_run_nothing\n1 failed, 8 passed, 1 deselected in 16.31s\n",
+      "killed_by": [
+        "tests/test_github_setup.py::test_labels_creates_the_missing_ones_and_a_second_run_nothing"
+      ]
+    },
+    {
+      "id": "G2",
+      "file": "repokit/github_setup.py",
+      "note": "one of the two present counts as both",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "G3",
+      "file": "repokit/github_setup.py",
+      "note": "already-pinned issues are pinned again",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "...F.....                                                                [100%]\n================================== FAILURES ===================================\n_______________ test_pin_by_title_and_a_second_run_pins_nothing _______________\n\n    def test_pin_by_title_and_a_second_run_pins_nothing():\n        fake = FakeGh(issues=[{\"number\": 1, \"title\": \"Roadmap\"}, {\"number\": 2, \"title\": ISSUES[1][0]}])\n        assert _setup(fake).pin() == [\"pin: #1 pinned\", \"pin: #2 pinned\"]\n        assert fake.pinned == {1, 2}\n>       assert _setup(fake).pin() == [\"pin: #1 already pinned\", \"pin: #2 already pinned\"]\nE       AssertionError: assert ['pin: #1 pin...n: #2 pinned'] == ['pin: #1 alr...ready pinned']\nE         \nE         At index 0 diff: 'pin: #1 pinned' != 'pin: #1 already pinned'\nE         Use -v to get more diff\n\ntests\\test_github_setup.py:93: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_github_setup.py::test_pin_by_title_and_a_second_run_pins_nothing\n1 failed, 8 passed, 1 deselected in 16.01s\n",
+      "killed_by": [
+        "tests/test_github_setup.py::test_pin_by_title_and_a_second_run_pins_nothing"
+      ]
+    },
+    {
+      "id": "G4",
+      "file": "repokit/github_setup.py",
+      "note": "the pypi environment for the wrong presets",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "or commits and templates.\\nThis will be saved to your project's .repokit.json file.\\n\\nEnter your full name (for git commits): \\n================================================================================\\nRepository demo has been set up successfully!\\n\\nRepository: C:\\\\Users\\\\Extreme\\\\AppData\\\\Local\\\\Temp\\\\repokit_test_l2ea_ao4\\\\demo  (branch: main)\\nPrivate work goes in private/, which git ignores.\\n\\nNext steps:\\n1. Set up a remote GitHub repository\\n2. Add it as a remote and push:\\n   cd C:\\\\Users\\\\Extreme\\\\AppData\\\\Local\\\\Temp\\\\repokit_test_l2ea_ao4\\\\demo\\n   git remote add origin https://github.com/username/repo.git\\n   git push -u origin main\\n================================================================================\\nGitHub: labels: created pinned, evergreen, roadmap, scratchpad, architecture, epic, ideas, CurrentTask, NextTask\\nGitHub: issues: #1 Roadmap\\nGitHub: issues: #2 Quick Notes -- Bugs, Features, Ideas\\nGitHub: pin: #1 pinned\\nGitHub: pin: #2 pinned\\nGitHub: discussions: on\\nGitHub: topics: cli, git\\nGitHub: traffic: ghtraf creates gists and needs a secret only you can set, so it is not run here.\\nGitHub:   From the project: `ghtraf create --help` (the old route used --configure --ci-workflows --non-interactive), then `gh secret set TRAFFIC_GIST_TOKEN --repo stub-user/demo`\\nGitHub: CI: watch the first run with `gh run list -R stub-user/demo --limit 5`\\nGitHub: Pages, if the project serves docs/: Settings > Pages > main, /docs\\n\"\n\ntests\\test_github_setup.py:213: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_github_setup.py::test_the_pypi_environment_only_for_the_pypi_preset\nFAILED tests/test_github_setup.py::TestGithubSetupThroughCreate::test_labels_and_issues_land_before_the_first_push_and_the_rest_after\n2 failed, 7 passed, 1 deselected in 16.24s\n",
+      "killed_by": [
+        "tests/test_github_setup.py::TestGithubSetupThroughCreate::test_labels_and_issues_land_before_the_first_push_and_the_rest_after",
+        "tests/test_github_setup.py::test_the_pypi_environment_only_for_the_pypi_preset"
+      ]
+    },
+    {
+      "id": "G5",
+      "file": "repokit/github_setup.py",
+      "note": "all runs nothing",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "......F.F                                                                [100%]\n================================== FAILURES ===================================\n______________________ test_setup_names_all_and_unknown _______________________\n\n    def test_setup_names_all_and_unknown():\n>       assert github_setup.setup_names([\"all\"]) == list(github_setup.STEPS)\nE       AssertionError: assert [] == ['labels', 'i...ronment', ...]\nE         \nE         Right contains 7 more items, first extra item: 'labels'\nE         Use -v to get more diff\n\ntests\\test_github_setup.py:111: AssertionError\n_ TestGithubSetupThroughCreate.test_labels_and_issues_land_before_the_first_push_and_the_rest_after _\n\nself = <tests.test_github_setup.TestGithubSetupThroughCreate testMethod=test_labels_and_issues_land_before_the_first_push_and_the_rest_after>\n\n    def test_labels_and_issues_land_before_the_first_push_and_the_rest_after(self):\n        code, out, err = self.run_repokit([\"create\", \"demo\", \"--language\", \"python\", \"--github\",\n                                           \"--github-setup\", \"all\", \"--topics\", \"cli,git\"])\n        self.assertEqual(code, 0, out[-2000:] + err[-2000:])\n        calls = self._calls()\n        creates = [c for c in calls if c[\"args\"][:2] == [\"issue\", \"create\"]]\n>       self.assertEqual(len(creates), 2)\nE       AssertionError: 0 != 2\n\ntests\\test_github_setup.py:207: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_github_setup.py::test_setup_names_all_and_unknown - Asserti...\nFAILED tests/test_github_setup.py::TestGithubSetupThroughCreate::test_labels_and_issues_land_before_the_first_push_and_the_rest_after\n2 failed, 7 passed, 1 deselected in 13.87s\n",
+      "killed_by": [
+        "tests/test_github_setup.py::TestGithubSetupThroughCreate::test_labels_and_issues_land_before_the_first_push_and_the_rest_after",
+        "tests/test_github_setup.py::test_setup_names_all_and_unknown"
+      ]
+    },
+    {
+      "id": "G6",
+      "file": "repokit/github_setup.py",
+      "note": "every topic is the first one",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".....F...                                                                [100%]\n================================== FAILURES ===================================\n_________________________ test_topics_and_discussions _________________________\n\n    def test_topics_and_discussions():\n        fake = FakeGh()\n        assert _setup(fake).topics([\"cli\", \"git\"]) == [\"topics: cli, git\"]\n>       assert [\"repo\", \"edit\", \"o/r\", \"--add-topic\", \"cli\", \"--add-topic\", \"git\"] in fake.calls\nE       AssertionError: assert ['repo', 'edit', 'o/r', '--add-topic', 'cli', '--add-topic', ...] in [['repo', 'edit', 'o/r', '--add-topic', 'cli', '--add-topic', ...]]\nE        +  where [['repo', 'edit', 'o/r', '--add-topic', 'cli', '--add-topic', ...]] = <tests.test_github_setup.FakeGh object at 0x000001A9BAB38110>.calls\n\ntests\\test_github_setup.py:106: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_github_setup.py::test_topics_and_discussions - AssertionErr...\n1 failed, 8 passed, 1 deselected in 16.28s\n",
+      "killed_by": [
+        "tests/test_github_setup.py::test_topics_and_discussions"
+      ]
+    },
+    {
+      "id": "G7",
+      "file": "repokit/github_setup.py",
+      "note": "an empty topic list still edits the repository",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    }
+  ],
+  "summary": {
+    "killed": 5,
+    "survived": 2
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_github_setup.py::TestGithubSetupThroughCreate::test_labels_and_issues_land_before_the_first_push_and_the_rest_after": [
+        "G4",
+        "G5"
+      ],
+      "tests/test_github_setup.py::test_labels_creates_the_missing_ones_and_a_second_run_nothing": [
+        "G1"
+      ],
+      "tests/test_github_setup.py::test_pin_by_title_and_a_second_run_pins_nothing": [
+        "G3"
+      ],
+      "tests/test_github_setup.py::test_setup_names_all_and_unknown": [
+        "G5"
+      ],
+      "tests/test_github_setup.py::test_the_pypi_environment_only_for_the_pypi_preset": [
+        "G4"
+      ],
+      "tests/test_github_setup.py::test_topics_and_discussions": [
+        "G6"
+      ]
+    },
+    "identical": [],
+    "contained": [
+      [
+        "tests/test_github_setup.py::test_setup_names_all_and_unknown",
+        "tests/test_github_setup.py::TestGithubSetupThroughCreate::test_labels_and_issues_land_before_the_first_push_and_the_rest_after"
+      ],
+      [
+        "tests/test_github_setup.py::test_the_pypi_environment_only_for_the_pypi_preset",
+        "tests/test_github_setup.py::TestGithubSetupThroughCreate::test_labels_and_issues_land_before_the_first_push_and_the_rest_after"
+      ]
+    ],
+    "killed_without_names": []
+  }
+}

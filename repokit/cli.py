@@ -214,6 +214,22 @@ Recipe: Microservice
     )
 
     create_parser.add_argument(
+        "--github-setup",
+        dest="github_setup",
+        action="append",
+        metavar="STEP[,STEP...]",
+        help="With --github, what to set up on the new repository: labels, issues (the Roadmap and "
+             "Quick Notes as #1 and #2, before the first push), pin, discussions, topics, "
+             "pypi-environment, traffic (prints ghtraf's commands), or all. Off unless named here "
+             "or in the global config's `github_setup` list."
+    )
+    create_parser.add_argument(
+        "--topics",
+        metavar="TOPIC[,TOPIC...]",
+        help="Repository topics for --github-setup topics"
+    )
+
+    create_parser.add_argument(
         "--description", "-d",
         help="Short description of the repository"
     )
@@ -1649,6 +1665,11 @@ def args_to_config(args: argparse.Namespace) -> Dict[str, Any]:
         cli_config["license_cli"] = True      # the flag beats license_private; a config value does not
     if getattr(args, "organization", None):
         cli_config["organization"] = args.organization    # the owner in the extras' URLs
+    if getattr(args, "github_setup", None):
+        from .layers import parse_languages as _split_steps
+        cli_config["github_setup"] = _split_steps(args.github_setup)
+    if getattr(args, "topics", None):
+        cli_config["topics"] = [t.strip() for t in args.topics.split(",") if t.strip()]
     if getattr(args, "no_extras", False):
         cli_config["extras"] = []
     elif getattr(args, "extras", None):
@@ -2826,11 +2847,17 @@ def main() -> int:
                     logger.info("--github with --no-push: nothing created on GitHub")
                 else:
                     from .github_create import create_on_github
+                    setup_report: list = []
+                    # repo_manager.config carries what the create settled
+                    # (the archetype, the extras) beside the person's settings
                     problem = create_on_github(
-                        repo_manager.repo_root, repo_manager.project_name, config,
+                        repo_manager.repo_root, repo_manager.project_name, repo_manager.config,
                         repo_manager.private_branch, organization=args.organization,
                         public=getattr(args, "public", False), logger=logger,
+                        report=setup_report,
                     )
+                    for line in setup_report:
+                        print(f"GitHub: {line}")
                     if problem:
                         logger.error(f"GitHub: {problem}")
                         logger.error("The local repository is complete; retry with gh once fixed.")

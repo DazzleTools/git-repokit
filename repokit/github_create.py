@@ -48,12 +48,18 @@ def branches_to_push(config: dict, private_branch: Optional[str], existing: List
 
 def create_on_github(repo_root: str, name: str, config: dict, private_branch: Optional[str],
                      organization: Optional[str] = None, public: bool = False,
-                     logger=None) -> Optional[str]:
-    """Create <owner>/<name> on GitHub and push the public branches.
+                     logger=None, report: Optional[List[str]] = None) -> Optional[str]:
+    """Create <owner>/<name> on GitHub, run the GitHub-half steps the config
+    names (`github_setup`, 0.9.3: labels and the two issues before the push,
+    the rest after), and push the public branches.
 
     Returns None on success, or what went wrong (the local repository is
-    left as it is either way).
+    left as it is either way). The steps' report lines go into ``report``.
     """
+    from . import github_setup
+    steps = github_setup.setup_names(config.get("github_setup"))
+    report = report if report is not None else []
+
     gh = gh_command()
     if gh is None:
         return "gh (the GitHub CLI) is not installed; see https://cli.github.com"
@@ -62,12 +68,18 @@ def create_on_github(repo_root: str, name: str, config: dict, private_branch: Op
     if rc != 0:
         return f"gh is not logged in (run `gh auth login`): {out}"
 
-    owner = organization
-    if not owner:
-        rc, out = _run(gh + ["api", "user", "-q", ".login"], repo_root)
-        if rc != 0 or not out:
-            return f"could not read the GitHub user from gh: {out}"
-        owner = out.splitlines()[-1].strip()
+    rc, out = _run(gh + ["api", "user", "-q", ".login"], repo_root)
+    login = out.splitlines()[-1].strip() if rc == 0 and out else None
+    if not organization and not login:
+        return f"could not read the GitHub user from gh: {out}"
+    # Refuse on another account: the config names the person's handle, and gh
+    # is logged into someone else (0.9.3).
+    github_cfg = config.get("github") if isinstance(config.get("github"), dict) else {}
+    configured = (github_cfg or {}).get("username")
+    if configured and login and configured.lower() != login.lower():
+        return (f"gh is logged into {login!r} but the config's github.username is {configured!r}; "
+                "switch with `gh auth switch` or fix the config")
+    owner = organization or login
 
     create = gh + ["repo", "create", f"{owner}/{name}",
                    "--public" if public else "--private",
@@ -81,6 +93,17 @@ def create_on_github(repo_root: str, name: str, config: dict, private_branch: Op
     if logger:
         logger.info(f"Created {owner}/{name} on GitHub ({'public' if public else 'private'})")
 
+    # Before the first push: the labels and the two issues, so they are #1 and #2.
+    setup = github_setup.GhSetup(gh, f"{owner}/{name}", lambda cmd: _run(cmd, repo_root))
+    project = config.get("name") or name
+    if "labels" in steps:
+        report += setup.labels()
+    if "issues" in steps:
+        drafts = os.path.join(repo_root, "private", "claude", "issues")
+        report += setup.issues(project, drafts if os.path.isdir(drafts) else None)
+    if "pin" in steps:
+        report += setup.pin()
+
     rc, out = _run(["git", "for-each-ref", "--format=%(refname:short)", "refs/heads"], repo_root)
     existing = out.split()
     pushed = []
@@ -91,4 +114,16 @@ def create_on_github(repo_root: str, name: str, config: dict, private_branch: Op
         pushed.append(branch)
     if logger:
         logger.info(f"Pushed: {', '.join(pushed) or 'nothing'}")
+
+    # After the push: the settings that need the repository's content or no ordering.
+    if "discussions" in steps:
+        report += setup.discussions()
+    if "topics" in steps:
+        report += setup.topics(list(config.get("topics") or []))
+    if "pypi-environment" in steps:
+        report += setup.pypi_environment(config.get("archetype"))
+    if "traffic" in steps:
+        report += setup.traffic(project)
+    if steps:
+        report += github_setup.reminders(f"{owner}/{name}", list(config.get("extras") or []))
     return None
