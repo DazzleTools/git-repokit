@@ -1,0 +1,97 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_vault_bootstrap.py",
+      "-m",
+      "not integration"
+    ],
+    "timestamp": "2026-10-24T13:37:46-04:00"
+  },
+  "results": [
+    {
+      "id": "B1",
+      "file": "repokit/vault.py",
+      "note": "the map keeps the template's name",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "h('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-13627/test_write_skeleton_lays_every0')\n\n    def test_write_skeleton_lays_every_file_once_and_keeps_existing_ones(tmp_path):\n        (tmp_path / \"CLAUDE.md\").write_text(\"mine\\n\", encoding=\"utf-8\")\n        written = vault.write_skeleton(str(tmp_path), \"demo\")\n        assert \"CLAUDE.md\" not in written                         # the existing file is kept\n        assert (tmp_path / \"CLAUDE.md\").read_text(encoding=\"utf-8\") == \"mine\\n\"\n        for rel in SKELETON[1:]:\n>           text = (tmp_path / rel).read_text(encoding=\"utf-8\")\n\ntests\\test_vault_bootstrap.py:28: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\nC:\\Python312\\Lib\\pathlib.py:1028: in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors) as f:\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-13627/test_write_skeleton_lays_every0/claude/_maps/MOC-demo.md')\nmode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\nE       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Extreme\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-Extreme\\\\pytest-13627\\\\test_write_skeleton_lays_every0\\\\claude\\\\_maps\\\\MOC-demo.md'\n\nC:\\Python312\\Lib\\pathlib.py:1014: FileNotFoundError\n=========================== short test summary info ===========================\nFAILED tests/test_vault_bootstrap.py::test_write_skeleton_lays_every_file_once_and_keeps_existing_ones\n1 failed, 3 passed, 1 deselected in 0.30s\n",
+      "killed_by": [
+        "tests/test_vault_bootstrap.py::test_write_skeleton_lays_every_file_once_and_keeps_existing_ones"
+      ]
+    },
+    {
+      "id": "B2",
+      "file": "repokit/vault.py",
+      "note": "the tokens are left in the skeleton",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "F...                                                                     [100%]\n================================== FAILURES ===================================\n______ test_write_skeleton_lays_every_file_once_and_keeps_existing_ones _______\n\ntmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-13628/test_write_skeleton_lays_every0')\n\n    def test_write_skeleton_lays_every_file_once_and_keeps_existing_ones(tmp_path):\n        (tmp_path / \"CLAUDE.md\").write_text(\"mine\\n\", encoding=\"utf-8\")\n        written = vault.write_skeleton(str(tmp_path), \"demo\")\n        assert \"CLAUDE.md\" not in written                         # the existing file is kept\n        assert (tmp_path / \"CLAUDE.md\").read_text(encoding=\"utf-8\") == \"mine\\n\"\n        for rel in SKELETON[1:]:\n            text = (tmp_path / rel).read_text(encoding=\"utf-8\")\n>           assert \"$project_name\" not in text and \"$date\" not in text, rel\nE           AssertionError: claude/_maps/MOC-demo.md\nE           assert ('$project_name' not in '---\\ntype: ...(none yet)\\n'\nE             \nE             '$project_name' is contained here:\nE               oc\nE               ---\nE               \nE               # $project_name -- map of content\nE             ?   +++++++++++++...\nE             \nE             ...Full output truncated (6 lines hidden), use '-vv' to show)\n\ntests\\test_vault_bootstrap.py:29: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_vault_bootstrap.py::test_write_skeleton_lays_every_file_once_and_keeps_existing_ones\n1 failed, 3 passed, 1 deselected in 0.24s\n",
+      "killed_by": [
+        "tests/test_vault_bootstrap.py::test_write_skeleton_lays_every_file_once_and_keeps_existing_ones"
+      ]
+    },
+    {
+      "id": "B3",
+      "file": "repokit/vault.py",
+      "note": "none still writes the prompt",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "...F                                                                     [100%]\n================================== FAILURES ===================================\n_________ test_vault_init_none_writes_nothing_and_unknown_is_refused __________\n\ntmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-13629/test_vault_init_none_writes_no0')\n\n    def test_vault_init_none_writes_nothing_and_unknown_is_refused(tmp_path):\n>       assert vault.bootstrap(str(tmp_path), \"demo\", \"none\") is None\nE       AssertionError: assert 'C:\\\\Users\\\\Extreme\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-Extreme\\\\pytest-13629\\\\test_vault_init_none_writes_no0\\\\private\\\\claude\\\\_oracle\\\\bootstrap-prompt.md' is None\nE        +  where 'C:\\\\Users\\\\Extreme\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-Extreme\\\\pytest-13629\\\\test_vault_init_none_writes_no0\\\\private\\\\claude\\\\_oracle\\\\bootstrap-prompt.md' = <function bootstrap at 0x00000136904E09A0>('C:\\\\Users\\\\Extreme\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-Extreme\\\\pytest-13629\\\\test_vault_init_none_writes_no0', 'demo', 'none')\nE        +    where <function bootstrap at 0x00000136904E09A0> = vault.bootstrap\nE        +    and   'C:\\\\Users\\\\Extreme\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-Extreme\\\\pytest-13629\\\\test_vault_init_none_writes_no0' = str(WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-13629/test_vault_init_none_writes_no0'))\n\ntests\\test_vault_bootstrap.py:54: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_vault_bootstrap.py::test_vault_init_none_writes_nothing_and_unknown_is_refused\n1 failed, 3 passed, 1 deselected in 0.32s\n",
+      "killed_by": [
+        "tests/test_vault_bootstrap.py::test_vault_init_none_writes_nothing_and_unknown_is_refused"
+      ]
+    },
+    {
+      "id": "B4",
+      "file": "repokit/vault.py",
+      "note": "an unknown mode is accepted",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "...F                                                                     [100%]\n================================== FAILURES ===================================\n_________ test_vault_init_none_writes_nothing_and_unknown_is_refused __________\n\ntmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-13630/test_vault_init_none_writes_no0')\n\n    def test_vault_init_none_writes_nothing_and_unknown_is_refused(tmp_path):\n        assert vault.bootstrap(str(tmp_path), \"demo\", \"none\") is None\n>       with pytest.raises(ValueError, match=\"unknown vault_init\"):\nE       Failed: DID NOT RAISE <class 'ValueError'>\n\ntests\\test_vault_bootstrap.py:55: Failed\n=========================== short test summary info ===========================\nFAILED tests/test_vault_bootstrap.py::test_vault_init_none_writes_nothing_and_unknown_is_refused\n1 failed, 3 passed, 1 deselected in 0.25s\n",
+      "killed_by": [
+        "tests/test_vault_bootstrap.py::test_vault_init_none_writes_nothing_and_unknown_is_refused"
+      ]
+    },
+    {
+      "id": "B5",
+      "file": "repokit/vault.py",
+      "note": "the report of what was written is empty",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    }
+  ],
+  "summary": {
+    "killed": 4,
+    "survived": 1
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_vault_bootstrap.py::test_vault_init_none_writes_nothing_and_unknown_is_refused": [
+        "B3",
+        "B4"
+      ],
+      "tests/test_vault_bootstrap.py::test_write_skeleton_lays_every_file_once_and_keeps_existing_ones": [
+        "B1",
+        "B2"
+      ]
+    },
+    "identical": [],
+    "contained": [],
+    "killed_without_names": []
+  }
+}

@@ -5,6 +5,12 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.4] - 2026-10-24
+
+### Added
+- **The vault skeleton.** The private vault's first commit now holds what `/obsidian-init` laid by hand before it read anything: the vault's own `CLAUDE.md` (its layout, its conventions, and the three-sessions-per-project note: a decisions session, a work session and an oracle, named `<PROJECT>__<YYYY-MM-DD>__<Role>`), a map-of-content stub at `claude/_maps/MOC-<project>.md`, the oracle's index stubs in `claude/_oracle/`, and the two boards in `claude/_todo/`. Files that already exist are kept.
+- **The oracle's first prompt.** The half of the bootstrap that needs someone who has read the project is now a prompt the create writes to `private/claude/_oracle/bootstrap-prompt.md`, listing the project's layout and the vault's documents and asking the oracle session to fill the map and the index. It goes through a vendored copy of the house AI library (`repokit/_vendor/ailib/`, copied unchanged from the copy of record and recorded with each file's fingerprint), using its prompt-file transport: nothing is sent anywhere, and the tool commits nothing a model would write. `vault_init` in the config chooses `prompt-file` (the default) or `none`.
+
 ## [0.9.3] - 2026-10-24
 
 ### Added

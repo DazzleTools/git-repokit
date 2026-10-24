@@ -88,6 +88,9 @@ class ConfigManager:
             # Off unless the global config or --github-setup names them.
             "github_setup": [],
             "topics": [],
+            # The vault's AI door (0.9.4): "prompt-file" writes the oracle's
+            # first prompt to private/claude/_oracle/; "none" writes nothing.
+            "vault_init": "prompt-file",
             "use_github_noreply": True,  # Add GitHub no-reply setting
             "user": {"name": "", "email": ""},
             # Branch configuration enhancements

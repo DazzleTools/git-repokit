@@ -170,6 +170,15 @@ class RepoManager:
             # Create initial commit
             self._create_initial_commit()
 
+            # The vault's AI door (0.9.4): the oracle's first prompt, written
+            # once the project's files exist to describe; left uncommitted in
+            # the vault for the oracle session to read and run.
+            if self.private_mode == "nested" and not self.config.get("is_adoption", False):
+                from .vault import bootstrap
+                prompt = bootstrap(self.repo_root, self.project_name, self.config.get("vault_init") or "prompt-file")
+                if prompt:
+                    self.logger.info(f"Vault: the oracle's first prompt is {prompt}")
+
             # Generate AI integration files if requested (only in private branch, after initial commit)
             if self.config.get("ai_integration"):
                 self._generate_ai_templates()

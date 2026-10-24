@@ -1,0 +1,10 @@
+{
+  "test_command": ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests/test_vault_bootstrap.py", "-m", "not integration"],
+  "mutations": [
+    {"id": "B1", "file": "repokit/vault.py", "original": "            if rel == \"claude/_maps/MOC-project.md\":", "mutated": "            if False:", "note": "the map keeps the template's name"},
+    {"id": "B2", "file": "repokit/vault.py", "original": "                text = string.Template(f.read()).safe_substitute(values)", "mutated": "                text = f.read()", "note": "the tokens are left in the skeleton"},
+    {"id": "B3", "file": "repokit/vault.py", "original": "    if mode == \"none\":\n        return None", "mutated": "    if False:\n        return None", "note": "none still writes the prompt"},
+    {"id": "B4", "file": "repokit/vault.py", "original": "    if mode not in VAULT_INIT_MODES:", "mutated": "    if False:", "note": "an unknown mode is accepted"},
+    {"id": "B5", "file": "repokit/vault.py", "original": "            written.append(rel)", "mutated": "            pass", "note": "the report of what was written is empty"}
+  ]
+}

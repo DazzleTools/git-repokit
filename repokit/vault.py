@@ -80,6 +80,88 @@ def ensure_parent_ignores(repo_root: str) -> List[str]:
     return [p for _title, patterns in missing for p in patterns]
 
 
+SKELETON = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "vault")
+VAULT_INIT_MODES = ("prompt-file", "none")
+
+
+def write_skeleton(private_path: str, project_name: str) -> List[str]:
+    """Lay the vault skeleton (0.9.4): the vault's CLAUDE.md with its
+    conventions and the three-session note, the map stub, the oracle's index
+    stubs, the two boards. Files that exist are kept. Returns what was written."""
+    import datetime
+    import string
+    values = {"project_name": project_name, "date": datetime.date.today().isoformat()}
+    written = []
+    for root, _dirs, files in os.walk(SKELETON):
+        for name in files:
+            src = os.path.join(root, name)
+            rel = os.path.relpath(src, SKELETON).replace("\\", "/")
+            if rel == "claude/_maps/MOC-project.md":
+                rel = f"claude/_maps/MOC-{project_name}.md"
+            dest = os.path.join(private_path, rel)
+            if os.path.exists(dest):
+                continue
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+            with open(src, encoding="utf-8") as f:
+                text = string.Template(f.read()).safe_substitute(values)
+            with open(dest, "w", encoding="utf-8", newline="\n") as f:
+                f.write(text)
+            written.append(rel)
+    return sorted(written)
+
+
+def bootstrap_prompt_text(repo_root: str, project_name: str) -> str:
+    """What the oracle session is asked to do first: build the map and the
+    index from the project and the vault (the half of /obsidian-init a model
+    has to do, because it reads the project)."""
+    top = sorted(n for n in os.listdir(repo_root) if not n.startswith(".git") and n != "private")
+    docs = sorted(os.path.relpath(os.path.join(r, n), os.path.join(repo_root, "private")).replace("\\", "/")
+                  for r, _d, fs in os.walk(os.path.join(repo_root, "private", "claude")) for n in fs
+                  if n.endswith(".md") and ".git" not in r)
+    return "\n".join([
+        f"# Bootstrap the vault of {project_name}",
+        "",
+        f"You are the oracle session for `{project_name}`. git-repokit laid the vault's skeleton; "
+        "fill the parts that need someone who has read the project:",
+        "",
+        f"1. Read the project's README, CHANGELOG and top-level layout ({', '.join(top)}).",
+        f"2. Fill `claude/_maps/MOC-{project_name}.md` with the project's arcs (one so far: its creation) "
+        "and link every document under `claude/`.",
+        "3. Fill `claude/_oracle/manifest.md` with one row per document, and `concepts.md` with any term "
+        "the project uses in its own sense.",
+        "4. Run `python scripts/repokit-common/generate-backlinks.py private/claude --validate` from the project root.",
+        "5. Commit the vault by named path; never push it.",
+        "",
+        "Then run `/obsidian-update` and `/obsidian-loop` as usual.",
+        "",
+        "## The vault today",
+        "",
+        *[f"- `{d}`" for d in docs],
+        "",
+    ])
+
+
+def bootstrap(repo_root: str, project_name: str, mode: str = "prompt-file") -> Optional[str]:
+    """The vault's AI door (0.9.4). `prompt-file` (the default) writes the
+    oracle's first prompt through ailib's prompt-file transport to
+    private/claude/_oracle/ and returns its path; `none` writes nothing. The
+    tool never commits what it writes here: the oracle session reviews it."""
+    if mode not in VAULT_INIT_MODES:
+        raise ValueError(f"unknown vault_init {mode!r}; known: {', '.join(VAULT_INIT_MODES)}")
+    if mode == "none":
+        return None
+    from ._vendor.ailib.types import Request, Spec
+    from ._vendor.ailib.backend import build
+    oracle = os.path.join(repo_root, "private", "claude", "_oracle")
+    backend = build(Spec(transport="prompt-file", name="vault-bootstrap", endpoint=oracle))
+    response = backend.invoke(Request(prompt=bootstrap_prompt_text(repo_root, project_name)))
+    if response.status != "deferred" or not response.artifact:
+        return None
+    final = os.path.join(oracle, "bootstrap-prompt.md")
+    os.replace(response.artifact, final)
+    return final
+
+
 def init_private_repo(repo_root: str, project_name: str, logger=None) -> bool:
     """Create private/ as its own git repository with a first commit.
 
@@ -115,6 +197,9 @@ def init_private_repo(repo_root: str, project_name: str, logger=None) -> bool:
             f.write(render_gitignore(PRIVATE_GITIGNORE_SECTIONS))
 
     if not existing_content:
+        # The skeleton /obsidian-init laid by hand (0.9.4), before the
+        # folders' gitkeeps so a folder with a file needs none.
+        write_skeleton(private_path, project_name)
         for sub in PRIVATE_STRUCTURE:
             folder = os.path.join(private_path, sub)
             os.makedirs(folder, exist_ok=True)
