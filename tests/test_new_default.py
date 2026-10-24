@@ -9,8 +9,10 @@ vendored from a local checkout (tests/conftest.py); without one these tests skip
 """
 
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -47,10 +49,28 @@ def commit_file(repo, name, content="x\n"):
 class TestBareCreate(RepoKitTestCase):
     """R3: a bare `repokit create demo`."""
 
+    # Every test here only reads the created tree, so the create runs once per
+    # class (0.9.5): a create is the whole cost of an integration test (about
+    # 2-3 s measured in tests/one-offs/thinking/p4-measure-integration-floor/),
+    # and five identical creates were four too many.
+    _shared = None
+
     def setUp(self):
         super().setUp()
-        self.assert_repokit_success(["create", "demo", "--no-push"])
-        self.repo = os.path.join(self.test_dir, "demo")
+        cls = type(self)
+        if cls._shared is None or not os.path.isdir(cls._shared):
+            base = tempfile.mkdtemp(prefix="repokit_shared_")
+            code, out, err = self.run_repokit(["create", "demo", "--no-push"], cwd=base)
+            self.assertEqual(code, 0, out[-2000:] + err[-2000:])
+            cls._shared = os.path.join(base, "demo")
+        self.repo = cls._shared
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls._shared:
+            shutil.rmtree(os.path.dirname(cls._shared), ignore_errors=True)
+            cls._shared = None
+        super().tearDownClass()
 
     def test_one_branch_main(self):
         self.assertEqual(git(self.repo, "branch", "--format=%(refname:short)").stdout.split(), ["main"])

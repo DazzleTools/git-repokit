@@ -1,0 +1,8 @@
+| step | median of 3 (s) |
+|---|---|
+| python -c pass | 0.05 |
+| python -m repokit --version | 0.12 |
+| create generic --no-common | 1.99 |
+| create python --no-common | 2.46 |
+| create python (vendored) | 3.19 |
+| git init (x2) | 0.07 |

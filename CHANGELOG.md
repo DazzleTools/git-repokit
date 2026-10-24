@@ -5,6 +5,11 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.5] - 2026-10-24
+
+### Changed
+- The suite's cost, measured and cut where it is. One `repokit create` costs 2 to 3 seconds (its commits, the vault repository, the layers; vendoring the tooling adds about 0.7 s), while the interpreter and `git init` cost a few hundredths: the fixed cost of an integration test is the create itself, so the lever is fewer creates. The bare-create test class now creates once and its five read-only tests share the tree, which takes it from about 27 seconds to about 14. The measure is kept as a one-off for the next classes to convert.
+
 ## [0.9.4] - 2026-10-24
 
 ### Added
