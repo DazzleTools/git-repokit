@@ -91,7 +91,12 @@ def test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble(tmp_
     r = layers.resolve(m, ["python", "js-ts"], ["js-ts/claude-plugin", "python/script"])
     ctx = token_context({"project_name": "duo", "description": "two languages", "author": "A",
                          "author_email": "a@example.com", "github": {"username": "acme"}}, archetype=None)
-    layers.assemble(ROOT, r.layers, str(tmp_path), ctx, engine=ENGINE)
+    skipped = []
+    layers.assemble(ROOT, r.layers, str(tmp_path), ctx, engine=ENGINE, primary_language="python", skipped=skipped)
+    # 0.9.2: .vscode/ is the primary language's (python's script), js-ts's is reported, not merged
+    launch = json.loads((tmp_path / ".vscode" / "launch.json").read_text(encoding="utf-8"))
+    assert launch["configurations"][0]["program"] == "${workspaceFolder}/duo.py"
+    assert skipped == ["js-ts: .vscode/launch.json"]
     settings = (tmp_path / ".repokit-common.toml").read_text(encoding="utf-8")
     # the js plugin's settings win (purpose ranks after build): both manifests in step, npm test on push
     assert 'path = "package.json"' in settings and 'path = "plugin/.claude-plugin/plugin.json"' in settings
@@ -106,7 +111,10 @@ def test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble(tmp_
         base = ROOT / folder
         for p in base.rglob("*"):
             if p.is_file() and not p.name.endswith(layers.APPEND) and "__pycache__" not in p.parts:
-                writers.setdefault(p.relative_to(base).as_posix(), []).append((name, p))
+                rel = p.relative_to(base).as_posix()
+                if rel in layers.PRIMARY_ONLY and layers.layer_language(folder) not in ("python", "any"):
+                    continue          # left out by the primary-language rule, not written
+                writers.setdefault(rel, []).append((name, p))
     undeclared = []
     for rel, ws in writers.items():
         if len(ws) > 1:

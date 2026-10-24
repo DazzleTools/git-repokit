@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Configure",
+      "detail": "cmake --preset windows-release (once, and after CMakeLists.txt changes); the Visual Studio generator builds Debug and Release from one configure",
+      "type": "shell",
+      "command": "cmake --preset windows-release",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Debug",
+      "type": "shell",
+      "command": "cmake --build build --config Debug",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$msCompile", "$gcc"]
+    },
+    {
+      "label": "Test",
+      "type": "shell",
+      "command": "ctest --test-dir build -C Debug --output-on-failure",
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}

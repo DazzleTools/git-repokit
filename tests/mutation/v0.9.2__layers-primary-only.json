@@ -1,0 +1,10 @@
+{
+  "test_command": ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "-m", "not integration", "tests/test_layers_vscode.py", "tests/test_layers_claude_plugin.py", "tests/test_layers_compositions.py", "tests/test_layers.py"],
+  "mutations": [
+    {"id": "V1", "file": "repokit/layers.py", "original": "            if primary_language and rel in PRIMARY_ONLY and lang not in (primary_language, \"any\", None):", "mutated": "            if primary_language and rel in PRIMARY_ONLY and lang != primary_language:", "note": "the shared any layer's debugger files would be dropped too"},
+    {"id": "V2", "file": "repokit/layers.py", "original": "                if skipped is not None and f\"{lang}: {rel}\" not in skipped:\n                    skipped.append(f\"{lang}: {rel}\")", "mutated": "                if False:\n                    skipped.append(f\"{lang}: {rel}\")", "note": "a left-out file is not reported"},
+    {"id": "V3", "file": "repokit/layers.py", "original": "PRIMARY_ONLY = (\".vscode/launch.json\", \".vscode/tasks.json\")", "mutated": "PRIMARY_ONLY = (\".vscode/tasks.json\",)", "note": "launch.json is no longer primary-only"},
+    {"id": "V4", "file": "repokit/layers.py", "original": "    return parts[1] if len(parts) >= 2 and parts[0] in (\"languages\", ARCHETYPES_DIR) else None", "mutated": "    return parts[0] if len(parts) >= 2 and parts[0] in (\"languages\", ARCHETYPES_DIR) else None", "note": "a layer's language is read from the wrong path part"},
+    {"id": "V5", "file": "repokit/layers.py", "original": "            if primary_language and rel in PRIMARY_ONLY and lang not in (primary_language, \"any\", None):", "mutated": "            if primary_language and rel in PRIMARY_ONLY and lang in (primary_language, \"any\", None):", "note": "the primary's own files are the ones dropped"}
+  ]
+}

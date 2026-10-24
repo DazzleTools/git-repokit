@@ -5,6 +5,15 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-10-23
+
+### Added
+- **`.vscode/launch.json` per preset**, so a new project is steppable in VS Code from its first commit. Python presets launch with `debugpy` (`justMyCode` off): the package as a module with `--version`, the script as a program, the Claude plugin's hook with its debug variable set, plus pytest over the tests and over the current file. C/C++ presets launch with `cppvsdbg` on Windows and `cppdbg` (gdb) where the build runs elsewhere; the CMake and MSBuild presets ship a `.vscode/tasks.json` with the build the launch runs first (`cmake --build build --config Debug`, `msbuild <name>.sln -p:Configuration=Debug -p:Platform=x64`). JavaScript/TypeScript presets launch with `node`: the current file, `npm test`, the script with `--version`, the plugin's hook. The shapes follow a measure of the 143 `launch.json` files on the development machine.
+- In a project of two or more languages, `.vscode/` holds the first language's debug configurations, and the create says so (`Note: .vscode/ holds python's debug configurations; js-ts's were not merged in`): VS Code reads one `launch.json`, and merging two languages' files is left to the person.
+
+### Removed
+- The structure's own `launch.json`, a Python-only template written into every project whatever its language. A `--language generic` project now has no `.vscode/launch.json`.
+
 ## [0.9.1] - 2026-10-23
 
 ### Added

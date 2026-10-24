@@ -1,0 +1,113 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "-m",
+      "not integration",
+      "tests/test_layers_vscode.py",
+      "tests/test_layers_claude_plugin.py",
+      "tests/test_layers_compositions.py",
+      "tests/test_layers.py"
+    ],
+    "timestamp": "2026-10-23T19:35:49-04:00"
+  },
+  "results": [
+    {
+      "id": "V1",
+      "file": "repokit/layers.py",
+      "note": "the shared any layer's debugger files would be dropped too",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "V2",
+      "file": "repokit/layers.py",
+      "note": "a left-out file is not reported",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "n launch[\"configurations\"]} == {\"node\"}\n>       assert skipped == [\"python: .vscode/launch.json\"]\nE       AssertionError: assert [] == ['python: .vs.../launch.json']\nE         \nE         Right contains one more item: 'python: .vscode/launch.json'\nE         Use -v to get more diff\n\ntests\\test_layers_vscode.py:83: AssertionError\n___ test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble ___\n\ntmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-13592/test_python_and_js_ts_with_the0')\n\n    def test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble(tmp_path):\n        m = _m()\n        r = layers.resolve(m, [\"python\", \"js-ts\"], [\"js-ts/claude-plugin\", \"python/script\"])\n        ctx = token_context({\"project_name\": \"duo\", \"description\": \"two languages\", \"author\": \"A\",\n                             \"author_email\": \"a@example.com\", \"github\": {\"username\": \"acme\"}}, archetype=None)\n        skipped = []\n        layers.assemble(ROOT, r.layers, str(tmp_path), ctx, engine=ENGINE, primary_language=\"python\", skipped=skipped)\n        # 0.9.2: .vscode/ is the primary language's (python's script), js-ts's is reported, not merged\n        launch = json.loads((tmp_path / \".vscode\" / \"launch.json\").read_text(encoding=\"utf-8\"))\n        assert launch[\"configurations\"][0][\"program\"] == \"${workspaceFolder}/duo.py\"\n>       assert skipped == [\"js-ts: .vscode/launch.json\"]\nE       AssertionError: assert [] == ['js-ts: .vscode/launch.json']\nE         \nE         Right contains one more item: 'js-ts: .vscode/launch.json'\nE         Use -v to get more diff\n\ntests\\test_layers_claude_plugin.py:99: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers_vscode.py::test_two_languages_get_the_primarys_launch_json_and_a_report\nFAILED tests/test_layers_claude_plugin.py::test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble\n2 failed, 53 passed, 5 deselected in 1.58s\n",
+      "killed_by": [
+        "tests/test_layers_claude_plugin.py::test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble",
+        "tests/test_layers_vscode.py::test_two_languages_get_the_primarys_launch_json_and_a_report"
+      ]
+    },
+    {
+      "id": "V3",
+      "file": "repokit/layers.py",
+      "note": "launch.json is no longer primary-only",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "encoding=\"utf-8\"))\n>       assert {c[\"type\"] for c in launch[\"configurations\"]} == {\"node\"}\nE       AssertionError: assert {'debugpy'} == {'node'}\nE         \nE         Extra items in the left set:\nE         'debugpy'\nE         Extra items in the right set:\nE         'node'\nE         Use -v to get more diff\n\ntests\\test_layers_vscode.py:82: AssertionError\n___ test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble ___\n\ntmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-13593/test_python_and_js_ts_with_the0')\n\n    def test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble(tmp_path):\n        m = _m()\n        r = layers.resolve(m, [\"python\", \"js-ts\"], [\"js-ts/claude-plugin\", \"python/script\"])\n        ctx = token_context({\"project_name\": \"duo\", \"description\": \"two languages\", \"author\": \"A\",\n                             \"author_email\": \"a@example.com\", \"github\": {\"username\": \"acme\"}}, archetype=None)\n        skipped = []\n        layers.assemble(ROOT, r.layers, str(tmp_path), ctx, engine=ENGINE, primary_language=\"python\", skipped=skipped)\n        # 0.9.2: .vscode/ is the primary language's (python's script), js-ts's is reported, not merged\n        launch = json.loads((tmp_path / \".vscode\" / \"launch.json\").read_text(encoding=\"utf-8\"))\n>       assert launch[\"configurations\"][0][\"program\"] == \"${workspaceFolder}/duo.py\"\nE       AssertionError: assert '${workspaceF...ion-start.mjs' == '${workspaceFolder}/duo.py'\nE         \nE         - ${workspaceFolder}/duo.py\nE         + ${workspaceFolder}/plugin/hooks/scripts/session-start.mjs\n\ntests\\test_layers_claude_plugin.py:98: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers_vscode.py::test_two_languages_get_the_primarys_launch_json_and_a_report\nFAILED tests/test_layers_claude_plugin.py::test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble\n2 failed, 53 passed, 5 deselected in 1.68s\n",
+      "killed_by": [
+        "tests/test_layers_claude_plugin.py::test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble",
+        "tests/test_layers_vscode.py::test_two_languages_get_the_primarys_launch_json_and_a_report"
+      ]
+    },
+    {
+      "id": "V4",
+      "file": "repokit/layers.py",
+      "note": "a layer's language is read from the wrong path part",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "ption\": \"two languages\", \"author\": \"A\",\n                             \"author_email\": \"a@example.com\", \"github\": {\"username\": \"acme\"}}, archetype=None)\n        skipped = []\n        layers.assemble(ROOT, r.layers, str(tmp_path), ctx, engine=ENGINE, primary_language=\"python\", skipped=skipped)\n        # 0.9.2: .vscode/ is the primary language's (python's script), js-ts's is reported, not merged\n>       launch = json.loads((tmp_path / \".vscode\" / \"launch.json\").read_text(encoding=\"utf-8\"))\n\ntests\\test_layers_claude_plugin.py:97: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\nC:\\Python312\\Lib\\pathlib.py:1028: in read_text\n    with self.open(mode='r', encoding=encoding, errors=errors) as f:\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nself = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-13594/test_python_and_js_ts_with_the0/.vscode/launch.json')\nmode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\nE       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\\\Users\\\\Extreme\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-Extreme\\\\pytest-13594\\\\test_python_and_js_ts_with_the0\\\\.vscode\\\\launch.json'\n\nC:\\Python312\\Lib\\pathlib.py:1014: FileNotFoundError\n=========================== short test summary info ===========================\nFAILED tests/test_layers_vscode.py::test_two_languages_get_the_primarys_launch_json_and_a_report\nFAILED tests/test_layers_claude_plugin.py::test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble\n2 failed, 53 passed, 5 deselected in 2.37s\n",
+      "killed_by": [
+        "tests/test_layers_claude_plugin.py::test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble",
+        "tests/test_layers_vscode.py::test_two_languages_get_the_primarys_launch_json_and_a_report"
+      ]
+    },
+    {
+      "id": "V5",
+      "file": "repokit/layers.py",
+      "note": "the primary's own files are the ones dropped",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "encoding=\"utf-8\"))\n>       assert {c[\"type\"] for c in launch[\"configurations\"]} == {\"node\"}\nE       AssertionError: assert {'debugpy'} == {'node'}\nE         \nE         Extra items in the left set:\nE         'debugpy'\nE         Extra items in the right set:\nE         'node'\nE         Use -v to get more diff\n\ntests\\test_layers_vscode.py:82: AssertionError\n___ test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble ___\n\ntmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-13595/test_python_and_js_ts_with_the0')\n\n    def test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble(tmp_path):\n        m = _m()\n        r = layers.resolve(m, [\"python\", \"js-ts\"], [\"js-ts/claude-plugin\", \"python/script\"])\n        ctx = token_context({\"project_name\": \"duo\", \"description\": \"two languages\", \"author\": \"A\",\n                             \"author_email\": \"a@example.com\", \"github\": {\"username\": \"acme\"}}, archetype=None)\n        skipped = []\n        layers.assemble(ROOT, r.layers, str(tmp_path), ctx, engine=ENGINE, primary_language=\"python\", skipped=skipped)\n        # 0.9.2: .vscode/ is the primary language's (python's script), js-ts's is reported, not merged\n        launch = json.loads((tmp_path / \".vscode\" / \"launch.json\").read_text(encoding=\"utf-8\"))\n>       assert launch[\"configurations\"][0][\"program\"] == \"${workspaceFolder}/duo.py\"\nE       AssertionError: assert '${workspaceF...ion-start.mjs' == '${workspaceFolder}/duo.py'\nE         \nE         - ${workspaceFolder}/duo.py\nE         + ${workspaceFolder}/plugin/hooks/scripts/session-start.mjs\n\ntests\\test_layers_claude_plugin.py:98: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers_vscode.py::test_two_languages_get_the_primarys_launch_json_and_a_report\nFAILED tests/test_layers_claude_plugin.py::test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble\n2 failed, 53 passed, 5 deselected in 1.89s\n",
+      "killed_by": [
+        "tests/test_layers_claude_plugin.py::test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble",
+        "tests/test_layers_vscode.py::test_two_languages_get_the_primarys_launch_json_and_a_report"
+      ]
+    }
+  ],
+  "summary": {
+    "survived": 1,
+    "killed": 4
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_layers_claude_plugin.py::test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble": [
+        "V2",
+        "V3",
+        "V4",
+        "V5"
+      ],
+      "tests/test_layers_vscode.py::test_two_languages_get_the_primarys_launch_json_and_a_report": [
+        "V2",
+        "V3",
+        "V4",
+        "V5"
+      ]
+    },
+    "identical": [
+      [
+        "tests/test_layers_claude_plugin.py::test_python_and_js_ts_with_the_js_plugin_and_the_python_script_assemble",
+        "tests/test_layers_vscode.py::test_two_languages_get_the_primarys_launch_json_and_a_report"
+      ]
+    ],
+    "contained": [],
+    "killed_without_names": []
+  }
+}

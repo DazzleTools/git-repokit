@@ -768,7 +768,7 @@ class RepoManager:
             category="common"
         )
 
-        # The structure's .gitignore and launch.json, then the code type on top
+        # The structure's .gitignore, then the code type on top (launch.json is a layer file since 0.9.2)
         self._write_gitignore_and_launch(context)
         self._apply_layers(context)
 
@@ -886,14 +886,9 @@ class RepoManager:
                 f.write(existing_adoption_patterns)
             self.logger.info("Preserved adoption-specific patterns in .gitignore")
 
-        vscode_dir = os.path.join(self.repo_root, ".vscode")
-        os.makedirs(vscode_dir, exist_ok=True)
-        self.template_engine.render_template_to_file(
-            "launch.json",
-            os.path.join(vscode_dir, "launch.json"),
-            context,
-            category="common",
-        )
+        # .vscode/launch.json (and tasks.json) come from the code-type layers
+        # since 0.9.2, one per preset; the structure's old template was
+        # Python-only and was written for every language.
 
     def _resolve_layers(self):
         """Resolve the code-type layers once (repokit/layers.py): returns
@@ -950,12 +945,20 @@ class RepoManager:
         if not resolution.layers:
             return
         ctx = token_context(context, resolution.archetype)
+        skipped: List[str] = []
         written = layers.assemble(
             root, resolution.layers, self.repo_root, ctx,
             engine=self.template_engine,
             preserve_existing=self.config.get("preserve_existing", False),
             logger=self.logger,
+            # two or more languages: the debugger files are the first language's
+            primary_language=resolution.languages[0] if len(resolution.languages) > 1 else None,
+            skipped=skipped,
         )
+        if skipped:
+            others = sorted({s.split(":", 1)[0] for s in skipped})
+            print(f"Note: .vscode/ holds {resolution.languages[0]}'s debug configurations; "
+                  f"{', '.join(others)}'s were not merged in (add them to .vscode/launch.json by hand)")
         self.logger.info(f"Code-type layers {', '.join(resolution.layers)}: {len(written)} files")
         for note in resolution.notes:
             # Once, to the person: a composition no preset vouches for (with

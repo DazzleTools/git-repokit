@@ -48,6 +48,9 @@ LAYERS_DIR = "layers"        # under the templates directory
 ARCHETYPES_DIR = "archetypes"
 NOT_A_PRESET = "assembled from layers; not a tested preset"
 UNRANKED = 99                # a layer folder with no [layers] entry sorts last, in the order given
+# Files only the primary language writes in a multi-language project (0.9.2):
+# VS Code reads one of each, and merging two languages' JSON is out of scope.
+PRIMARY_ONLY = (".vscode/launch.json", ".vscode/tasks.json")
 
 
 class LayerError(Exception):
@@ -413,11 +416,24 @@ def _is_text(data: bytes) -> bool:
     return b"\0" not in data[:8192]
 
 
+def layer_language(folder: str) -> Optional[str]:
+    """The language a layer folder belongs to: languages/<lang> or archetypes/<lang>/<name>."""
+    parts = folder.split("/")
+    return parts[1] if len(parts) >= 2 and parts[0] in ("languages", ARCHETYPES_DIR) else None
+
+
 def assemble(root: Path, layers: List[str], dest: str, context: Dict[str, Any],
              engine: Optional[TemplateEngine] = None, preserve_existing: bool = False,
-             logger=None) -> List[str]:
+             logger=None, primary_language: Optional[str] = None,
+             skipped: Optional[List[str]] = None) -> List[str]:
     """Lay the layers down under ``dest``. Returns the files written or appended,
-    as dest-relative POSIX paths. ``context`` is token_context(...)."""
+    as dest-relative POSIX paths. ``context`` is token_context(...).
+
+    With ``primary_language`` set (a project of two or more languages), the
+    files in PRIMARY_ONLY come from that language's layers and the shared
+    `any` ones only: VS Code reads one launch.json, and merging two languages'
+    debug configurations is out of scope (0.9.2). Each file left out is
+    reported in ``skipped`` as "<language>: <path>"."""
     engine = engine or TemplateEngine()
     files: Dict[str, bytes] = {}        # template-relative path (tokens unresolved) -> content
     appends: Dict[str, bytes] = {}      # appends whose target no layer provides: a file already on disk
@@ -426,12 +442,17 @@ def assemble(root: Path, layers: List[str], dest: str, context: Dict[str, Any],
         base = root / layer
         if not base.is_dir():
             raise LayerError(f"layer folder missing: {layer} (under {root})")
+        lang = layer_language(layer)
         for src in sorted(p for p in base.rglob("*") if p.is_file()):
             # Bytecode beside the template sources (a syntax check compiled
             # them) is not part of any layer, and carries the tokens inside.
             if "__pycache__" in src.parts or src.suffix in (".pyc", ".pyo"):
                 continue
             rel = src.relative_to(base).as_posix()
+            if primary_language and rel in PRIMARY_ONLY and lang not in (primary_language, "any", None):
+                if skipped is not None and f"{lang}: {rel}" not in skipped:
+                    skipped.append(f"{lang}: {rel}")
+                continue
             data = src.read_bytes()
             if rel.endswith(APPEND):
                 target = rel[: -len(APPEND)]

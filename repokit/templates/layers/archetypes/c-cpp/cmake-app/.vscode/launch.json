@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "__RK_PROJECT__ --version (Windows, Debug)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/Debug/__RK_PROJECT__.exe",
+      "args": ["--version"],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "Build Debug"
+    },
+    {
+      "name": "__RK_PROJECT__ --version (gdb, single-config build)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/__RK_PROJECT__",
+      "args": ["--version"],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "environment": [],
+      "MIMode": "gdb",
+      "preLaunchTask": "Build Debug"
+    }
+  ]
+}

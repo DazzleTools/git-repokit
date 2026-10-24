@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build Debug",
+      "detail": "run VS Code from a Developer Command Prompt (or with msbuild on PATH)",
+      "type": "shell",
+      "command": "msbuild __RK_PROJECT__.sln -p:Configuration=Debug -p:Platform=x64",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$msCompile"]
+    },
+    {
+      "label": "Build Release",
+      "type": "shell",
+      "command": "msbuild __RK_PROJECT__.sln -p:Configuration=Release -p:Platform=x64",
+      "group": "build",
+      "problemMatcher": ["$msCompile"]
+    }
+  ]
+}

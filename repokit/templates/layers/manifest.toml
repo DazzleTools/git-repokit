@@ -82,6 +82,7 @@ description = "layer files shared by several languages"
 
 [layers."python/pypi"]
 facet = "build"
+overrides = [".vscode/launch.json"]
 description = "pyproject.toml with a dynamic version, the package (__init__, __main__, cli, _version), tests, and the publish-on-release workflow"
 
 [layers."python/setuppy"]
@@ -90,13 +91,13 @@ description = "setup.py and requirements.txt: git-repokit's Python output before
 
 [layers."python/script"]
 facet = "build"
-overrides = [".github/workflows/ci-python.yml"]
+overrides = [".github/workflows/ci-python.yml", ".vscode/launch.json"]
 description = "a local tool: one module reading VERSION, no packaging, no publish workflow (the simple-projects floor)"
 
 [layers."python/claude-plugin"]
 facet = "purpose"
 implies = ["any/claude-plugin"]
-overrides = [".github/workflows/ci-python.yml", ".repokit-common.toml", "VERSION"]
+overrides = [".github/workflows/ci-python.yml", ".repokit-common.toml", "VERSION", ".vscode/launch.json"]
 description = "a Claude Code plugin in plugin/ whose hooks are Python, launched through a small node script (Claude Code runs hooks with node); pytest for its tests; VERSION kept in step with the manifest"
 
 [layers."any/claude-plugin"]
@@ -139,6 +140,7 @@ description = "TypeScript: tsconfig.json (strict, ES2022, NodeNext), build and t
 [layers."js-ts/script"]
 facet = "build"
 implies = ["node"]
+overrides = [".vscode/launch.json"]
 description = "a plain script: one .js file run with node, reading VERSION; no build step, no dependencies"
 
 [layers."js-ts/vite"]
@@ -166,7 +168,7 @@ description = "an npm package: exports map, src/index.ts, node:test tests, publi
 [layers."js-ts/claude-plugin"]
 facet = "purpose"
 implies = ["node", "any/claude-plugin"]
-overrides = [".repokit-common.toml"]
+overrides = [".repokit-common.toml", ".vscode/launch.json"]
 description = "a Claude Code plugin in plugin/ (manifest, hooks, tests, its marketplace README) with the marketplace manifest at the root; VERSION kept in step with both manifests"
 
 [layers."js-ts/obsidian-plugin"]
