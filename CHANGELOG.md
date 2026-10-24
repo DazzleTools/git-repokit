@@ -8,111 +8,140 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.9.5] - 2026-10-24
 
 ### Changed
-- The suite's cost, measured and cut where it is. One `repokit create` costs 2 to 3 seconds (its commits, the vault repository, the layers; vendoring the tooling adds about 0.7 s), while the interpreter and `git init` cost a few hundredths: the fixed cost of an integration test is the create itself, so the lever is fewer creates. The bare-create test class now creates once and its five read-only tests share the tree, which takes it from about 27 seconds to about 14. The measure is kept as a one-off for the next classes to convert.
+- **Faster test suite** - the bare-create test class creates its project once and shares it (about 27 s to 14 s)
 
 ## [0.9.4] - 2026-10-24
 
 ### Added
-- **The vault skeleton.** The private vault's first commit now holds what `/obsidian-init` laid by hand before it read anything: the vault's own `CLAUDE.md` (its layout, its conventions, and the three-sessions-per-project note: a decisions session, a work session and an oracle, named `<PROJECT>__<YYYY-MM-DD>__<Role>`), a map-of-content stub at `claude/_maps/MOC-<project>.md`, the oracle's index stubs in `claude/_oracle/`, and the two boards in `claude/_todo/`. Files that already exist are kept.
-- **The oracle's first prompt.** The half of the bootstrap that needs someone who has read the project is now a prompt the create writes to `private/claude/_oracle/bootstrap-prompt.md`, listing the project's layout and the vault's documents and asking the oracle session to fill the map and the index. It goes through a vendored copy of the house AI library (`repokit/_vendor/ailib/`, copied unchanged from the copy of record and recorded with each file's fingerprint), using its prompt-file transport: nothing is sent anywhere, and the tool commits nothing a model would write. `vault_init` in the config chooses `prompt-file` (the default) or `none`.
+- **Vault skeleton** - the private vault's first commit holds what `/obsidian-init` used to lay by hand
+  - The vault's own `CLAUDE.md`, with the three-sessions-per-project note
+  - A map-of-content stub in `claude/_maps/`, the oracle's index stubs in `claude/_oracle/`, the boards in `claude/_todo/`
+  - Existing files are kept
+- **The oracle's first prompt** - written to `private/claude/_oracle/bootstrap-prompt.md` for an oracle session to run
+  - Nothing is sent anywhere, and the tool commits nothing a model would write
+  - `vault_init` in the config: `prompt-file` (default) or `none`
 
 ## [0.9.3] - 2026-10-24
 
 ### Added
-- **The GitHub half of a new project.** With `--github`, `--github-setup STEP[,STEP...]` (or the global config's `github_setup` list) sets up what the old route did by hand once the repository existed: `labels` (pinned, evergreen, roadmap, scratchpad, architecture, epic, ideas, CurrentTask, NextTask), `issues` (a Roadmap and a Quick Notes issue, created as #1 and #2), `pin` (both pinned at the top of the Issues tab), `discussions`, `topics` (from `--topics a,b`), `pypi-environment` (the `pypi` environment PyPI's trusted publishing needs, for the pypi preset only), and `traffic` (prints the ghtraf commands, since ghtraf creates gists and needs a secret only the person can set); `all` means every one. The labels and the two issues are made **before the first push**, so a pull request Dependabot opens on that push cannot take issue number 1. Every step skips what is already there, so running it twice creates nothing new, and the issues step refuses on a repository that already has issues rather than giving them later numbers. The bodies of the two issues are also kept in the vault's `private/claude/issues/`. Afterwards the create prints what has no API: watching the first CI run, Sponsorships, Pages.
-- `--github` refuses when `gh` is logged into a different account from the config's `github.username`, before anything is created.
+- **GitHub setup with `--github`** - what `/github-issues-setup` used to do by hand
+  - `--github-setup` (or the config's `github_setup`): `labels`, `issues`, `pin`, `discussions`, `topics`, `pypi-environment`, `traffic`, or `all`
+  - The nine standard labels, and Roadmap and Quick Notes as issues #1 and #2, both pinned
+  - Labels and issues are made before the first push, so a Dependabot PR can't take #1
+  - Safe to run twice; refuses to number issues on a repository that already has some
+  - `--topics a,b` sets the repository's topics
+  - Prints the steps GitHub has no API for: the first CI run, Sponsorships, Pages
+- `--github` refuses when `gh` is logged into a different account than the config names
 
 ### Fixed
-- **The first push of a Python package created with `--github` was blocked.** The vendored pre-push hook runs the tests with `python -P -m pytest`, which keeps the project root off the import path, and the pypi preset's tests import the package, which nobody has installed at that point. The preset's `pyproject.toml` now tells pytest to put the project root on the path (`pythonpath = ["."]`). The earlier GitHub tests had used `--no-common`, so they never ran the hook.
+- The first push of a Python package made with `--github` was blocked by its own pre-push test run
 
 ## [0.9.2] - 2026-10-23
 
 ### Added
-- **`.vscode/launch.json` per preset**, so a new project is steppable in VS Code from its first commit. Python presets launch with `debugpy` (`justMyCode` off): the package as a module with `--version`, the script as a program, the Claude plugin's hook with its debug variable set, plus pytest over the tests and over the current file. C/C++ presets launch with `cppvsdbg` on Windows and `cppdbg` (gdb) where the build runs elsewhere; the CMake and MSBuild presets ship a `.vscode/tasks.json` with the build the launch runs first (`cmake --build build --config Debug`, `msbuild <name>.sln -p:Configuration=Debug -p:Platform=x64`). JavaScript/TypeScript presets launch with `node`: the current file, `npm test`, the script with `--version`, the plugin's hook. The shapes follow a measure of the 143 `launch.json` files on the development machine.
-- In a project of two or more languages, `.vscode/` holds the first language's debug configurations, and the create says so (`Note: .vscode/ holds python's debug configurations; js-ts's were not merged in`): VS Code reads one `launch.json`, and merging two languages' files is left to the person.
+- **`.vscode/launch.json` per preset** - a new project can be debugged in VS Code from its first commit
+  - Python: `debugpy` for the package, the script or the plugin hook, plus pytest
+  - C/C++: `cppvsdbg` on Windows, `cppdbg` elsewhere; CMake and MSBuild presets add a `tasks.json` that builds first
+  - JavaScript/TypeScript: `node` for the current file, `npm test`, the script, the plugin hook
+- With two or more languages, `.vscode/` holds the first language's configurations, and the create says so
 
 ### Removed
-- The structure's own `launch.json`, a Python-only template written into every project whatever its language. A `--language generic` project now has no `.vscode/launch.json`.
+- The Python-only `launch.json` every project used to get, whatever its language
 
 ## [0.9.1] - 2026-10-23
 
 ### Added
-- **`python/claude-plugin`: a Claude Code plugin whose hooks are Python.** `repokit create NAME --language python --with claude-plugin` makes the shape claude-session-logger keeps, nested like the js-ts one: `plugin/hooks/hooks.json` runs a SessionStart hook written in Python through a small node launcher (`plugin/hooks/scripts/run-hook.mjs`, because Claude Code always has node but the shell a hook runs under differs by platform), pytest tests that check the manifests agree with `VERSION` and that the hook answers both directly and through the launcher, a CI workflow that compiles the hooks and runs those tests, and a push that runs them. No `pyproject.toml`: a plugin, not a package.
-- **A shared layer for what both plugin shapes have in common.** The marketplace manifest, the plugin manifest and the plugin's marketplace README now live in one place that both the js-ts and the Python plugin pull in, so the two cannot drift apart. The js-ts plugin's output is byte-for-byte what 0.9.0 wrote. JavaScript/TypeScript stays the primary shape: a bare `--with claude-plugin` with no language named is the js-ts plugin, as before; with `--language python` it is the Python one; with both languages named it asks which.
-- **A second language left without a preset is said out loud.** `--language python,js-ts` with nothing else gives python its default and now prints `js-ts got no preset of its own; add --with js-ts/<name> (see repokit list js-ts)` rather than leaving js-ts as a bare language layer silently. The same note appears when `--with` names only the other language's layers.
+- **`python/claude-plugin`** - a Claude Code plugin whose hooks are written in Python
+  - `repokit create NAME --language python --with claude-plugin`
+  - The hook runs through a small node launcher, so it works whatever shell Claude Code uses
+  - pytest tests for the manifests and the hook, a CI workflow, and a push that runs them
+- **One shared layer for both plugin shapes** - the marketplace manifest, plugin manifest and marketplace README
+  - A bare `--with claude-plugin` is still the js-ts plugin; with `--language python` it is the Python one; with both languages named it asks which
+- A second language with no preset of its own is now named, with the command that adds one
 
 ### Changed
-- A JavaScript/TypeScript project's push runs its tests. The settings the js-ts layers write name a `test-command` that runs `npm test` once the dependencies are installed and otherwise says to run `npm install`; before this, the vendored hook's default test step looked for Python tests and ran nothing in a js-ts project.
+- A JavaScript/TypeScript project's push runs its tests (`npm test`)
 
 ### Fixed
-- The wheel test built through the checkout's own `build/` folder, which setuptools reuses, so a file moved away by a later commit stayed in the wheel until someone deleted the folder by hand. It now builds the sdist first and the wheel from it, in a temporary folder, which also proves the sdist is complete.
+- The wheel could carry files a later commit had removed; it is now built from a fresh sdist
 
 ## [0.9.0] - 2026-10-23
 
-The 0.9.x line makes `repokit create` produce everything the old route produced: first the file tree of git-repokit-template, then what the `/create-project`, `/github-issues-setup` and `/obsidian-init` skills and `dz private-init` added by hand around it. Every piece is optional and configurable, so the house style lives in one person's global config and nobody else's defaults change; Python is built first because the old route for Python is the measured golden, and each piece lands for every language the tool builds, by the mechanism that owns its kind of question. **This version is the milestone: template parity.** A `repokit create NAME --language python` with the licence and the extras named reproduces git-repokit-template's project tree, and the same licence and extras land for C/C++ and JavaScript/TypeScript. That was git-repokit's original goal, and the versions after this one are the perfecting.
+The 0.9 line makes `repokit create` produce everything the old route did: git-repokit-template's file tree, then what `/create-project`, `/github-issues-setup`, `/obsidian-init` and `dz private-init` added by hand. Every piece is optional, so one person's house style lives in their global config. **0.9.0 is the milestone: template parity**, git-repokit's original goal; the versions after it are the perfecting.
 
 ### Added
-- **The licence is a parameter.** `--license <id>` writes `LICENSE` from a catalogue of the SPDX set GitHub and GitLab offer (MIT, Apache-2.0, GPL-2.0/3.0, LGPL, AGPL, MPL-2.0, BSD-2/3-Clause, 0BSD, ISC, BSL-1.0, EPL-2.0, Unlicense, CC0-1.0, CC-BY-4.0, CC-BY-SA-4.0) with the holder and the year filled from the git identity and the clock; `gpl-3.0-or-later`, `lgpl-3.0-or-later` and `agpl-3.0-or-later` add the notice line that the text itself cannot carry; `all-rights-reserved` is a plain notice for a private project; `--license file=<path>` copies any text as it is; `--license none` writes no file. The texts come from `github/choosealicense.com` at one pinned commit and `repokit/licenses/LICENSES.md` records the commit and each file's fingerprint, so a changed text shows. A licence is **required**: with none on the command line and none in the global config (`license`, and `license_private` for `--private-repo`), the create refuses before writing anything and names the catalogue. `.repokit.json` records the choice.
-- **The extras**: the optional files git-repokit-template carried and the old route wrote by hand, each behind a name in the global config's `extras` list or `--extras`: `funding` (`.github/FUNDING.yml`), `dependabot`, `stale`, `pr-template`, `release-template`, `roadmap` (`ROADMAP.md`, pointing at the repository's first issue), `platform-support` (`docs/platform-support.md`), `vscode-settings` (`.vscode/settings.json`), `placeholders` (`docs/.gitkeep`, `tests/one-offs/README.md`, `tests/output/.gitkeep`); `all` means every one, `--no-extras` none. The five `.github` files are the template repository's own, copied in unchanged apart from their placeholders. Off unless named, and recorded in `.repokit.json`.
-- `tests/test_template_parity.py`: the regression that keeps the milestone. It replays git-repokit-template's setup workflow on the local checkout, creates a project with the tool, and asserts the only differences are a declared list: `ci.yml` only in the template (the tool's CI is the language layer's), and a few files only in the tool (`.gitattributes`, `CHANGELOG.md`, `CLAUDE.md`, the layer's CI, `launch.json`, the preset's `cli.py`, the two hand-written extras). The copied extras must stay identical to the template's; wording differences in shared files are declared and anything new fails.
+- **`--license`** - writes `LICENSE` from a catalogue of the licences GitHub and GitLab offer
+  - Holder and year filled from the git identity and the clock
+  - `all-rights-reserved` for a private project, `file=<path>` for any text, `none` for no file
+  - Required: with no licence named on the command line or in the config, the create refuses and lists the catalogue
+- **Extras** - the optional files git-repokit-template carried, each named in `--extras` or the config's `extras`
+  - `funding`, `dependabot`, `stale`, `pr-template`, `release-template`, `roadmap`, `platform-support`, `vscode-settings`, `placeholders`, or `all`
+  - Off unless named; `.repokit.json` records which were written
+- A regression test that checks a create still matches git-repokit-template's tree
 
 ### Changed
-- git-repokit's own push runs the unit class of its suite (about four seconds) through the vendored pre-push hook; the complete suite (about seven minutes) runs in CI and before a tag. The `test-command` setting in `pyproject.toml` says so.
-- The structure's template context gains `package_name` and `github_org` (the organisation from `--org` or the config's `github.organization`, else the user), which the extras' URLs use.
+- git-repokit's own push runs only its unit tests (about 4 s); the full suite runs in CI
 
 ### Fixed
-- The wheel test asserted a workflow file name from before 0.7.3 and passed only because a stale `build/lib/` directory still held that file, which setuptools carried into every wheel built from the checkout, along with stale bytecode under the layer tree. The test now checks both inclusions (every file on disk is in the wheel, and nothing in the wheel is missing from disk) and names the current file; release wheels are built from a clean tree.
+- Wheels could carry stale files from an old `build/` folder
 
 ## [0.8.3] - 2026-10-22
 
 ### Added
-- **`js-ts/claude-plugin`: a Claude Code plugin, nested.** `repokit create NAME --with claude-plugin` makes the shape claude-bookmarks keeps: the plugin in `plugin/` with its own `.claude-plugin/plugin.json`, a `hooks/hooks.json` with one SessionStart hook and its script, `node:test` tests that check the manifests agree with `VERSION` and the hook answers, and the plugin's own README written for the marketplace; at the repository root, `.claude-plugin/marketplace.json` listing `./plugin`, the GitHub README, the tooling. `VERSION` is the source and the vendored version tool keeps `package.json` and the plugin manifest in step; tags are `v0.1.0`-style so they match what Claude Code reads from the manifest. TypeScript is not part of the preset (`--with claude-plugin,ts` adds it); the measure of the plugin checkouts on the development machine (`tests/one-offs/thinking/p3-measure-plugin-checkouts/`) found one of three in TypeScript.
-
-### Changed
-- The claude-plugin layer carries the whole `.repokit-common.toml` rather than appending to the language layer's: in TOML a key appended after a `[[table]]` belongs to that table, so `tag-format` could not follow the node layer's extra-target append. The override is declared in the manifest.
+- **`js-ts/claude-plugin`** - a Claude Code plugin, nested in `plugin/`
+  - `repokit create NAME --with claude-plugin`
+  - The plugin manifest, a SessionStart hook, `node:test` tests and a marketplace README
+  - `.claude-plugin/marketplace.json` at the root
+  - `VERSION` kept in step with `package.json` and the plugin manifest
+  - Add TypeScript with `--with claude-plugin,ts`
 
 ## [0.8.2] - 2026-10-22
 
 ### Added
-- **The `js-ts` language**, with its first layers and presets. `repokit create NAME --language js-ts` makes an npm package in TypeScript (`js-ts/node-package`, the default): a `package.json` with an exports map and ES modules, `tsconfig.json` (strict, ES2022, NodeNext), `src/index.ts`, `node:test` tests compiled with the sources, a `VERSION` file the vendored version tool keeps in step with `package.json`, `.editorconfig`, the JavaScript ignore lines, a CI workflow (install with the lockfile when there is one, type-check when there is a `tsconfig.json`, `npm test`) and a publish-on-release workflow for npm. `--with js-ts/script` is the floor for this language: one `.js` file run with node, reading `VERSION`, no build step, no dependencies, two `node:test` tests. The layers below the language: `node` (runtime), `ts` (dialect), `script` (build), `node-package` (purpose); `browser`, `vite`, `react`, `svelte` and the flavours `claude-plugin` (next version), `web-vite-react`, `obsidian-plugin`, `browser-extension` and `comfyui-frontend` are announced and refuse with a description until built.
-- The shape follows a measure of the eleven Node checkouts on the development machine (`tests/one-offs/thinking/p3-measure-node-checkouts/`): ES modules, npm, `engines` rather than `.nvmrc`, TypeScript common but not universal, Vite with Vitest as the web stack (a later version).
+- **The `js-ts` language** - `repokit create NAME --language js-ts`
+  - Default `js-ts/node-package`: an npm package in TypeScript (ES modules, strict `tsconfig.json`, `node:test`)
+  - CI, and a publish-on-release workflow for npm
+  - `VERSION` kept in step with `package.json`
+  - `--with js-ts/script`: one `.js` file, no build step, no dependencies
+  - Layers: `node`, `ts`, `script`, `node-package`; others are announced and refuse until built
 
 ### Changed
-- The `javascript` stub in the layers' manifest is now the `js-ts` language; `repokit list` and the known-languages line say `js-ts`.
-- A project's settings file for the vendored tooling no longer names `languages` for js-ts: the hooks detect `javascript` and `typescript` from `package.json` and `tsconfig.json`, so one file serves a JavaScript or a TypeScript project.
-- Several layers may each want `package.json`, and JSON cannot be appended to, so a later layer that needs more in it carries a whole `package.json` for the stack it implies and declares the override (`node`, then `ts`, then `node-package`).
-- The test suite runs `repokit` with stdin closed: `create` asks for a git identity when it finds none, and an inherited pipe made that prompt wait forever once.
+- `repokit list` and the language list say `js-ts` (was `javascript`)
 
 ### Fixed
-- git-repokit's own `.gitignore` rule `*config*.json` (a credentials guard) swallowed the ts layer's `tsconfig.json`, so the layer was whole in the developer's checkout and would have been missing in every clone. The rule now excludes the template tree, and a test checks that no layer file is ignored.
+- `tsconfig.json` was missing from the ts layer in every clone (an over-broad ignore rule)
 
 ## [0.8.1] - 2026-10-21
 
 ### Added
-- **`python/script`, the simple-projects floor.** `repokit create NAME --with python/script` (or `--with script`) makes a project that is one module, `NAME.py`, answering `--version` from a plain `VERSION` file beside it, with a two-test `tests/` folder, a `.repokit-common.toml` that points the vendored version tool at `VERSION`, and its own small CI (compile every top-level `.py`, run each with `--version`, run `tests/` when present). No `pyproject.toml`, no `setup.py`, no publish workflow: a local tool that is run, not installed.
+- **`python/script`** - the simplest Python project: one module, run rather than installed
+  - `repokit create NAME --with python/script` (or `--with script`)
+  - `NAME.py` answers `--version` from a `VERSION` file
+  - Two tests and a small CI; no `pyproject.toml`, no publish workflow
 
 ### Changed
-- `script` is a **build** choice (how the project is packaged: not at all), exclusive with `pypi` and `setuppy`, so `--with pypi,script` is refused as a collision rather than assembled. The design had placed it under purpose; the facet rule (named by the question the person answers) put it here.
+- `--with pypi,script` is refused: a project is either packaged or a script
 
 ## [0.8.0] - 2026-10-20
 
-The 0.8 line gives the code-type templates their type system below the language, and builds the language git-repokit's revival was started for. Through 0.7, a project was a language and one archetype within it. In 0.8 a project is named by the choices the person makes -- where it runs, which dialect it is written in, how it is built or packaged, what it uses, what it is -- each a layer with a facet, composed on the command line or taken whole as a tested preset, so that a Claude Code plugin, a Node package, a Vite site or a plain script are each a few tokens away and none needs a hand-customised template afterwards. 0.8.0 lays down the facets, the resolver and the `--with` grammar with Python and C/C++ unchanged; 0.8.1 adds the plain Python script as a shape; 0.8.2 and 0.8.3 add JavaScript/TypeScript with Node, TypeScript, the npm package and the Claude Code plugin.
+The 0.8 line gives projects a type system below the language, and adds JavaScript/TypeScript. A project is named by the choices you make (where it runs, its dialect, how it is built, what it is), each a layer, composed on the command line or taken whole as a tested preset. 0.8.0 adds the grammar, 0.8.1 the plain Python script, 0.8.2 and 0.8.3 JavaScript/TypeScript and the Claude Code plugin.
 
 ### Added
-- **`--with`, a list of presets and layers, replaces `--archetype` on `create` and `adopt`.** A token is a preset (`python/pypi`), a layer qualified by its language (`c-cpp/qt`), or a bare name when only one language has it (`setuppy`). The tool fills in what each layer implies (its language at least), orders the list by facet, refuses two layers that answer the same one-answer question (`pypi,setuppy` names the pair and the facet), refuses a bare name two languages share by naming both forms, and suggests a close name on a typo. A list equal to a preset's expansion is recorded as that preset; any other list is assembled by the rules and noted once as not a tested preset.
-- **Facets in the layers' manifest.** `[facets]` names the questions a project answers below its language -- runtime, dialect, build, framework, purpose -- with the order they apply in and whether a project has one answer or several; `[layers."lang/name"]` gives every layer folder its facet, what it implies, and whether it is built yet. The presets are the `[archetypes]` table as before. The rule for a facet: it is named by the question the person answers, never by the files the answer produces (TypeScript is a dialect, not a build system).
-- **`repokit list [LANG]`**: per language, the presets (planned ones marked) and each facet's choices, on one screen.
-- **`.repokit.json` records `layers`**, every layer in the order applied; `archetype` is the preset the request equalled, or null.
-- `tests/test_layers_compositions.py`: every composition of the shipped layers assembles into a temp directory with no two layers writing one path undeclared and no token left behind.
+- **`--with`** - a list of presets and layers, replacing `--archetype` on `create` and `adopt`
+  - A preset (`python/pypi`), a qualified layer (`c-cpp/qt`), or a bare name when only one language has it
+  - Fills in what each layer implies, and orders the list
+  - Refuses two layers that answer the same question (`pypi,setuppy`), and suggests a name on a typo
+- **`repokit list [LANG]`** - each language's presets and choices on one screen
+- `.repokit.json` records the layers a project was built from
 
 ### Changed
-- Nothing Python or C/C++ produce changed: `--language python` is still the pypi package, `--language c-cpp` the CMake app, `--with python/setuppy` and `--with c-cpp/msbuild` the same files as `--archetype` gave in 0.7.3 (checked byte for byte, `tests/one-offs/thinking/p3-identity/compare.py`).
+- Python and C/C++ projects are unchanged, file for file
 
 ### Fixed
-- The pypi archetype's `release.yml` could sit in a checkout with CRLF line endings on disk against the repository's LF attribute, and was then copied into projects that way (workflow files are copied byte for byte). The identity check against 0.7.3 found it; the layer is LF again.
+- The pypi preset's `release.yml` could be copied into projects with Windows line endings
 
 ### Removed
-- `--archetype`. No alias: git-repokit's own tests, README and this file were its only users (checked against the template-family roster on 2026-10-19).
+- `--archetype` (use `--with`)
 
 ## [0.7.3] - 2026-10-09
 
