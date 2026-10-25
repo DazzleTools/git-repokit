@@ -2695,79 +2695,29 @@ exit 0
         return (login or self.GITHUB_PLACEHOLDER, owner or self.GITHUB_PLACEHOLDER)
 
     def _generate_badges(self, language: str) -> str:
-        """Generate GitHub workflow badges based on language and configuration."""
-        _, github_user = self._github_names()  # the repository's owner: the URLs
-
-        # Base badges
-        badges = []
-        badge_links = []
-
-        # Workflow status badge, for the CI file the code-type layers write
-        # (ci-<language>.yml); a project with no CI gets no workflow badge.
-        workflow = self._ci_workflow()
-        if workflow:
-            badges.append("[![GitHub Workflow Status][workflow-badge]][workflow-url]")
-            badge_links.extend(
-                [
-                    f"[workflow-badge]: https://github.com/{github_user}/{self.project_name}/actions/workflows/{workflow}/badge.svg",
-                    f"[workflow-url]: https://github.com/{github_user}/{self.project_name}/actions",
-                ]
-            )
-
-        # Every value below comes from the project (0.9.6). Until then the
-        # version said 1.0.0, Python said >=3.7 and the licence said MIT
-        # whatever the project was, and a project in any other language got
-        # a "build passing" badge that checked nothing.
+        """The README's badge line (0.9.7): the house's badges, in the house's
+        order, from the template the preset or the person picks
+        (repokit/badges.py)."""
+        from . import badges as rk_badges
         from .readme_blocks import floors
-        repo = f"https://github.com/{github_user}/{self.project_name}"
-
-        # The latest release, read live (none until the first release)
-        badges.append("[![Release][release-badge]][release-url]")
-        badge_links.extend([
-            f"[release-badge]: https://img.shields.io/github/v/release/{github_user}/{self.project_name}"
-            "?include_prereleases&sort=semver",
-            f"[release-url]: {repo}/releases",
-        ])
-
-        # The runtime floor the preset's own files declare
+        login, owner = self._github_names()
+        kind, lid = getattr(self, "_license", None) or ("none", None)
         floor = floors(self.config.get("archetype"))
-        if "python" in floor:
-            badges.append("[![Python][python-badge]][python-url]")
-            badge_links.extend([
-                f"[python-badge]: https://img.shields.io/badge/python-%3E%3D{floor['python']}-blue",
-                "[python-url]: https://www.python.org/downloads/",
-            ])
-        if "node" in floor:
-            badges.append("[![Node][node-badge]][node-url]")
-            badge_links.extend([
-                f"[node-badge]: https://img.shields.io/badge/node-%3E%3D{floor['node']}-green",
-                "[node-url]: https://nodejs.org/en/download",
-            ])
-
-        # The licence the create wrote (none for a file, `none` or all rights reserved)
-        spdx = self._license_spdx()
-        if spdx and not spdx.startswith("LicenseRef"):
-            badges.append("[![License][license-badge]][license-url]")
-            badge_links.extend([
-                "[license-badge]: https://img.shields.io/badge/license-"
-                + spdx.replace("-", "--").replace("_", "__").replace(" ", "%20") + "-orange",
-                "[license-url]: LICENSE",
-            ])
-
-        # Discussions, when --github turns them on
-        from .github_setup import setup_names
-        try:
-            steps = setup_names(self.config.get("github_setup"))
-        except ValueError:
-            steps = []
-        if self.config.get("github_login") and "discussions" in steps:
-            badges.append("[![GitHub Discussions][discussions-badge]][discussions-url]")
-            badge_links.extend([
-                "[discussions-badge]: https://img.shields.io/badge/discussions-welcome-lightgrey",
-                f"[discussions-url]: {repo}/discussions",
-            ])
-
-        return "\n".join(badges) + "\n\n" + "\n".join(badge_links)
+        extras = self.config.get("extras") or []
+        values = {
+            "owner": owner, "repo": self.project_name, "repo_lower": self.project_name.lower(),
+            "dist": self.project_name, "python": floor.get("python", ""), "node": floor.get("node", ""),
+            "ci": self._ci_workflow() or "", "gist_user": login,
+            "gist": self.config.get("traffic_gist_id") or "PLACEHOLDER",  # ghtraf fills it
+            "pages": owner.lower(),
+            "platform_link": ("docs/platform-support.md" if "platform-support" in extras
+                              else f"https://github.com/{owner}/{self.project_name}"),
+            **rk_badges.license_values(lid if kind == "catalogue" else None, self._license_spdx()),
+        }
+        names = rk_badges.resolve(self.config.get("badges"), self.config.get("archetype"),
+                                  self.config.get("badge_templates"), self.config.get("badge_types"))
+        return rk_badges.render(names, values, ci=self.config.get("badges_ci") or "auto",
+                                types=self.config.get("badge_types"))
 
     def _license_spdx(self) -> Optional[str]:
         """The SPDX id of the catalogue licence this project got, else None."""
@@ -2786,24 +2736,58 @@ exit 0
         docs = sections(self.config.get("archetype"), self.config.get("language", "generic"),
                         self.project_name, owner,
                         bool(getattr(self, "with_common", False)) and not self.config.get("is_adoption", False))
-        kind, _ = getattr(self, "_license", None) or ("none", None)
+        from . import licenses
+        import datetime
+        kind, lid = getattr(self, "_license", None) or ("none", None)
         spdx = self._license_spdx()
+        # The License section, last in the README, in the house projects'
+        # words (claude-bookmarks, Claude-Session-Backup): the copyright line,
+        # then the licence by name. There is no Acknowledgements section: a
+        # project does not credit its own author (djdarcy, 2026-10-24).
+        notice = f"{self.project_name}, Copyright (C) {datetime.date.today().year} {self._holder()}"
         if spdx and spdx.startswith("LicenseRef"):
-            docs["license_line"] = "All rights reserved. See [LICENSE](LICENSE)."
+            docs["license_line"] = f"{notice}. All rights reserved -- see [LICENSE](LICENSE)."
         elif spdx:
-            docs["license_line"] = f"{spdx}. See [LICENSE](LICENSE) for details."
+            docs["license_line"] = (f"{notice}\n\nLicensed under the {licenses.title(lid) or spdx} ({spdx}) "
+                                    "-- see [LICENSE](LICENSE).")
         elif kind in ("file", "existing"):
             docs["license_line"] = "See [LICENSE](LICENSE)."
         else:
             docs["license_line"] = "No licence has been chosen yet."
         # what the layers' manifests say about the licence and the keywords
-        from . import licenses
-        _, lid = getattr(self, "_license", None) or ("none", None)
         docs["license_expression"] = (spdx if spdx else
                                       "SEE LICENSE IN LICENSE" if kind in ("file", "existing") else "UNLICENSED")
         docs["license_classifier"] = licenses.CLASSIFIERS.get(lid or "", "") if kind == "catalogue" else ""
         docs["topics"] = list(self.config.get("topics") or [])
+        # The house projects' support button, with the handle FUNDING.yml names
         funding = "funding" in (self.config.get("extras") or []) and login != self.GITHUB_PLACEHOLDER
-        docs["support_line"] = (f"Like the project? [Support it](https://github.com/sponsors/{login}).\n\n"
-                                if funding else "")
+        docs["support_line"] = (
+            "Like the project?\n\n"
+            '[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)]'
+            f"(https://www.buymeacoffee.com/{login})\n\n" if funding else "")
+        # What CONTRIBUTING.md covers, listed in the README
+        covers = ["Development setup", "Running the tests"]
+        docs["version_section"] = ""
+        if bool(getattr(self, "with_common", False)) and not self.config.get("is_adoption", False):
+            covers.append("Version management with `sync-versions.py`")
+            docs["version_section"] = (
+                "## Version Management\n\n"
+                "The version lives in one place and the pre-commit hook keeps every other copy in step. "
+                "To bump it:\n\n"
+                "```bash\n"
+                "python scripts/repokit-common/sync-versions.py --bump patch   # or minor, major\n"
+                "python scripts/repokit-common/sync-versions.py --check        # every copy agrees?\n"
+                "```\n\n")
+        covers.append("Pull request checklist")
+        docs["contributing_covers"] = "\n".join(f"- {c}" for c in covers)
         return docs
+
+    def _holder(self) -> str:
+        """Who the LICENSE names: the config's user, else the git identity
+        this repository's commits are made with."""
+        name = (self.config.get("user") or {}).get("name")
+        if name:
+            return name
+        r = subprocess.run(["git", "config", "user.name"], cwd=self.repo_root, capture_output=True,
+                           text=True, encoding="utf-8", errors="replace")
+        return (r.stdout.strip() if r.returncode == 0 else "") or "the copyright holder"

@@ -228,6 +228,14 @@ Recipe: Microservice
         metavar="TOPIC[,TOPIC...]",
         help="Repository topics for --github-setup topics"
     )
+    create_parser.add_argument(
+        "--badges",
+        metavar="TEMPLATE|BADGE[,BADGE...]",
+        help="README badges: a template (pypi, github, comfyui, minimal, or one saved as "
+             "badge_templates in the config) or a list of badges (pypi-version, release-date, "
+             "downloads, release-version, ci, python, node, comfyui-registry, license, discussions, "
+             "installs, views, platform). Default: the preset's template"
+    )
 
     create_parser.add_argument(
         "--description", "-d",
@@ -1670,6 +1678,8 @@ def args_to_config(args: argparse.Namespace) -> Dict[str, Any]:
         cli_config["github_setup"] = _split_steps(args.github_setup)
     if getattr(args, "topics", None):
         cli_config["topics"] = [t.strip() for t in args.topics.split(",") if t.strip()]
+    if getattr(args, "badges", None):
+        cli_config["badges"] = args.badges.strip()
     if getattr(args, "no_extras", False):
         cli_config["extras"] = []
     elif getattr(args, "extras", None):

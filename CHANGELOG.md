@@ -5,6 +5,22 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.7] - 2026-10-25
+
+### Added
+- **Badge templates** - the README's badge line as the house's own projects write it
+  - `pypi`, `github`, `comfyui`, `minimal`; the preset picks one
+  - `--badges <template>` or `--badges a,b,c` to choose
+  - Your own templates and badges in `~/.repokit/config.json` (`badge_templates`, `badge_types`)
+  - Badges always render in one order, with Platform last
+  - CI is added only where it fills a row
+  - The licence badge takes a colour that stands apart from its neighbours
+
+### Changed
+- **The README ends as the house's projects do** - Contributing, the support button, then License last
+  - No Acknowledgements section crediting the author
+  - CONTRIBUTING covers version management when repokit-common is vendored
+
 ## [0.9.6] - 2026-10-24
 
 ### Fixed

@@ -45,10 +45,25 @@ class TestOwner(GhStubCase):
         self.assertEqual(leftover, [], f"{PLACEHOLDER} left in {leftover}")
         self.assertIn("*       @stub-user", files[".github/CODEOWNERS"])
         self.assertIn('Homepage = "https://github.com/stub-user/demo"', files["pyproject.toml"])
-        self.assertIn("github/v/release/stub-user/demo", files["README.md"])
+        self.assertIn("github/release-date/stub-user/demo", files["README.md"])
+        self.assertIn("gist.githubusercontent.com/stub-user/", files["README.md"])
         self.assertIn("github: stub-user", files[".github/FUNDING.yml"])
         self.assertNotIn("username/repo", stdout)
         self.assertIn("is created and pushed next", stdout)
+
+    def test_the_readme_ends_the_way_the_house_projects_do(self):
+        # License last, no Acknowledgements crediting the author, the support
+        # button with the login FUNDING names (djdarcy, 2026-10-24)
+        self.create("--github")
+        readme = tracked_text(os.path.join(self.test_dir, "demo"))["README.md"]
+        headings = [l for l in readme.splitlines() if l.startswith("## ")]
+        self.assertEqual(headings[-1], "## License")
+        self.assertNotIn("Acknowledgements", readme)
+        self.assertIn("https://www.buymeacoffee.com/stub-user", readme)
+        self.assertNotIn("camo.githubusercontent.com", readme)
+        self.assertRegex(readme, r"demo, Copyright \(C\) 20\d\d \S+")
+        self.assertIn("Licensed under the MIT License (MIT) -- see [LICENSE](LICENSE).", readme)
+        self.assertIn("See **[CONTRIBUTING.md](CONTRIBUTING.md)** for:", readme)
 
     def test_org_owns_the_urls_and_the_login_owns_codeowners_and_funding(self):
         self.create("--github", "--org", "someorg")
@@ -68,8 +83,8 @@ class TestOwner(GhStubCase):
         self.assertNotIn("GPL", py)
         self.assertIn('keywords = ["cli", "demo"]', py)
         readme = files["README.md"]
-        self.assertIn("license-MIT", readme)
-        self.assertIn("python-%3E%3D3.10", readme)
+        self.assertIn("license-MIT-yellow", readme)
+        self.assertIn("python-3.10+-blue", readme)
         self.assertNotIn("1.0.0", readme)
         self.assertNotIn("Feature 1", readme)
         self.assertIn("pip install demo", readme)

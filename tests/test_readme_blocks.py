@@ -77,6 +77,14 @@ def test_spdx_ids_come_from_the_catalogue():
     assert licenses.spdx("no-such-licence") is None
 
 
+def test_licence_titles_come_from_the_catalogue():
+    assert licenses.title("mit") == "MIT License"
+    assert licenses.title("gpl-3.0") == "GNU General Public License v3.0"
+    assert licenses.title("gpl-3.0-or-later") == "GNU General Public License v3.0 or later"
+    assert licenses.title("all-rights-reserved") == "All rights reserved"
+    assert licenses.title("no-such-licence") is None
+
+
 def test_every_classifier_is_one_pypi_accepts():
     for lid, classifier in licenses.CLASSIFIERS.items():
         assert classifier in PYPI_LICENSE_CLASSIFIERS, f"{lid}: {classifier!r} is not a PyPI classifier"

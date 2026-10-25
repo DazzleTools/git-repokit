@@ -88,6 +88,13 @@ class ConfigManager:
             # Off unless the global config or --github-setup names them.
             "github_setup": [],
             "topics": [],
+            # README badges (0.9.7): a template name or a list; None picks the
+            # preset's (pypi for python/pypi, else github). badge_templates
+            # and badge_types hold a person's own; badges_ci is auto, on, off.
+            "badges": None,
+            "badge_templates": {},
+            "badge_types": {},
+            "badges_ci": "auto",
             # The vault's AI door (0.9.4): "prompt-file" writes the oracle's
             # first prompt to private/claude/_oracle/; "none" writes nothing.
             "vault_init": "prompt-file",

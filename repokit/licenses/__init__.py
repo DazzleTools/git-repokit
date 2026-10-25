@@ -123,6 +123,21 @@ def spdx(lid: str) -> Optional[str]:
     return None
 
 
+def title(lid: str) -> Optional[str]:
+    """The licence's full name for prose (`gpl-3.0` -> `GNU General Public
+    License v3.0`): the variants' base title plus "or later", else
+    LICENSES.md's title column; None for an id the catalogue lacks."""
+    lid = normalise(lid)
+    if lid in VARIANTS:
+        base = title(VARIANTS[lid][0])
+        return f"{base} or later" if base else None
+    for line in RECORD.read_text(encoding="utf-8").splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) > 2 and cells[0] == lid:
+            return cells[2].replace(" (authored here)", "")
+    return None
+
+
 def file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
