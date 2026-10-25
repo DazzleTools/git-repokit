@@ -1,25 +1,67 @@
 [build-system]
-# bump setuptools so we can use PEP 621 metadata
-requires = ["setuptools>=62.3", "wheel"]  # 62.3: recursive ** in package-data
+# 77: the PEP 639 licence fields below (an SPDX `license` string and
+# `license-files`); it also covers 62.3's recursive ** in package-data
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "repokit"
-version = "0.9.7"
-description = "A tool for creating standardized Git repositories with complex branching and worktree workflows"
+# PyPI's trusted publisher is registered for this name (DazzleTools/git-repokit,
+# publish.yml, environment pypi); the command stays `repokit`
+name = "git-repokit"
+version = "0.9.8"
+description = "Create standardized Git repositories: language presets, licences, GitHub setup, and a private notes vault"
 readme = "README.md"
-requires-python = ">=3.7"
-# requests: the --publish-to REST path (remote_integration.py imports it)
-dependencies = ["requests>=2.25.0"]
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Dustin Darcy" }]
+keywords = ["git", "repository", "scaffolding", "template", "project-generator", "github"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Version Control :: Git",
+]
+# 3.10: measured 2026-10-25 (tests/one-offs/thinking/p4-measure-python-floor/):
+# the full suite passes on 3.10; 3.9 fails in the repokit-common tooling every
+# created project vendors (`str | None` at runtime), and 3.7/3.8 lack
+# importlib.resources.files, which loads the templates
+requires-python = ">=3.10"
+dependencies = [
+  # the --publish-to REST path (remote_integration.py imports it)
+  "requests>=2.25.0",
+  # tomllib is 3.11+; the layer engine reads TOML (layers.py falls back to tomli)
+  "tomli>=1.1; python_version < '3.11'",
+]
+
+[project.urls]
+Homepage = "https://github.com/DazzleTools/git-repokit"
+Repository = "https://github.com/DazzleTools/git-repokit"
+Issues = "https://github.com/DazzleTools/git-repokit/issues"
+Changelog = "https://github.com/DazzleTools/git-repokit/blob/main/CHANGELOG.md"
 
 [project.scripts]
 repokit = "repokit.cli:main"
 
 [project.optional-dependencies]
+# what the test suite needs beyond the package (CI installs `.[test]`)
+test = [
+  "pytest>=7.0.0",
+  "python-dotenv>=1.0.0",
+  "pyyaml>=6.0",
+  "build>=1.0",
+]
 # keep your formatter/tester/etc here
 dev = [
   "pytest>=7.0.0",
   "python-dotenv>=1.0.0",
+  "pyyaml>=6.0",
+  "build>=1.0",
   "black>=23.0.0",
   "flake8>=6.0.0",
   "mypy>=1.0.0",

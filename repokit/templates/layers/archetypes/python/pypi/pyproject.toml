@@ -1,5 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+# 77: the PEP 639 licence fields (an SPDX `license` string and `license-files`)
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,17 +8,19 @@ name = "__RK_PROJECT__"
 dynamic = ["version"]
 description = "__RK_DESCRIPTION__"
 readme = "README.md"
-license = {text = "__RK_LICENSE__"}
+__RK_LICENSE_FIELD__
+__RK_LICENSE_FILES__
 requires-python = ">=3.10"
 authors = [
     {name = "__RK_AUTHOR__", email = "__RK_EMAIL__"},
 ]
 keywords = [__RK_KEYWORDS__]
+# No `License ::` classifier: setuptools 77+ refuses one beside a licence
+# expression (measured 2026-10-25); the `license` field above says it.
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Environment :: Console",
     "Intended Audience :: Developers",
-    __RK_LICENSE_CLASSIFIER__
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",

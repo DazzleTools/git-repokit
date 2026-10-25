@@ -85,31 +85,6 @@ def record() -> Dict[str, Tuple[str, str]]:
     return out
 
 
-# id -> PyPI's trove classifier, checked against PyPI's list on 2026-10-24
-# (tests/test_readme_blocks.py holds the lines). Ids with no classifier there
-# (lgpl-2.1, the CC-BY licences, all-rights-reserved) get none.
-CLASSIFIERS: Dict[str, str] = {
-    "mit": "License :: OSI Approved :: MIT License",
-    "apache-2.0": "License :: OSI Approved :: Apache Software License",
-    "gpl-2.0": "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
-    "gpl-3.0": "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-    "gpl-3.0-or-later": "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
-    "lgpl-3.0": "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
-    "lgpl-3.0-or-later": "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
-    "agpl-3.0": "License :: OSI Approved :: GNU Affero General Public License v3",
-    "agpl-3.0-or-later": "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
-    "mpl-2.0": "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
-    "bsd-2-clause": "License :: OSI Approved :: BSD License",
-    "bsd-3-clause": "License :: OSI Approved :: BSD License",
-    "0bsd": "License :: OSI Approved :: Zero-Clause BSD (0BSD)",
-    "isc": "License :: OSI Approved :: ISC License (ISCL)",
-    "bsl-1.0": "License :: OSI Approved :: Boost Software License 1.0 (BSL-1.0)",
-    "epl-2.0": "License :: OSI Approved :: Eclipse Public License 2.0 (EPL-2.0)",
-    "unlicense": "License :: OSI Approved :: The Unlicense (Unlicense)",
-    "cc0-1.0": "License :: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication",
-}
-
-
 def spdx(lid: str) -> Optional[str]:
     """The SPDX identifier for a catalogue id (`gpl-3.0` -> `GPL-3.0`), from the
     variants or LICENSES.md's SPDX column; None for an id the catalogue lacks."""

@@ -1,26 +1,57 @@
 name: CI
 
+# The unit class on every Python from the floor (3.10, measured 2026-10-25)
+# up, on Linux and Windows, plus a build of the package with the leak check.
+# The complete suite (about ten minutes; it creates real repositories) runs by
+# hand before a release: `python -m pytest -q`.
+
 on:
   push:
     branches: [ main, dev ]
   pull_request:
     branches: [ main, dev ]
 
+permissions:
+  contents: read
+
 jobs:
-  build:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v7
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install
+      run: |
+        python -m pip install --upgrade pip
+        pip install ".[test]"
+
+    - name: Unit tests
+      run: python -m pytest -q -m unit -p no:cacheprovider
+
+  package:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Set up python
-      run: echo "Setting up python environment"
-      
-    - name: Run tests
+    - uses: actions/checkout@v7
+
+    - name: Set up Python
+      uses: actions/setup-python@v7
+      with:
+        python-version: '3.12'
+
+    - name: Build and check
       run: |
-        echo "Running tests for git-repokit"
-        # Add testing commands here
-    
-    - name: Build
-      run: |
-        echo "Building git-repokit"
-        # Add build commands here
+        python -m pip install --upgrade pip build twine
+        python -m build --outdir dist/
+        python scripts/check_dist_no_leak.py dist/
+        twine check --strict dist/*

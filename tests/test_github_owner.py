@@ -78,8 +78,9 @@ class TestOwner(GhStubCase):
         self.create("--no-push")
         files = tracked_text(os.path.join(self.test_dir, "demo"))
         py = files["pyproject.toml"]
-        self.assertIn('license = {text = "MIT"}', py)
-        self.assertIn('"License :: OSI Approved :: MIT License",', py)
+        self.assertIn('license = "MIT"', py)                     # PEP 639 (0.9.8)
+        self.assertIn('license-files = ["LICENSE"]', py)
+        self.assertNotIn('"License :: OSI Approved', py)
         self.assertNotIn("GPL", py)
         self.assertIn('keywords = ["cli", "demo"]', py)
         readme = files["README.md"]

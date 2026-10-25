@@ -1,0 +1,73 @@
+name: Publish to PyPI
+
+# Publishes git-repokit when a GitHub Release is published (the house rule:
+# the release notes exist before the package does). PyPI's trusted publisher
+# is registered for this workflow, this repository and the `pypi`
+# environment, so no token is stored anywhere.
+#
+# The dazzle-git-repokit alias joins as a second publish job once its own
+# trusted publisher exists on PyPI (djdarcy, 2026-10-25: after this one
+# works); until then an alias job would fail on every release.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build git-repokit
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Set up Python
+      uses: actions/setup-python@v7
+      with:
+        python-version: '3.12'
+
+    - name: Install build tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+
+    - name: Build the sdist and the wheel
+      run: python -m build --outdir dist/
+
+    - name: Verify no private or local-only content leaked into the artifacts
+      run: python scripts/check_dist_no_leak.py dist/
+
+    - name: Check the packages' metadata
+      run: twine check --strict dist/*
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: dist
+        path: dist/
+
+  publish:
+    name: Publish git-repokit
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/git-repokit
+
+    permissions:
+      id-token: write
+
+    steps:
+    - uses: actions/download-artifact@v8
+      with:
+        name: dist
+        path: dist/
+
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        # a re-run of the same release finds its files already there
+        skip-existing: true

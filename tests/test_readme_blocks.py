@@ -16,28 +16,6 @@ from repokit.template_engine import token_context
 
 LAYERS = Path(__file__).resolve().parents[1] / "repokit" / "templates" / "layers" / "archetypes"
 
-# PyPI's licence classifiers, from https://pypi.org/pypi?%3Aaction=list_classifiers on 2026-10-24
-PYPI_LICENSE_CLASSIFIERS = {
-    "License :: CC0 1.0 Universal (CC0 1.0) Public Domain Dedication",
-    "License :: OSI Approved :: Apache Software License",
-    "License :: OSI Approved :: BSD License",
-    "License :: OSI Approved :: Boost Software License 1.0 (BSL-1.0)",
-    "License :: OSI Approved :: Eclipse Public License 2.0 (EPL-2.0)",
-    "License :: OSI Approved :: GNU Affero General Public License v3",
-    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
-    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
-    "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
-    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
-    "License :: OSI Approved :: ISC License (ISCL)",
-    "License :: OSI Approved :: MIT License",
-    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
-    "License :: OSI Approved :: The Unlicense (Unlicense)",
-    "License :: OSI Approved :: Zero-Clause BSD (0BSD)",
-}
-
-
 def _min_matrix_python(workflow: Path) -> str:
     versions = re.findall(r"'(3\.\d+)'", re.search(r"python-version:\s*\[([^\]]*)\]", workflow.read_text()).group(1))
     return min(versions, key=lambda v: tuple(int(p) for p in v.split(".")))
@@ -85,10 +63,15 @@ def test_licence_titles_come_from_the_catalogue():
     assert licenses.title("no-such-licence") is None
 
 
-def test_every_classifier_is_one_pypi_accepts():
-    for lid, classifier in licenses.CLASSIFIERS.items():
-        assert classifier in PYPI_LICENSE_CLASSIFIERS, f"{lid}: {classifier!r} is not a PyPI classifier"
-        assert lid in licenses.known(), f"{lid} is not a catalogue id"
+def test_the_pypi_preset_declares_its_licence_the_pep_639_way():
+    # setuptools 77+ refuses a `License ::` classifier beside a licence
+    # expression (measured 2026-10-25), so the preset carries neither the old
+    # table form nor a classifier, and requires the setuptools that reads it
+    text = (LAYERS / "python/pypi/pyproject.toml").read_text(encoding="utf-8")
+    assert 'requires = ["setuptools>=77"' in text
+    assert "__RK_LICENSE_FIELD__" in text and "__RK_LICENSE_FILES__" in text
+    assert "License ::" not in text.split("[project.optional-dependencies]")[0].replace("# No `License ::`", "")
+    assert "license = {text" not in text
 
 
 # --- the README and CONTRIBUTING sections ---
@@ -125,18 +108,25 @@ def test_plugin_sections_install_through_the_marketplace():
 
 def test_tokens_carry_the_owner_the_licence_and_the_keywords():
     ctx = token_context({"project_name": "p", "github_org": "someorg", "github_user": "me",
-                         "license_expression": "MIT",
-                         "license_classifier": "License :: OSI Approved :: MIT License",
+                         "license_expression": "MIT", "license_spdx": "MIT", "license_file_written": True,
                          "topics": ["cli", "demo"]})
     assert ctx["RK_ORG"] == "someorg"
     assert ctx["RK_LICENSE"] == "MIT"
-    assert ctx["RK_LICENSE_CLASSIFIER"] == '"License :: OSI Approved :: MIT License",'
+    assert ctx["RK_LICENSE_FIELD"] == 'license = "MIT"'
+    assert ctx["RK_LICENSE_FILES"] == 'license-files = ["LICENSE"]'
     assert ctx["RK_KEYWORDS"] == '"cli", "demo"'
 
 
-def test_no_topics_and_no_classifier_leave_valid_empty_values():
+def test_a_file_licence_ships_its_file_without_an_spdx_claim():
+    ctx = token_context({"project_name": "p", "license_expression": "SEE LICENSE IN LICENSE",
+                         "license_spdx": "", "license_file_written": True})
+    assert ctx["RK_LICENSE_FIELD"] == "" and ctx["RK_LICENSE_FILES"] == 'license-files = ["LICENSE"]'
+
+
+def test_no_topics_and_no_licence_leave_valid_empty_values():
     ctx = token_context({"project_name": "p"})
-    assert ctx["RK_KEYWORDS"] == "" and ctx["RK_LICENSE_CLASSIFIER"] == ""
+    assert ctx["RK_KEYWORDS"] == ""
+    assert ctx["RK_LICENSE_FIELD"] == "" and ctx["RK_LICENSE_FILES"] == ""
     assert ctx["RK_LICENSE"] == "UNLICENSED"
 
 

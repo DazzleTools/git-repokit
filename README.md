@@ -39,16 +39,16 @@ RepoKit automates the creation of standardized Git repositories with professiona
 
 ## 📦 Installation
 
+Python 3.10 or newer. The command is `repokit`.
+
 ```bash
-# Install from source
-git clone https://github.com/djdarcy/git-repokit.git
+# From PyPI
+pip install git-repokit
+
+# From source
+git clone https://github.com/DazzleTools/git-repokit.git
 cd git-repokit
-
-# Install in development mode with all dependencies
-pip install -e ".[dev]"
-
-# Or install for regular use
-pip install -e .
+pip install -e ".[dev]"     # with the test and lint tools
 ```
 
 ## 🎯 Quick Start

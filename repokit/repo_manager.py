@@ -2757,7 +2757,10 @@ exit 0
         # what the layers' manifests say about the licence and the keywords
         docs["license_expression"] = (spdx if spdx else
                                       "SEE LICENSE IN LICENSE" if kind in ("file", "existing") else "UNLICENSED")
-        docs["license_classifier"] = licenses.CLASSIFIERS.get(lid or "", "") if kind == "catalogue" else ""
+        # PEP 639 (0.9.8): the SPDX id only for a catalogue licence (a file has
+        # none), and whether a LICENSE file is written at all
+        docs["license_spdx"] = spdx or ""
+        docs["license_file_written"] = kind in ("catalogue", "file", "existing")
         docs["topics"] = list(self.config.get("topics") or [])
         # The house projects' support button, with the handle FUNDING.yml names
         funding = "funding" in (self.config.get("extras") or []) and login != self.GITHUB_PLACEHOLDER

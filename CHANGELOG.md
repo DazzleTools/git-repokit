@@ -5,6 +5,20 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.8] - 2026-10-25
+
+### Added
+- **Ready for PyPI as `git-repokit`** - `pip install git-repokit`; the command is still `repokit`
+  - A publish workflow that runs when a GitHub Release is published
+  - The build fails if anything private would ship (`scripts/check_dist_no_leak.py`)
+- CI runs the unit tests on Python 3.10 to 3.13, on Linux and Windows
+
+### Changed
+- **Python 3.10 or newer** - 3.9 and older do not work; `tomli` is installed on 3.10
+- **Licences declared the current way** - in git-repokit and in created Python projects
+  - `license = "<SPDX id>"` and `license-files`, no licence classifier, setuptools 77 or newer
+  - Builds no longer warn about the licence fields
+
 ## [0.9.7] - 2026-10-25
 
 ### Added

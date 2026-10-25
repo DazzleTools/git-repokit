@@ -33,7 +33,7 @@ repokit adopt ./my-project --publish-to github --repo-name my-project --private-
 
 ### Prerequisites
 - Git installed on your system
-- Python 3.7+ with RepoKit installed (`pip install repokit`)
+- Python 3.10+ with RepoKit installed (`pip install git-repokit`)
 - GitHub account (if publishing to GitHub)
 - Your project in a folder somewhere on your computer
 

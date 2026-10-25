@@ -52,11 +52,24 @@ def test_the_vendor_tree_is_a_package_with_its_record():
     assert RECORD.is_file() and SECTION in RECORD.read_text(encoding="utf-8")
 
 
+def _stdlib_names():
+    """The standard library's top-level module names. sys.stdlib_module_names
+    is Python 3.10+; on 3.9 (git-repokit's floor) they are read from the
+    interpreter's own library folder, plus its built-in modules."""
+    if hasattr(sys, "stdlib_module_names"):
+        return set(sys.stdlib_module_names)
+    import sysconfig
+    lib = Path(sysconfig.get_paths()["stdlib"])
+    names = {p.stem for p in lib.glob("*.py")} | {p.name for p in lib.iterdir()
+                                                  if p.is_dir() and (p / "__init__.py").exists()}
+    return names | set(sys.builtin_module_names)
+
+
 def test_purity_nothing_under_vendor_knows_its_host():
     """Real import statements (read with ast, so examples in docstrings do not
     count) stay inside the copy or the standard library; no host token appears
     anywhere in the text."""
-    stdlib = set(sys.stdlib_module_names) | {"__future__"}
+    stdlib = _stdlib_names() | {"__future__"}
     bad = []
     for p in _py():
         rel = p.relative_to(AILIB).as_posix()
