@@ -438,6 +438,24 @@ def test_no_layer_file_is_ignored_by_git():
     assert ignored == [], ignored
 
 
+def test_every_file_the_package_ships_is_tracked_by_git():
+    """Found 2026-10-25 by the first real CI run: the vault's CLAUDE.md template
+    (0.9.4) matched the checkout's `.git/info/exclude` rule `CLAUDE.md`, so it was
+    never committed. Every local test passed (the file was on this disk) while
+    every clone, CI run and PyPI wheel lacked it. A file the package ships must
+    be tracked, whatever any ignore file says."""
+    if not (REPO / ".git").exists():
+        pytest.skip("not a git checkout")
+    r = subprocess.run(["git", "ls-files", "--", "repokit"], cwd=str(REPO), capture_output=True, text=True)
+    tracked = set(r.stdout.splitlines())
+    shipped = [p for sub in ("templates", "licenses", "hooks", "_vendor")
+               for p in (REPO / "repokit" / sub).rglob("*")
+               if p.is_file() and "__pycache__" not in p.parts and p.suffix != ".pyc"]
+    missing = sorted(p.relative_to(REPO).as_posix() for p in shipped
+                     if p.relative_to(REPO).as_posix() not in tracked)
+    assert missing == [], f"shipped but not tracked: {missing}"
+
+
 # --- Phase 3, unit 1: every layer has a facet -----------------------------------
 
 def test_every_layer_folder_has_a_manifest_entry_with_a_known_facet():

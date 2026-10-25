@@ -5,6 +5,13 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.9] - 2026-10-25
+
+### Fixed
+- **The vault's `CLAUDE.md` was missing from every clone and package** - only the development machine had it
+  - A local ignore rule kept the template out of git since 0.9.4
+  - A test now checks that every file the package ships is tracked
+
 ## [0.9.8] - 2026-10-25
 
 ### Added
