@@ -49,7 +49,7 @@ Examples:
   repokit create myproject --language python --dir-profile standard
   
   # Adopt an existing project with RepoKit structure
-  repokit adopt ./existing-project --strategy safe
+  repokit adopt ./existing-project --migration-strategy safe
   
   # Create with custom branch strategy
   repokit create webapp --branch-strategy gitflow --publish-to github
@@ -136,7 +136,7 @@ Examples:
   repokit create myapp --language python
   
   # Web project with standard profile
-  repokit create webapp --dir-profile standard --language javascript
+  repokit create webapp --dir-profile standard --language js-ts
   
   # Enterprise project with custom directories
   repokit create enterprise-app --dir-profile complete --directories "analytics,ml-models"
@@ -605,7 +605,7 @@ GITHUB DEPLOYMENT RECIPES:
   repokit adopt ./open-source-project \\
     --publish-to github \\
     --repo-name awesome-open-source \\
-    --language javascript \\
+    --language js-ts \\
     --dir-profile complete
     
   # Private GitHub repository with organization
@@ -729,7 +729,9 @@ For more detailed documentation, see: docs/Adoption-Guide.md
     adopt_parser.add_argument(
         "--license",
         metavar="ID|file=PATH|none",
-        help="The LICENSE to write when the project has none, as for create; an existing LICENSE is kept"
+        help="The LICENSE to write, as for create. Optional: without it the project's own license file "
+             "(LICENSE, LICENSE.md, COPYING, ...) is kept, or the config's `license` is written when there is "
+             "none, or the project is adopted without one. Naming one replaces the project's own file"
     )
 
     adopt_parser.add_argument(
@@ -1865,6 +1867,13 @@ def main() -> int:
         except _layers.LayerError as e:
             logger.error(str(e))
             return 1
+        if not args.language:
+            # the license catalogue, which create's --license help points to (0.9.11)
+            from . import licenses as _licenses
+            print("licenses (--license; or file=PATH, or none):")
+            ids = list(_licenses.known())
+            for i in range(0, len(ids), 8):
+                print("  " + ", ".join(ids[i:i + 8]))
         return 0
 
     elif args.command == "list-templates":
@@ -2375,9 +2384,13 @@ def main() -> int:
                 print("  Project is already using RepoKit structure.")
             elif summary["project_type"] == "empty":
                 print("  Create new RepoKit project:")
-                print(
-                    f"    repokit create {os.path.basename(dir_path)} --language {summary['detected_language']}"
-                )
+                # The analyzer names languages repokit has no layers for (java,
+                # go, ...) and calls js-ts "javascript"; suggest only a language
+                # create accepts (0.9.11)
+                detected = {"javascript": "js-ts"}.get(summary["detected_language"],
+                                                       summary["detected_language"])
+                language = f" --language {detected}" if detected in _known_language_names() else ""
+                print(f"    repokit create {os.path.basename(dir_path)}{language} --license <id>")
             else:
                 print("  Migrate to RepoKit structure:")
                 print(
@@ -2385,7 +2398,7 @@ def main() -> int:
                 )
                 print("  Or adopt in-place:")
                 print(
-                    f"    repokit adopt {args.name} --strategy {summary['recommended_strategy']}"
+                    f"    repokit adopt {args.name} --migration-strategy {summary['recommended_strategy']}"
                 )
                 if getattr(args, "publish_to", None):
                     print(f"  With publishing:")

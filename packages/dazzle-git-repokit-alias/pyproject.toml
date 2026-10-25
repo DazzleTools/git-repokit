@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# An alias: `pip install dazzle-git-repokit` installs git-repokit, the same way
+# `dazzle-dz` installs dazzlecmd. PyPI's trusted publisher for this name is
+# DazzleTools/git-repokit, publish.yml, environment pypi. The version moves in
+# lockstep with git-repokit's (tests/test_packaging.py checks it), so the
+# alias always pulls the release it was published beside or a later one.
+name = "dazzle-git-repokit"
+version = "0.9.11"
+description = "Alias for git-repokit -- create standardized Git repositories"
+readme = { text = "This is an alias package. `pip install git-repokit` or `pip install dazzle-git-repokit` -- both install the same tool, whose command is `repokit`. See https://github.com/DazzleTools/git-repokit for documentation.", content-type = "text/plain" }
+license = "MIT"
+requires-python = ">=3.10"
+authors = [{ name = "Dustin Darcy" }]
+keywords = ["git", "repository", "scaffolding", "template", "project-generator", "github", "dazzletools"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Version Control :: Git",
+]
+dependencies = ["git-repokit>=0.9.11"]
+
+# The same console script as git-repokit, pointing at its entry point (importable
+# because git-repokit is a dependency). Without it, `pipx install
+# dazzle-git-repokit` exposes nothing: pipx surfaces only the named package's
+# commands, not its dependencies'. (The dazzle-dz alias learned this.)
+[project.scripts]
+repokit = "repokit.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/DazzleTools/git-repokit"
+Repository = "https://github.com/DazzleTools/git-repokit"
+Issues = "https://github.com/DazzleTools/git-repokit/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,51 +1,43 @@
-# RepoKit
+# git-repokit
 
-[![GitHub Workflow Status](https://github.com/djdarcy/git-repokit/actions/workflows/main.yml/badge.svg)](https://github.com/djdarcy/git-repokit/actions)
-[![Version](https://img.shields.io/badge/version-0.6.0-blue)](https://github.com/djdarcy/git-repokit/releases)
-[![Python](https://img.shields.io/badge/python-%3E%3D3.7-darkgreen)](https://python.org/downloads)
-[![License](https://img.shields.io/badge/license-MIT-orange)](https://github.com/djdarcy/git-repokit/blob/main/LICENSE)
-[![GitHub Discussions](https://img.shields.io/badge/discussions-Welcome-lightgrey)](https://github.com/djdarcy/git-repokit/discussions)
+[![PyPI](https://img.shields.io/pypi/v/git-repokit?color=green)](https://pypi.org/project/git-repokit/)
+[![Release Date](https://img.shields.io/github/release-date/DazzleTools/git-repokit?color=green)](https://github.com/DazzleTools/git-repokit/releases)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/git-repokit?period=total&units=international_system&left_color=black&right_color=green&left_text=downloads)](https://pypistats.org/packages/git-repokit)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Discussions](https://img.shields.io/github/discussions/DazzleTools/git-repokit)](https://github.com/DazzleTools/git-repokit/discussions)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](docs/platform-support.md)
 
-**Transform chaotic code folders into professional, organized repositories that work seamlessly with GitHub and teams.**
+**One `repokit` command creates a project that is ready to work in (including the structure, the code for its language, the tooling and hooks, a private notes vault, a license, and the repository on GitHub with its labels and first issues).**
 
-RepoKit automates the creation of standardized Git repositories with professional structure, worktree-based and branching workflows, and GitHub/Gitlab/etc deployment pipelines. Whether you're starting fresh or organizing existing code, RepoKit provides the structure and tools for professional development.
+`repokit create` replaces the hand-run route of copying a template repository, running its setup, then setting up GitHub and the notes by hand. Every piece is optional and configurable, so your own house style lives in one config file, and a create becomes one short command.
 
-## Why RepoKit?
+## What a project gets
 
-**Before**: Scattered files, no organization, deployment nightmares  
-**After**: Professional structure, team-ready, GitHub-ready, portfolio-worthy
+A full create (the [Quick Start](#-quick-start) below) produces:
 
-> **New to RepoKit?** Read [Why RepoKit Exists](docs/Why-RepoKit-Exists.md) for the complete picture.
-
-## Features
-
-### Core Capabilities
-- **Universal Bootstrap System**: Analyze and migrate ANY project to RepoKit structure
-- **Standardized Repository Structure**: Consistent directory layout with standard folders
-- **Branch Strategies**: a single `main` branch with private notes kept out of git, or the multi-branch model (main, dev, staging, test, live, and a local-only private branch)
-- **Worktree Management**: Git worktrees for efficient branch isolation and parallel development
-- **Private Content Protection**: Secure local-only content that never gets pushed
-- **GitHub/GitLab Integration**: Automated repository creation and deployment
-- **AI Development Integration**: Built-in Claude AI assistance with workflow documentation
-- **Two template systems**: the structure every project gets, then the code type on top -- a language layer and, below it, layers named by the choice they answer (how it is built, what it uses, what it is), composed with `--with` or taken whole as a preset (`--language python,c-cpp`, `--with c-cpp/cmake-app`, `--with cmake-lib,qt`); `repokit list` shows them; a new language is a folder and a manifest entry, not code
-- **Comprehensive Test Framework**: Unit, integration, and end-to-end testing
-
-### Universal Project Support
-- **Empty Projects**: Start fresh with optimal structure
-- **Existing Code**: Preserve your files while adding RepoKit benefits  
-- **Git Repositories**: Maintain full history while upgrading workflow
-- **Complex Projects**: Handle multi-branch, multi-contributor scenarios
-- **Legacy Codebases**: Safe migration with conflict resolution
+- **The structure:** README, CONTRIBUTING, CHANGELOG, LICENSE, `.gitignore`, `.gitattributes`, `docs/`, `tests/`, `scripts/`, and, if you ask for them, ROADMAP, a funding file, Dependabot, a stale-issue policy and PR and release templates.
+- **The code for its language:** a Python package with `pyproject.toml` and a CLI, a CMake or Visual Studio C/C++ project, a TypeScript npm package, a Claude Code plugin, and more. Each comes with tests, a CI workflow and a VS Code debug configuration that work from the first commit. See [Languages and layers](docs/Languages-and-Layers.md).
+- **A README that names the project:** the real GitHub owner, badges for the release, the Python or Node minimum and the license, install and test commands for the preset, and a License section at the end.
+- **The tooling:** [git-repokit-common](https://github.com/DazzleTools/git-repokit-common) vendored at `scripts/repokit-common/`, with git hooks that keep version numbers in step, keep private files out of public commits, and run the tests before a push.
+- **A private vault:** `private/` is its own git repository, ignored by the project, for notes, design documents and postmortems. It starts with a map, an index for an oracle session and a to-do board. See [The vault](docs/The-Vault.md).
+- **The repository on GitHub** (with `--github`): created with your `gh` login and pushed. It gets the standard labels, Roadmap and Quick Notes as issues #1 and #2 (pinned), discussions and topics. See [GitHub setup](docs/GitHub-Setup.md).
 
 ## 📦 Installation
 
 Python 3.10 or newer. The command is `repokit`.
 
 ```bash
-# From PyPI
 pip install git-repokit
+# or the same tool under its DazzleTools alias
+pip install dazzle-git-repokit
+```
 
-# From source
+`--github` also needs the [GitHub CLI](https://cli.github.com/), logged in once with `gh auth login`.
+
+From source:
+
+```bash
 git clone https://github.com/DazzleTools/git-repokit.git
 cd git-repokit
 pip install -e ".[dev]"     # with the test and lint tools
@@ -53,320 +45,231 @@ pip install -e ".[dev]"     # with the test and lint tools
 
 ## 🎯 Quick Start
 
-### Create a New Project
-```bash
-# Basic project creation
-repokit create my-awesome-project --language python
+### A full project, on GitHub
 
-# A C/C++ project: the language's layer plus its default archetype (cmake-app)
-repokit create my-tool --language c-cpp
-
-# A preset names its language; several languages stack in the order given
-repokit create my-tool --with c-cpp/msbuild
-repokit create my-tool --language python,c-cpp
-
-# Compose layers below the language (bare names when unique; the tool orders them)
-repokit create my-tool --with setuppy
-repokit list            # every language's presets and layers, one screen
-
-# Create and deploy to GitHub in one command
-repokit create my-project --language python --publish-to github --private-repo
-
-# Create with AI integration
-repokit create my-project --ai claude --publish-to github
-```
-
-### Languages and archetypes (the code-type layers)
-
-Every project gets the same structure (README, CONTRIBUTING, `.github/`, `.gitignore`, the vault, repokit-common). `--language` adds the code type on top, from `repokit/templates/layers/`: each language has a layer and a default archetype, and an archetype (`--with LANG/NAME`) adds its own layer and implies its language. With several languages and no `--with`, the first language is the primary one and only its default archetype applies (two archetypes would both claim the settings and build files); the other languages add their language layers. A later layer's file replaces an earlier one; a file named `<name>.rkappend` is appended instead (so each language adds its lines to `.gitignore`); `__RK_NAME__` tokens in file names and contents become the project's names (`my-tool`, `my_tool`, `MY_TOOL`, `MyTool`, the author, the year, a GUID). Workflow files are copied unchanged. Files are written byte for byte, so a header's BOM or a `.sln`'s line endings are what the layer holds. `repokit list` prints the known languages, presets and layers; an unknown name, or one whose layer is not built yet, stops before anything is created and names what is known. `generic` (the default) adds no code-type files.
-
-`--with` takes a list. A token is a preset (`python/pypi`, the tested lists in the table below), a layer qualified by its language (`c-cpp/qt`), or a bare name when only one language has it (`setuppy`; `qt` is refused naming both). Every layer belongs to a **facet**, the question it answers -- where it runs, which dialect, how it is built or packaged, what it uses, what it is -- and the tool orders a list by facet, fills in what a layer implies (its language at least), and refuses two answers to a one-answer question (`pypi,setuppy`). A list that equals a preset is recorded as that preset in `.repokit.json`; any other list is assembled by the rules and noted once as not a tested preset. `.repokit.json` records `layers`, every layer in the order applied.
-
-CI comes from the layers too: `ci-python.yml` with the Python layer (a matrix of pytest runs and a build), `ci-c-cpp.yml` with the cmake-app archetype (CMake, CTest on three operating systems); the README's workflow badge names the file that exists, and a project with no CI has no workflow badge. The structure writes `.gitattributes` (line-ending normalisation, and `scripts/repokit-common/** linguist-vendored` so GitHub does not count the vendored tooling as the project's language) and a `CHANGELOG.md` with the first version's heading and links, which git-repokit-common's version tool expects.
-
-| Language | Default archetype | Archetypes |
-|---|---|---|
-| `python` | `python/pypi` (`pyproject.toml` with a dynamic version, the package with `cli.py` and `_version.py`, tests, the publish-on-release workflow -- the shape of git-repokit-template's projects) | `python/setuppy` (`setup.py` + `requirements.txt`, the output before 0.7.1); `python/script` (one module reading `VERSION`, its own small CI, no packaging -- the simple-projects floor); `python/claude-plugin` (a Claude Code plugin whose hooks are Python, run through a small node launcher; pytest tests; the same nested shape and shared manifests as the js-ts plugin, which stays the default for a bare `--with claude-plugin`); `python/comfyui`, `python/django`, `python/qt` announced |
-| `c-cpp` | `c-cpp/cmake-app` (CMake presets, a vcpkg manifest, CTest, a build-time version stamp, CI) | `c-cpp/msbuild` (a Visual Studio solution), `c-cpp/minimal` (one source file, `Makefile` + `build.bat`); `c-cpp/cmake-lib` and `c-cpp/qt` announced. All three build as generated with Visual Studio 2022's tools (`tests/test_layers_c_cpp.py`); the version lives in `include/<name>/version.h`, which CMake, the `.rc` resource and the code all read |
-| `js-ts` | `js-ts/node-package` (an npm package in TypeScript: `package.json` with an exports map, `tsconfig.json`, `src/index.ts`, `node:test` tests, publish-on-release; the layers `node`, `ts`, `node-package`) | `js-ts/script` (one `.js` run with node, reading `VERSION`, no build step -- the floor); `js-ts/claude-plugin` (a Claude Code plugin in `plugin/` with its own manifest, a SessionStart hook, `node:test` tests and the marketplace README, the marketplace manifest at the root; add `ts` for TypeScript); `js-ts/web-vite-react`, `js-ts/obsidian-plugin`, `js-ts/browser-extension`, `js-ts/comfyui-frontend` announced. The version lives in `VERSION`; the vendored version tool keeps `package.json` in step |
-
-### Adopt an Existing Project
-```bash
-# Analyze what RepoKit will do
-repokit analyze .
-
-# Adopt in-place with safe strategy
-repokit adopt . --publish-to github --private-repo
-
-# Migrate to new structure (creates copy)
-repokit migrate ./old-project ./new-project
-```
-
-## 🔧 Common Use Cases
-
-### 1. Brand New Python Project
-```bash
-# Create project with GitHub deployment
-repokit create awesome-api \
-  --language python \
-  --description "My awesome Python API" \
-  --publish-to github \
-  --private-repo \
-  --ai claude
-```
-
-### 2. Existing Project Migration
-```bash
-# First, analyze your project
-cd existing-project
-repokit analyze .
-
-# Then adopt with recommended settings
-repokit adopt . \
-  --migration-strategy safe \
-  --publish-to github \
-  --organization my-company
-```
-
-### 3. Legacy Project Modernization
-```bash
-# Analyze complex project
-repokit analyze ./legacy-app
-
-# Adopt with careful conflict handling
-repokit adopt ./legacy-app \
-  --strategy safe \
-  --branch-strategy gitflow \
-  --dry-run  # Preview changes first
-```
-
-### 4. Multi-Language Monorepo
-```bash
-# Create with custom structure
-repokit create platform \
-  --language generic \
-  --directories "backend,frontend,shared,docs,infra" \
-  --branches "main,develop,release,hotfix" \
-  --publish-to github
-```
-
-## 📊 Project Analysis
-
-RepoKit can analyze any project and provide migration recommendations:
+This is the most common create: a Python package with everything turned on, published to GitHub with its labels, first issues and topics.
 
 ```bash
-repokit analyze /path/to/project
-
-# Output includes:
-# - Project type (empty, source_no_git, git_with_history, etc.)
-# - Detected primary language
-# - Migration complexity (low/medium/high)
-# - Recommended migration strategy
-# - Recommended branch strategy
-# - Step-by-step migration plan
+repokit create my-tool --language python --license gpl-3.0-or-later \
+  --description "What my-tool does, in one sentence" \
+  --extras all \
+  --github --github-setup labels,issues,pin,discussions,topics \
+  --topics cli,python
 ```
 
-## 🌳 Branch Strategies
+You get a private GitHub repository under your `gh` login (add `--public` for a public one, `--org MyOrg` for an organization), with `main` pushed, the labels made, and issues #1 (Roadmap) and #2 (Quick Notes) pinned. Locally, `my-tool/` holds the project and its vault in `my-tool/private/`. [GitHub setup](docs/GitHub-Setup.md) lists the few steps that are still done by hand afterwards.
 
-RepoKit supports multiple branching strategies.
+### The same create from your house config
 
-### Main-only (the default)
-```
-main
-```
-`repokit create my-project` makes the project folder the repository, on `main`, with:
-- `private/` as **its own git repository** (ignored by the project; linked into every worktree);
-- [git-repokit-common](https://github.com/DazzleTools/git-repokit-common) vendored at `scripts/repokit-common/`, with its hooks installed (version sync, private-content checks, test gating).
+Put the choices you make every time in `~/.repokit/config.json`:
 
-`--no-common` skips git-repokit-common; `--private-mode branch` keeps private work on a private branch only.
-
-`--license <id>` writes `LICENSE` from the catalogue (the SPDX set GitHub and GitLab offer, plus `gpl-3.0-or-later` and the like, and `all-rights-reserved`), `--license file=<path>` copies a text as it is, `--license none` writes none; a licence is required, so with no flag the global config must name `license` (and `license_private` for `--private-repo`), and otherwise the create refuses and lists the catalogue. `--extras funding,dependabot,stale,pr-template,release-template,roadmap,platform-support,vscode-settings,placeholders` (or `all`) adds the optional files the old template carried; they are off unless named here or in the global config's `extras` list, and `--no-extras` turns them off. The house style, then, is a `~/.repokit/config.json` such as:
-
-```json
-{"license": "gpl-3.0", "license_private": "all-rights-reserved",
- "extras": ["funding", "dependabot", "stale", "pr-template", "release-template", "roadmap", "placeholders"],
- "github": {"username": "you", "organization": "your-org"}}
-```
-
-With it, `repokit create NAME --language python` reproduces the project tree git-repokit-template gave, which `tests/test_template_parity.py` keeps true; the same licence and extras land for `--language c-cpp` and `--language js-ts`.
-
-### The private-branch model
-
-These keep your working history on a local-only `private` branch (repository in `<name>/local/`, `main` in `<name>/github/`) and move finished work to the public branches -- squashed, fast-forwarded, or selectively. A valid workflow, and RepoKit's original one, but more involved: hooks refuse private files on public branches to keep mistakes from leaking. See [docs/Branch-Strategies.md](docs/Branch-Strategies.md).
-
-With `--with-common`, these strategies also get git-repokit-common's hooks, configured to refuse private files on the public branches. `repokit setup-guardrails` installs the same hooks in an existing project.
-
-### Standard
-```
-private → dev → main → test → staging → live
-```
-
-### Simple
-```
-private → dev → main
-```
-
-### GitFlow
-```
-private → feature/* → develop → release/* → main
-                  ↘                    ↗
-                    hotfix/* →  →  → ↗
-```
-
-### GitHub Flow
-```
-private → feature/* → main
-```
-
-### Custom
-```bash
-repokit create my-project \
-  --branches "main,develop,qa,production" \
-  --worktrees "main,develop"
-```
-
-## 🔐 GitHub/GitLab Integration
-
-### With the gh CLI (simplest)
-
-```bash
-gh auth login                                   # once
-repokit create my-project --github              # private repo under your account, main pushed
-repokit create my-project --github --public --org MyOrg
-```
-
-git-repokit uses gh's login, so no token is configured here. Only public branches are pushed; a private branch never leaves your machine.
-
-### Through the REST API with a token
-
-### Initial Setup
-```bash
-# Store GitHub credentials (one time)
-repokit store-credentials --publish-to github --token YOUR_TOKEN
-
-# Or use environment variable
-export GITHUB_TOKEN=YOUR_TOKEN
-```
-
-### Automatic Deployment
-```bash
-# Create and deploy in one command
-repokit create my-project --publish-to github --private-repo
-
-# Deploy to organization
-repokit create team-project \
-  --publish-to github \
-  --organization my-company \
-  --private-repo
-```
-
-## 🤖 AI Integration
-
-RepoKit includes Claude AI integration for enhanced development:
-
-```bash
-# Create project with AI assistance
-repokit create my-project --ai claude
-
-# This adds:
-# - CLAUDE.md with project context
-# - Development workflow instructions
-# - Problem-solving methodology (The Process)
-# - Private documentation structure
-```
-
-## 📁 Directory Structure
-
-RepoKit creates an organized project structure:
-
-```
-my-project/
-├── local/          # Main repository (private branch)
-│   ├── docs/       # Documentation
-│   ├── tests/      # Test files
-│   ├── scripts/    # Utility scripts
-│   ├── private/    # Local-only content
-│   │   └── claude/ # AI assistance docs
-│   └── ...
-├── github/         # Main branch worktree
-└── dev/           # Development branch worktree
-```
-
-## 🧪 Testing
-
-RepoKit includes a comprehensive test framework:
-
-```bash
-# Run all tests
-python tests/run_tests.py
-
-# Run specific test categories
-python tests/run_tests.py --unit        # Fast unit tests
-python tests/run_tests.py --integration # CLI integration tests
-python tests/run_tests.py --github      # GitHub API tests (live; requires token)
-
-# Check test environment
-python tests/run_tests.py --check
-```
-
-Every run is isolated from your git config, home directory and tokens; see `tests/README.md` (and `python -m pytest` works too). A `git push` runs the unit class through the vendored pre-push hook (`test-command` in `pyproject.toml`, about four seconds); the complete suite runs in CI, and before a tag run it yourself: `python -m pytest -q` (about seven minutes).
-
-## 📚 Documentation
-
-### Getting Started
-- **[Documentation Guide](docs/README.md)** - Start here for navigation
-- **[Why RepoKit Exists](docs/Why-RepoKit-Exists.md)** - Understand the problem and solution
-- **[Adoption Guide](docs/Adoption-Guide.md)** - Step-by-step tutorials for existing projects
-
-### Reference Guides  
-- **[Recipes and How-Tos](docs/Recipes-And-Howtos.md)** - Copy-paste commands for common scenarios
-- **[Branch Strategies](docs/Branch-Strategies.md)** - Branching workflows explained
-- **[Migration Guide](docs/Migration-Guide.md)** - Universal bootstrap scenarios
-- **[Auth Guide](docs/Auth-Guide.md)** - Authentication and credentials
-- **[Workflow Guide](docs/Workflow-Guide.md)** - Development workflows
-- **[Deployment Demo](docs/Deployment-Demo.md)** - Step-by-step deployment examples
-- **[Test Framework](tests/README.md)** - Comprehensive testing documentation
-
-> **💡 Pro Tip**: Start with the [Documentation Guide](docs) for easier perusal and recommended reading order.
-
-## 🛠️ Configuration
-
-RepoKit uses hierarchical configuration:
-
-1. **Default values** (built-in)
-2. **Global config** (`~/.repokit/config.json`)
-3. **Project config** (`./.repokit.json`)
-4. **Environment variables** (`REPOKIT_*`)
-5. **CLI arguments** (highest priority)
-
-### Example Configuration
 ```json
 {
-  "name": "my-project",
-  "language": "python",
-  "branches": ["main", "develop", "staging"],
-  "worktrees": ["main", "develop"],
-  "user": {
-    "name": "Your Name",
-    "email": "your.email@example.com"
-  },
-  "github": true,
-  "private_repo": true
+  "license": "gpl-3.0-or-later",
+  "license_private": "all-rights-reserved",
+  "extras": ["all"],
+  "github_setup": ["labels", "issues", "pin", "discussions", "topics"],
+  "github": {"username": "your-login"}
 }
 ```
 
+Then the full create is:
+
+```bash
+repokit create my-tool --language python --github \
+  --description "What my-tool does, in one sentence" --topics cli,python
+```
+
+Every key is listed in [Configuration](docs/Configuration.md).
+
+### A multi-branch project
+
+The private-branch model keeps all your working history on a local-only `private` branch, and moves finished work to public branches that are checked out beside it:
+
+```bash
+repokit create my-app --branch-strategy standard --language python --license mit --github
+```
+
+```
+my-app/
+  local/     the repository, on the private branch: work here
+  dev/       the dev branch
+  github/    the main branch
+```
+
+Then the day-to-day loop is:
+
+```bash
+cd my-app/local                     # work and commit on private, notes and all
+git add -A && git commit -m "Add the parser"
+
+cd ../dev                           # bring the work to dev, without the private files
+repokit safe-merge private --preview
+repokit safe-merge private
+git commit -m "Add the parser"
+
+cd ../github                        # and on to main when it is ready
+repokit safe-merge dev
+git commit -m "Release the parser"
+git push
+```
+
+`safe-merge` leaves out the private content (`private/`, `CLAUDE.md`, `revisions/`, ...), and the hooks refuse it on a public branch if it ever gets staged. `--github` pushes only the public branches. Other layouts: `simple` (private, dev, main), `gitflow`, `github-flow`, and your own with `--branches` and `--worktrees`; see [Branch strategies](#branch-strategies) below.
+
+> **Known issue in 0.9.11:** this create prints `fatal: ambiguous argument 'private'` once per public branch, and `dev/` and `github/` start with only the README and `.github/`. The loop above still brings the work across. The fix is tracked in [#16](https://github.com/DazzleTools/git-repokit/issues/16).
+
+### Other common creates
+
+```bash
+# Local only: no GitHub, nothing pushed
+repokit create my-tool --language python --license mit
+
+# A Claude Code plugin (hooks in JavaScript; add --language python for Python hooks)
+repokit create my-plugin --with claude-plugin --license apache-2.0 --github
+
+# A C/C++ app with CMake, or a Visual Studio solution
+repokit create my-app --language c-cpp --license bsd-3-clause
+repokit create my-app --with c-cpp/msbuild --license gpl-3.0-or-later
+
+# A TypeScript npm package
+repokit create my-lib --language js-ts --license mpl-2.0
+
+# A one-file Python script, no packaging, given away to the public domain
+repokit create my-script --with python/script --license unlicense
+
+# Several pieces in one --with, comma-separated; repokit puts them in order
+repokit create my-plugin --with claude-plugin,ts --license mit              # a Claude Code plugin in TypeScript
+repokit create my-lib --with node,ts,node-package --license isc             # the same layers as --with js-ts/node-package
+repokit create my-app --with c-cpp/cmake-app,python/script --license mit    # two languages, a preset for each
+
+# A private project: all rights reserved, evaluation-only, your own terms, or no LICENSE at all
+repokit create my-work --language python --license all-rights-reserved
+repokit create my-work --language python --license proprietary-evaluation
+repokit create my-work --language python --license file=../terms/client-terms.txt
+repokit create my-sketch --license none
+
+# What every language offers, and the license catalogue
+repokit list
+```
+
+The catalogue has every license GitHub and GitLab offer when you create a repository, beyond the ones above: `lgpl-3.0`, `agpl-3.0`, `epl-2.0`, `0bsd`, `cc0-1.0` and more, with the texts from [choosealicense.com](https://choosealicense.com/licenses/), which also helps you pick one. `repokit list` prints every id, ready to copy. Two more are for software you are not giving away: `all-rights-reserved`, and `proprietary-evaluation`, which allows evaluation and non-commercial use until you revoke it, forbids everything else, and optionally provides an email for permission requests.
+
+## Choosing the code type
+
+`--language` picks the language: `python`, `c-cpp`, `js-ts`, or `generic` (the default, which adds no code). Each language has a default preset, and `--with` picks another one, such as `python/claude-plugin` or `c-cpp/msbuild`. `--with` also takes a comma-separated list of presets and single layers (`--with claude-plugin,ts`). A name can be bare when only one language has it, and is qualified when two do: `script` is refused as ambiguous, `python/script` is not. `repokit list` shows every preset and layer, including the planned ones.
+
+| Language | Default preset | Other presets |
+|---|---|---|
+| `python` | `python/pypi`: a package with `pyproject.toml`, a CLI, tests, and publish-on-release | `python/script`, `python/setuppy`, `python/claude-plugin` |
+| `c-cpp` | `c-cpp/cmake-app`: CMake presets, vcpkg, CTest, a version header | `c-cpp/msbuild`, `c-cpp/minimal` |
+| `js-ts` | `js-ts/node-package`: a TypeScript npm package with `node:test` | `js-ts/script`, `js-ts/claude-plugin` |
+
+Several languages stack: `--language python,c-cpp`. The details, and how to add a language, are in [Languages and layers](docs/Languages-and-Layers.md).
+
+## The license
+
+A license is required. `--license <id>` writes `LICENSE` from a catalogue of the licenses GitHub and GitLab offer (`mit`, `apache-2.0`, `gpl-3.0`, `gpl-3.0-or-later`, `bsd-3-clause`, ...), plus `all-rights-reserved` and `proprietary-evaluation` for a private project. `--license file=<path>` copies a text as it is, and `--license none` writes no file. The holder and year come from your git identity and the clock, and the license also populates in `pyproject.toml` or the plugin manifest. With `license` set in the config, you can leave the flag off.
+
+## Branch strategies
+
+repokit has two ways to keep private work private:
+
+- **`main-only` (the default):** the project folder is the repository, on `main`, and `private/` is its own nested git repository that the project ignores. One branch, no merging rules to learn.
+- **The private-branch model:** your working history lives on a local-only `private` branch in `<name>/local/`, and the public branches are git worktrees in sibling folders. You move finished work across with `repokit safe-merge`, which leaves the private content behind. This is the model repokit was first built for, and it suits projects with several release stages or several people.
+
+| `--branch-strategy` | Public branches | Checked out in folders | Flow |
+|---|---|---|---|
+| `main-only` | main | the project folder itself | commit on main |
+| `standard` | dev, staging, test, live, main | `dev/`, `github/` (main) | private -> dev -> test / staging -> main -> live |
+| `simple` | dev, main | `github/` (main) | private -> dev -> main |
+| `gitflow` | develop, release, hotfix, main | `develop/`, `github/` (main) | private -> develop -> release -> main, with hotfixes |
+| `github-flow` | main | `github/` (main) | private -> main |
+| `minimal` | main | none (switch branches in `local/`) | private -> main |
+
+```bash
+# A GitFlow project on GitHub
+repokit create my-lib --branch-strategy gitflow --language python --license mit --github
+
+# Your own branches, with worktrees for two of them (name a private-branch
+# strategy too, or the project gets no private branch)
+repokit create my-app --branch-strategy simple --branches main,develop,qa,production \
+  --worktrees main,develop --license mit
+```
+
+The guards for the private-branch model: `repokit check-guardrails` shows what is protected, `repokit setup-guardrails` installs the hooks in a project repokit did not make, and `repokit safe-merge-dev` merges between development branches while keeping their history out of the public ones. The [Branch strategies](docs/Branch-Strategies.md) guide covers each layout, and the [Workflow guide](docs/Workflow-Guide.md) covers the day-to-day work.
+
+## Existing projects
+
+```bash
+repokit analyze ./my-project                              # what repokit would do, changing nothing
+repokit adopt ./my-project --dry-run                      # preview adopting a git repository in place
+repokit adopt ./my-project --language python --migration-strategy safe --backup
+repokit migrate ./my-folder --dry-run                     # add repokit's folders and files to a folder
+```
+
+`adopt` fills in what the project lacks. It keeps the project's own license file (`LICENSE`, `LICENSE.md`, `COPYING`, ...); with none, it writes the license your config names, or adopts the project without one and says so. `--license` is only for choosing one (it replaces the project's own file). It keeps the repository's history and sets up the private-branch layout (`--branch-strategy standard` unless you name another): your folder stays on the `private` branch, with `main` and `dev` checked out in sibling folders. The `safe` strategy keeps every existing file and adds what is missing beside it. `repokit setup-guardrails` adds the private-content hooks to a project repokit did not create. The [Adoption guide](docs/Adoption-Guide.md) and the [Migration guide](docs/Migration-Guide.md) walk through each case.
+
+## All commands
+
+| Command | What it does |
+|---|---|
+| `create` | Create a new project |
+| `list` | List the languages, presets and layers |
+| `analyze` | Report what repokit would do with an existing folder |
+| `adopt` | Add repokit's structure to an existing git repository, in place |
+| `migrate` | Add repokit's standard folders, files and hooks to an existing folder |
+| `publish` | Publish an existing repository to GitHub or GitLab |
+| `bootstrap` | Write a script that sets repokit up |
+| `init-config` | Write a `.repokit.json` |
+| `store-credentials` | Store a GitHub or GitLab token for `--publish-to` |
+| `setup-guardrails`, `check-guardrails` | Install, or check, the private-content protection |
+| `safe-merge`, `safe-merge-dev` | Merge branches without carrying private content across |
+| `clean-history`, `analyze-history` | Find, or remove, sensitive data in a repository's history |
+| `manage-gitkeep` | Add or remove `.gitkeep` files |
+| `list-templates` | List the template files |
+
+`repokit <command> --help` shows each command's options and examples.
+
+## 🧪 Testing
+
+```bash
+python -m pytest -q             # the full suite, about ten minutes
+python -m pytest -q -m unit     # the unit tests, a few seconds
+```
+
+Every run is isolated from your git config, home directory and tokens. A `git push` runs the unit tests through the vendored pre-push hook; CI runs the unit tests on Python 3.10 to 3.13, on Linux and Windows. [tests/README.md](tests/README.md) covers the test classes and the live GitHub tests.
+
+## 📚 Documentation
+
+- [Configuration](docs/Configuration.md): every config key, and the flag that matches it
+- [Languages and layers](docs/Languages-and-Layers.md): presets, `--with`, and adding a language
+- [GitHub setup](docs/GitHub-Setup.md): `--github`, `--github-setup`, and what GitHub has no API for
+- [The vault](docs/The-Vault.md): `private/`, its first files, and the sessions that use it
+- [Branch strategies](docs/Branch-Strategies.md): main-only and the private-branch model
+- [Workflow guide](docs/Workflow-Guide.md): day-to-day work under the private-branch strategies
+- [Deployment demo](docs/Deployment-Demo.md): worked examples, from a new project to GitHub
+- [Adoption guide](docs/Adoption-Guide.md) and [Migration guide](docs/Migration-Guide.md): existing projects
+- [Recipes and how-tos](docs/Recipes-And-Howtos.md): commands for common cases
+- [Auth guide](docs/Auth-Guide.md): the `gh` login, and tokens for `--publish-to`
+- [Platform support](docs/platform-support.md): what runs where, and what each platform needs
+- [Why repokit exists](docs/Why-RepoKit-Exists.md)
+
+The [documentation guide](docs/README.md) suggests a reading order.
+
 ## Contributing
 
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines. Please feel free to open issues or submit pull requests.
+Contributions are welcome! See the [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 
 Like the project?
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/djdarcy)
 
+## Related Projects
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+- [git-repokit-common](https://github.com/DazzleTools/git-repokit-common) - The shared scripts and git hooks every project gets at `scripts/repokit-common/`: version sync, private-content checks, tests before a push, `gh_issue_full.py`. repokit vendors it into each project it creates, and into itself
+- [git-repokit-template](https://github.com/DazzleTools/git-repokit-template) - The template repository repokit grew from: copy it, run its setup, then finish GitHub and the notes by hand. `repokit create --language python` reproduces its project tree, and a regression test keeps the two in step
+- [dazzlecmd](https://github.com/DazzleTools/dazzlecmd) - The DazzleTools CLI (`dz`). Its `dz private-init` first made `private/` its own repository; repokit's vault is a port of it
+- [github-traffic-tracker](https://github.com/djdarcy/github-traffic-tracker) - Traffic history beyond GitHub's 14 days (`ghtraf`). `--github-setup traffic` prints its setup commands, and the `installs` and `views` badges read its counts
 
 ## Acknowledgments
 
@@ -378,4 +281,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
   - https://www.atlassian.com/continuous-delivery
   - https://www.perforce.com/blog/vcs/best-branching-strategies-high-velocity-development
 - Built for developers who value consistency and automation
-- Special thanks to the open-source community
+- Special thanks to the open-source community writ large
+
+## License
+
+git-repokit, Copyright (C) 2025-2026 Dustin Darcy
+
+Licensed under the MIT License (MIT) -- see [LICENSE](LICENSE).

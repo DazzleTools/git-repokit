@@ -1,7 +1,7 @@
 """0.9.8: git-repokit as a PyPI package.
 
 The name PyPI's trusted publisher is registered for, the measured Python floor,
-the PEP 639 licence fields, a publish workflow that runs on a published release
+the PEP 639 license fields, a publish workflow that runs on a published release
 through the `pypi` environment, and the leak check that guards both artifacts.
 """
 import importlib.util
@@ -43,7 +43,7 @@ def test_the_python_floor_is_the_measured_one_and_tomli_covers_it():
     assert "Programming Language :: Python :: 3.10" in project["classifiers"]
 
 
-def test_the_licence_is_declared_the_pep_639_way():
+def test_the_license_is_declared_the_pep_639_way():
     data = pyproject()
     assert data["project"]["license"] == "MIT"
     assert data["project"]["license-files"] == ["LICENSE"]
@@ -62,8 +62,36 @@ def test_publish_runs_on_a_release_through_the_pypi_environment():
     assert "name: pypi" in wf and "id-token: write" in wf
     assert "pypa/gh-action-pypi-publish@release/v1" in wf and "skip-existing: true" in wf
     assert "check_dist_no_leak.py" in wf and "twine check --strict" in wf
-    # the alias waits for its own trusted publisher (djdarcy, 2026-10-25)
-    assert "dazzle-git-repokit" not in wf.split("#")[0]
+
+
+def test_the_alias_publishes_from_its_own_job_beside_git_repokit():
+    wf = (REPO / ".github" / "workflows" / "publish.yml").read_text(encoding="utf-8")
+    # git-repokit's steps are the ones that first published 0.9.10
+    assert "python -m build --outdir dist/\n" in wf and "name: dist\n" in wf
+    assert "url: https://pypi.org/p/git-repokit\n" in wf
+    # the alias: its own build folder, leak check, metadata check and job
+    assert "python -m build packages/dazzle-git-repokit-alias/ --outdir dist-alias/" in wf
+    assert "check_dist_no_leak.py dist-alias/" in wf and "twine check --strict dist-alias/*" in wf
+    alias_job = wf.split("publish-alias:")[1]
+    assert "needs: build" in alias_job and "name: pypi" in alias_job and "id-token: write" in alias_job
+    assert "url: https://pypi.org/p/dazzle-git-repokit" in alias_job
+    assert "name: dist-alias" in alias_job and "skip-existing: true" in alias_job
+
+
+def alias_pyproject():
+    path = REPO / "packages" / "dazzle-git-repokit-alias" / "pyproject.toml"
+    return tomllib.loads(path.read_text(encoding="utf-8"))
+
+
+def test_the_alias_moves_in_lockstep_with_git_repokit():
+    main, alias = pyproject()["project"], alias_pyproject()["project"]
+    assert alias["name"] == "dazzle-git-repokit"
+    assert alias["version"] == main["version"]
+    assert alias["dependencies"] == [f"git-repokit>={main['version']}"]
+    # pipx exposes only the named package's commands, so the alias declares repokit too
+    assert alias["scripts"] == main["scripts"]
+    assert alias["requires-python"] == main["requires-python"]
+    assert alias["license"] == main["license"]
 
 
 def _tar(names):

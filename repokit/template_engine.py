@@ -58,14 +58,16 @@ def token_context(context: Dict[str, Any], archetype: Optional[str] = None) -> D
         "RK_GUID_SOLUTION": str(uuid.uuid4()).upper(),
         "RK_AUTHOR": str(context.get("author") or context.get("author_name") or ""),
         "RK_EMAIL": str(context.get("author_email") or ""),
-        # 0.9.6: the licence the create wrote and the topics as keywords (one
+        # 0.9.6: the license the create wrote and the topics as keywords (one
         # form valid in a TOML or a JSON array). RK_LICENSE is a manifest's
         # string (plugin.json); the pyproject lines are whole lines (0.9.8,
-        # PEP 639): `license = "<SPDX>"` only for a catalogue licence, and
+        # PEP 639): `license = "<SPDX>"` only for a catalogue license, and
         # `license-files` whenever a LICENSE is written, else nothing.
         "RK_LICENSE": str(context.get("license_expression") or "UNLICENSED"),
         "RK_LICENSE_FIELD": (f'license = "{context["license_spdx"]}"' if context.get("license_spdx") else ""),
-        "RK_LICENSE_FILES": ('license-files = ["LICENSE"]' if context.get("license_file_written") else ""),
+        # the file's own name: an adopted project's may be LICENSE.md or COPYING (0.9.11)
+        "RK_LICENSE_FILES": (f'license-files = ["{context.get("license_file_name") or "LICENSE"}"]'
+                             if context.get("license_file_written") else ""),
         "RK_KEYWORDS": ", ".join(json.dumps(str(t)) for t in (context.get("topics") or [])),
     }
     return {**context, **tokens}

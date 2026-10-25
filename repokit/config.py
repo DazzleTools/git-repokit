@@ -73,7 +73,7 @@ class ConfigManager:
             "sensitive_patterns": DEFAULT_SENSITIVE_PATTERNS.copy(),
             "private_branch": BRANCH_STRATEGIES[DEFAULT_BRANCH_STRATEGY]["private_branch"],
             "github": True,
-            # The licence is REQUIRED: --license, else `license` here (or in the
+            # The license is REQUIRED: --license, else `license` here (or in the
             # global file), else `license_private` for a private repository;
             # with none, create refuses and names the catalogue (0.9.0).
             "license": None,

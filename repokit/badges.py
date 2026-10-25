@@ -9,14 +9,14 @@ in the vault.
   project, inline (`[![alt](image)](link)`) as the house writes them.
 - TEMPLATES are ordered lists. The general ones follow djdarcy's slots:
   where to get it (PyPI, else the release), when it was released, package
-  downloads, runtime, other package locations, licence, discussions,
+  downloads, runtime, other package locations, license, discussions,
   ghstats, platform last (the commitment that the tools work everywhere).
   ComfyUI keeps its own order: the Registry is where a node comes from.
 - CI is a filler: in when it lands on a row that already exists, out when
   it would start a row by itself (ROW badges per row).
-- The licence's colour is its house colour (GPL/AGPL green, MIT yellow,
+- The license's color is its house color (GPL/AGPL green, MIT yellow,
   others orange), switched to the next of green, yellow, orange when it would
-  equal a neighbour's colour.
+  equal a neighbour's color.
 
 A person's own templates (`badge_templates`) and badge types
 (`badge_types`, each naming `after` to take its place in the order) come
@@ -27,30 +27,30 @@ from typing import Dict, List, Optional, Sequence
 
 ROW = 7  # shields badges per row of a GitHub README (to be checked on a render)
 
-# id -> (alt, image, link, colour). {owner} {repo} {dist} {python} {node}
+# id -> (alt, image, link, color). {owner} {repo} {dist} {python} {node}
 # {license_label} {license_url} {gist_user} {gist} {pages} are filled per
-# project; {colour} is the badge's resolved colour.
+# project; {color} is the badge's resolved color.
 TYPES: Dict[str, tuple] = {
-    "pypi-version": ("PyPI", "https://img.shields.io/pypi/v/{dist}?color={colour}",
+    "pypi-version": ("PyPI", "https://img.shields.io/pypi/v/{dist}?color={color}",
                      "https://pypi.org/project/{dist}/", "green"),
-    "release-date": ("Release Date", "https://img.shields.io/github/release-date/{owner}/{repo}?color={colour}",
+    "release-date": ("Release Date", "https://img.shields.io/github/release-date/{owner}/{repo}?color={color}",
                      "https://github.com/{owner}/{repo}/releases", "green"),
     "downloads": ("PyPI Downloads",
                   "https://static.pepy.tech/personalized-badge/{dist}?period=total&units=international_system"
-                  "&left_color=black&right_color={colour}&left_text=downloads",
+                  "&left_color=black&right_color={color}&left_text=downloads",
                   "https://pypistats.org/packages/{dist}", "green"),
     "release-version": ("GitHub release",
                         "https://img.shields.io/github/v/release/{owner}/{repo}?include_prereleases&label=version",
                         "https://github.com/{owner}/{repo}/releases", "blue"),
     "ci": ("CI", "https://github.com/{owner}/{repo}/actions/workflows/{ci}/badge.svg",
            "https://github.com/{owner}/{repo}/actions/workflows/{ci}", "default"),
-    "python": ("Python {python}+", "https://img.shields.io/badge/python-{python}+-{colour}.svg",
+    "python": ("Python {python}+", "https://img.shields.io/badge/python-{python}+-{color}.svg",
                "https://www.python.org/downloads/", "blue"),
-    "node": ("Node {node}+", "https://img.shields.io/badge/node-{node}+-{colour}.svg",
+    "node": ("Node {node}+", "https://img.shields.io/badge/node-{node}+-{color}.svg",
              "https://nodejs.org/en/download", "blue"),
-    "comfyui-registry": ("ComfyUI Registry", "https://img.shields.io/badge/ComfyUI-Registry-{colour}.svg",
+    "comfyui-registry": ("ComfyUI Registry", "https://img.shields.io/badge/ComfyUI-Registry-{color}.svg",
                          "https://registry.comfy.org/publishers/{gist_user}/nodes/{repo_lower}", "green"),
-    "license": ("License: {license_label}", "https://img.shields.io/badge/license-{license_badge}-{colour}.svg",
+    "license": ("License: {license_label}", "https://img.shields.io/badge/license-{license_badge}-{color}.svg",
                 "{license_url}", "contrast"),
     "discussions": ("GitHub Discussions", "https://img.shields.io/github/discussions/{owner}/{repo}",
                     "https://github.com/{owner}/{repo}/discussions", "blue"),
@@ -60,7 +60,7 @@ TYPES: Dict[str, tuple] = {
     "views": ("Views",
               "https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/{gist_user}/{gist}/raw/views.json",
               "https://{pages}.github.io/{repo}/stats/#views", "blue"),
-    "platform": ("Platform", "https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-{colour}.svg",
+    "platform": ("Platform", "https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-{color}.svg",
                  "{platform_link}", "lightgrey"),
 }
 
@@ -81,7 +81,7 @@ TEMPLATES: Dict[str, List[str]] = {
 # The default template for a preset
 PRESET_TEMPLATE = {"python/pypi": "pypi", "python/comfyui": "comfyui"}
 
-# licence id -> (badge text, the licence's page, house colour)
+# license id -> (badge text, the license's page, house color)
 LICENSES = {
     "gpl-3.0": ("GPL v3", "https://www.gnu.org/licenses/gpl-3.0.html", "green"),
     "gpl-3.0-or-later": ("GPL v3", "https://www.gnu.org/licenses/gpl-3.0.html", "green"),
@@ -136,7 +136,7 @@ def render(names: Sequence[str], values: Dict[str, str], ci: str = "auto",
     left out. `ci` is auto, on or off."""
     catalogue = dict(TYPES)
     for tid, spec in (types or {}).items():  # a person's own badge lines
-        catalogue[tid] = (spec.get("alt", tid), spec["image"], spec.get("link", ""), spec.get("colour", "default"))
+        catalogue[tid] = (spec.get("alt", tid), spec["image"], spec.get("link", ""), spec.get("color", "default"))
     picked = []
     for n in names:
         if n == "runtime":
@@ -156,28 +156,28 @@ def render(names: Sequence[str], values: Dict[str, str], ci: str = "auto",
         others = len(picked) - 1
         if ci == "off" or (others and others % ROW == 0):
             picked.remove("ci")
-    colours = [catalogue[n][3] for n in picked]
+    colors = [catalogue[n][3] for n in picked]
     for i, n in enumerate(picked):
-        if colours[i] != "contrast":
+        if colors[i] != "contrast":
             continue
-        neighbours = {colours[j] for j in (i - 1, i + 1) if 0 <= j < len(picked)}
+        neighbours = {colors[j] for j in (i - 1, i + 1) if 0 <= j < len(picked)}
         neighbours |= {"blue"} if "default" in neighbours else set()  # shields' default reads blue
-        house = values.get("license_colour") or "orange"
-        colours[i] = house if house not in neighbours else next(
+        house = values.get("license_color") or "orange"
+        colors[i] = house if house not in neighbours else next(
             (c for c in CONTRAST if c not in neighbours), house)
     lines = []
-    for n, colour in zip(picked, colours):
+    for n, color in zip(picked, colors):
         alt, image, link, _ = catalogue[n]
-        fill = {**values, "colour": colour}
+        fill = {**values, "color": color}
         lines.append(f"[![{alt.format(**fill)}]({image.format(**fill)})]({link.format(**fill)})")
     return "\n".join(lines)
 
 
 def license_values(lid: Optional[str], spdx: Optional[str]) -> Dict[str, str]:
-    """The licence badge's text, link and house colour; empty when the project
-    has no catalogue licence (a file, none, or all rights reserved)."""
+    """The license badge's text, link and house color; empty when the project
+    has no catalogue license (a file, none, or all rights reserved)."""
     if not lid or not spdx or spdx.startswith("LicenseRef"):
         return {}
-    label, url, colour = LICENSES.get(lid, (spdx, "LICENSE", "orange"))
+    label, url, color = LICENSES.get(lid, (spdx, "LICENSE", "orange"))
     return {"license_label": label, "license_badge": _shields_text(label), "license_url": url,
-            "license_colour": colour}
+            "license_color": color}

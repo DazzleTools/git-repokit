@@ -1,4 +1,4 @@
-"""The licence catalogue (0.9.0, U1): the record is true, every id renders,
+"""The license catalogue (0.9.0, U1): the record is true, every id renders,
 the variants share a body, and the resolver's order and refusal hold."""
 import json
 import subprocess
@@ -60,9 +60,9 @@ def test_resolve_order_flag_then_config_then_refusal(tmp_path):
     f = tmp_path / "LICENSE.custom"
     f.write_text("custom\n")
     assert licenses.resolve(f"file={f}", None, False, None) == ("file", str(f))
-    with pytest.raises(licenses.LicenseError, match="no licence named"):
+    with pytest.raises(licenses.LicenseError, match="no license named"):
         licenses.resolve(None, None, False, None)
-    with pytest.raises(licenses.LicenseError, match="unknown licence"):
+    with pytest.raises(licenses.LicenseError, match="unknown license"):
         licenses.resolve("wtfpl", None, False, None)
     with pytest.raises(licenses.LicenseError, match="not found"):
         licenses.resolve("file=" + str(tmp_path / "missing"), None, False, None)

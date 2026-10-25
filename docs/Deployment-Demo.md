@@ -1,15 +1,18 @@
 # RepoKit GitHub Deployment Demo
 
-This is a complete, step-by-step demonstration of how to use RepoKit's universal bootstrap system to create, migrate, and deploy projects to GitHub.
+This is a step-by-step demonstration of how to use RepoKit's universal bootstrap system to create, migrate, and deploy projects to GitHub.
+
+The demos adopt existing folders with `repokit adopt`, which uses the private-branch layout: your folder becomes the local checkout on the `private` branch, and the public branches are checked out as sibling folders (`github/` for `main`, `dev/` for `dev`). For a project you are starting from nothing, `repokit create` makes the default `main-only` layout instead; see the end of Demo 1 and [Branch-Strategies.md](Branch-Strategies.md).
 
 ## Prerequisites
 
-1. **Install RepoKit**: Ensure RepoKit is installed and working
-2. **GitHub Token**: Get a GitHub personal access token with `repo` permissions
-   - Go to: https://github.com/settings/tokens
-   - Click "Generate new token (classic)"
-   - Select scopes: `repo` (full repository access)
-   - Copy the token (you'll only see it once!)
+1. **Install RepoKit**: `pip install git-repokit` (Python 3.10 or newer; also published as `dazzle-git-repokit`). The command is `repokit`.
+2. **A license choice**: `create` needs `--license <id>` (`repokit list` ends with the ids) unless `~/.repokit/config.json` has a `license` key. `adopt` keeps the project's own license file, or writes the config's, or adopts without one. The demos use `--license mit`.
+3. **GitHub access**, by one of two routes:
+   - **The `gh` CLI, logged in** (`gh auth login`). This is the simple path and needs no token. It is used by `repokit create ... --github`.
+   - **A personal access token** with `repo` permissions, for the `--publish-to github` path that `adopt`, `migrate`, `create` and `publish` share. Create one at https://github.com/settings/tokens (select the `repo` scope, and copy the token, you only see it once).
+
+The demos below use the token path, because `adopt` has no `--github` flag.
 
 ## Demo 1: Brand New Project
 
@@ -56,23 +59,35 @@ repokit analyze .
 repokit store-credentials --publish-to github --token "YOUR_GITHUB_TOKEN_HERE"
 
 # Step 6: Adopt and deploy in one command!
-repokit adopt . --publish-to github --private-repo --ai claude
+repokit adopt . --license mit --language python --branch-strategy simple \
+  --publish-to github --private-repo --ai claude
 
 # This will:
-# - Create RepoKit directory structure
-# - Initialize Git with main and dev branches
-# - Generate Python-specific templates
+# - Create the RepoKit directory structure
+# - Initialize Git with the private, main and dev branches
+# - Lay down the python layers and templates (because of --language python)
 # - Add Claude AI integration
 # - Create a private GitHub repository
-# - Push all branches to GitHub
+# - Push main and dev to GitHub (never the private branch)
 ```
+
+The analysis recommends the `simple` branch strategy, but `adopt` only uses it when you pass `--branch-strategy simple`; without the flag it uses `standard`.
 
 **Expected Results:**
 - New GitHub repository: `awesome-calculator`
-- Branches: `main`, `dev`, `private` (private not pushed)
-- Complete RepoKit structure with Python templates
+- Local branches: `private`, `main`, `dev` (`private` is never pushed)
+- `awesome-calculator/` stays on `private`; `../github/` has `main` and `../dev/` has `dev`
+- The RepoKit structure with Python templates and a LICENSE
 - Claude AI integration files
 - All code preserved and properly organized
+
+**If you are starting a project rather than adopting a folder**, skip all of this and let `create` do it. This makes the default layout (one `main` branch, a nested private repository, git-repokit-common's hooks), makes the GitHub repository through your `gh` login, and sets up the labels and Roadmap issue:
+
+```bash
+repokit create awesome-calculator --language python --license mit --github --github-setup labels,issues
+```
+
+See [GitHub-Setup.md](GitHub-Setup.md) for all the `--github-setup` steps and `--topics`.
 
 ## Demo 2: Existing Python Project
 
@@ -132,38 +147,39 @@ git commit -m "Add basic tests"
 repokit analyze .
 
 # Output should show:
-# Project type: git_with_history
 # Detected language: python
 # Migration complexity: medium
 # Recommended strategy: safe
 # Recommended branch strategy: simple
+# Git repository: current branch and branches listed
 
 # Step 3: Adopt preserving all Git history
-repokit adopt . --strategy safe --publish-to github --organization "your-org"
+repokit adopt . --license mit --language python --migration-strategy safe \
+  --publish-to github --organization "your-org"
 
 # This will:
 # - Preserve all existing Git history and commits
 # - Add RepoKit structure around existing files
-# - Create proper branch strategy
+# - Create the branches for the standard strategy
 # - Deploy to your organization on GitHub
 ```
 
 **Expected Results:**
-- GitHub repository with full Git history preserved
+- GitHub repository with the Git history preserved
 - All existing commits and files intact
-- Enhanced with RepoKit structure
-- Professional organization-level deployment
+- Enhanced with the RepoKit structure
+- Created under your organization
 
-## Demo 3: Complex Multi-Branch Project
+## Demo 3: Multi-Branch Project
 
-Let's work with a more complex existing project:
+Let's work with a project that already has several branches:
 
 ```bash
-# Step 1: Create a complex project
+# Step 1: Create a project with branches
 mkdir api-service
 cd api-service
 
-# Initialize with complex branch structure
+# Initialize with a branch structure
 git init
 git config user.name "Demo User"
 git config user.email "demo@example.com"
@@ -234,35 +250,38 @@ git commit -m "Add user model"
 # Go back to develop
 git checkout develop
 
-# Step 2: Analyze this complex project
+# Step 2: Analyze this project
 repokit analyze .
 
 # Output should show:
-# Project type: git_with_history
 # Detected language: python
-# Migration complexity: high (due to multiple branches)
-# Recommended strategy: safe
+# Migration complexity: medium
+# Recommended strategy: merge
 # Recommended branch strategy: gitflow (detected existing pattern)
+# Git repository: Branches: develop, feature/user-management, main
 
-# Step 3: Adopt with intelligent branch mapping
-repokit adopt . --strategy safe --branch-strategy auto --publish-to github
+# Step 3: Adopt with the branch strategy the analysis suggested
+repokit adopt . --license mit --language python --migration-strategy merge \
+  --branch-strategy gitflow --publish-to github
 
 # This will:
-# - Detect existing GitFlow-like pattern
-# - Preserve all branches and their relationships
-# - Add RepoKit structure while maintaining workflow
-# - Map to appropriate RepoKit branch strategy
+# - Keep all existing branches
+# - Add the gitflow branches that are missing (private, release, hotfix)
+# - Add the RepoKit structure, merging with files that exist
+# - Publish the public branches to GitHub
 ```
 
 **Expected Results:**
 - All existing branches preserved
-- Complex Git history maintained
-- RepoKit structure added intelligently
-- Branch strategy detected and enhanced
+- Git history maintained
+- RepoKit structure added
+- The branch strategy you chose, matching the pattern the analysis detected
+
+`adopt` does not pick the branch strategy for you; read the recommendation from `analyze` and pass it with `--branch-strategy`.
 
 ## Demo 4: Legacy Project Migration
 
-Migrate a legacy project with potential conflicts:
+Migrate a legacy project with files that overlap RepoKit's templates:
 
 ```bash
 # Step 1: Create a "legacy" project with potential conflicts
@@ -283,7 +302,7 @@ setup(
 )
 EOF
 
-mkdir .github
+mkdir -p .github/workflows
 cat > .github/workflows/old-ci.yml << 'EOF'
 # Legacy CI configuration
 name: Old CI
@@ -292,7 +311,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Run legacy tests
         run: echo "Legacy testing approach"
 EOF
@@ -332,30 +351,32 @@ git commit -m "Legacy codebase"
 repokit analyze .
 
 # Output should show:
-# Project type: git_with_history  
 # Detected language: python
 # Migration complexity: medium
 # Has template conflicts: Yes
-# Recommended strategy: safe (due to conflicts)
+# Recommended strategy: merge
 
-# Step 4: Migrate with safe strategy to preserve existing files
-repokit adopt . --strategy safe --publish-to github --dry-run
+# Step 4: Preview, then adopt with the safe migration strategy
+repokit adopt . --license mit --language python --migration-strategy safe \
+  --backup --dry-run
 
-# See what would happen first
-repokit adopt . --strategy safe --publish-to github
+# See what would happen first, then run it for real
+repokit adopt . --license mit --language python --migration-strategy safe \
+  --backup --publish-to github
 
 # This will:
-# - Backup existing setup.py as setup.py.backup
-# - Backup existing .github/workflows/ as .github_backup/
-# - Add new RepoKit templates alongside
-# - Preserve all legacy functionality
+# - Copy the whole project to a backup folder first (--backup)
+# - Keep your setup.py and .github/workflows/old-ci.yml as they are
+# - Add the RepoKit and python files (pyproject.toml, the CI workflows) alongside
+# - Copy any template-directory files that conflict into a "<dir>_backup" folder
 ```
 
+Safe means your own files are never overwritten. Where a RepoKit template would land on an existing file, safe keeps yours; conflicting files from a template directory such as `.github` are copied to a `_backup` folder (for example `.github_backup/`) when RepoKit has to move them aside. Use `--migration-strategy merge` to combine configuration files, or `replace` to take RepoKit's versions.
+
 **Expected Results:**
-- Legacy files preserved with `.backup` extensions
-- New RepoKit templates added
+- A backup copy of the project, beside it (`legacy-tool_backup_<timestamp>`)
+- Legacy files kept; new RepoKit files added
 - No existing functionality broken
-- Clear migration path provided
 
 ## Authentication Methods Demo
 
@@ -365,44 +386,54 @@ repokit adopt . --strategy safe --publish-to github
 export GITHUB_TOKEN="your_token_here"
 
 # Deploy using environment token
-repokit adopt my-project --publish-to github
+repokit adopt my-project --license mit --publish-to github
 ```
 
 ### Method 2: Stored Credentials
 ```bash
-# Store token securely (one time)
+# Store token (one time; saved in ~/.repokit/credentials.json)
 repokit store-credentials --publish-to github --token "your_token_here"
 
 # Deploy using stored credentials (no token needed)
-repokit adopt my-project --publish-to github
+repokit adopt my-project --license mit --publish-to github
 ```
 
 ### Method 3: Password Manager Integration
 ```bash
 # Using pass password manager
-repokit adopt my-project --publish-to github --token-command "pass show github/token"
+repokit adopt my-project --license mit --publish-to github --token-command "pass show github/token"
 
 # Using 1Password CLI
-repokit adopt my-project --publish-to github --token-command "op read op://Personal/GitHub/token"
+repokit adopt my-project --license mit --publish-to github --token-command "op read op://Personal/GitHub/token"
 
 # Using LastPass CLI
-repokit adopt my-project --publish-to github --token-command "lpass show --password github-token"
+repokit adopt my-project --license mit --publish-to github --token-command "lpass show --password github-token"
 ```
 
 ### Method 4: Organization Deployment
 ```bash
-# Store organization credentials
+# Store a default organization with the credentials
 repokit store-credentials --publish-to github --token "org_token" --organization "my-company"
 
 # Deploy to organization
-repokit adopt my-project --publish-to github --organization "my-company"
+repokit adopt my-project --license mit --publish-to github --organization "my-company"
 ```
+
+### Method 5: The `gh` CLI (create only)
+```bash
+# No token handling: uses your gh login
+gh auth login
+repokit create my-project --license mit --github
+```
+
+See [Auth-Guide.md](Auth-Guide.md) for details on tokens and scopes.
 
 ## Advanced Deployment Options
 
 ### Private Repository with Description
 ```bash
 repokit adopt my-project \
+  --license mit \
   --publish-to github \
   --private-repo \
   --description "My awesome project built with RepoKit"
@@ -411,8 +442,10 @@ repokit adopt my-project \
 ### Full Automation with All Options
 ```bash
 repokit adopt my-project \
-  --strategy auto \
-  --branch-strategy auto \
+  --license mit \
+  --language python \
+  --migration-strategy safe \
+  --branch-strategy simple \
   --publish-to github \
   --private-repo \
   --organization "my-company" \
@@ -425,7 +458,7 @@ repokit adopt my-project \
 # Deploy multiple projects
 for project in project1 project2 project3; do
   echo "Deploying $project..."
-  repokit adopt $project --publish-to github --strategy safe
+  repokit adopt $project --license mit --publish-to github --migration-strategy safe
 done
 ```
 
@@ -433,8 +466,8 @@ done
 
 ### Issue 1: Token Authentication Fails
 ```bash
-# Verify token is stored
-cat ~/.repokit/credentials.json
+# Verify a token is stored (the file holds the token: do not share it)
+ls ~/.repokit/credentials.json
 
 # Test token manually
 curl -H "Authorization: token YOUR_TOKEN" https://api.github.com/user
@@ -449,11 +482,11 @@ repokit store-credentials --publish-to github --token "new_token"
 # "Repository already exists at https://github.com/user/project"
 
 # Solutions:
-# 1. Use a different name
-repokit adopt my-project --publish-to github --name "my-project-v2"
+# 1. Use a different name for the GitHub repository
+repokit adopt my-project --license mit --publish-to github --repo-name "my-project-v2"
 
-# 2. Delete existing repository first (careful!)
-# 3. Push to existing repository (if you own it)
+# 2. Delete the existing repository first (careful!)
+# 3. Push to the existing repository (if you own it)
 ```
 
 ### Issue 3: Uncommitted Changes
@@ -464,20 +497,23 @@ git add .
 git commit -m "Save work before RepoKit adoption"
 
 # Then proceed with adoption
-repokit adopt . --publish-to github
+repokit adopt . --license mit --publish-to github
 ```
 
 ### Issue 4: Template Conflicts
 ```bash
 # Use safe strategy to preserve existing files
-repokit adopt my-project --strategy safe --publish-to github
+repokit adopt my-project --license mit --migration-strategy safe --publish-to github
 
-# Or use merge strategy to combine configurations  
-repokit adopt my-project --strategy merge --publish-to github
+# Or use merge strategy to combine configurations
+repokit adopt my-project --license mit --migration-strategy merge --publish-to github
 
-# Check backup files created
-ls -la *.backup
+# Check the backup folders created
+ls -d *_backup .*_backup
 ```
+
+### Issue 5: "no license named"
+`create` stops with `no license named: pass --license <id>...` until a license is chosen. Add `--license mit` (or `file=PATH`, or `none`), or set `license` once in `~/.repokit/config.json` (see [Configuration.md](Configuration.md)). `adopt` never stops for this: it keeps the project's own license file, writes the config's license when there is none, or adopts the project without one and says so.
 
 ## Success Verification
 
@@ -490,12 +526,13 @@ After deployment, verify everything worked:
 # Verify local repository
 git remote -v
 git branch -a
+git worktree list      # the project folder on private, plus the github/ and dev/ worktrees
 
 # Check RepoKit structure
 ls -la
 # Should see: docs/, private/, scripts/, tests/, etc.
 
-# Verify branches were pushed
+# Verify branches were pushed (main and dev, never private)
 git ls-remote origin
 
 # Test the application still works
@@ -505,14 +542,14 @@ python main.py  # or your app's entry point
 ## Next Steps After Deployment
 
 1. **Review Generated Templates**: Check and customize the generated files
-2. **Set Up CI/CD**: Configure GitHub Actions workflows  
+2. **Set Up CI/CD**: Configure GitHub Actions workflows
 3. **Add Collaborators**: Invite team members to the repository
 4. **Configure Branch Protection**: Set up branch protection rules
 5. **Update Documentation**: Customize README and docs for your project
 
-## Complete Example Script
+## Example Script
 
-Here's a complete script you can run to test RepoKit deployment:
+Here is a script you can run to try RepoKit's analysis and dry run (it creates a folder and publishes nothing):
 
 ```bash
 #!/bin/bash
@@ -521,10 +558,6 @@ Here's a complete script you can run to test RepoKit deployment:
 set -e  # Exit on any error
 
 echo "=== RepoKit GitHub Deployment Demo ==="
-
-# Cleanup any existing test
-rm -rf repokit-demo-test
-rm -f ~/.repokit/credentials.json
 
 # Create test project
 mkdir repokit-demo-test
@@ -563,26 +596,26 @@ echo "1. Analyzing project..."
 repokit analyze .
 
 echo "2. Testing dry run..."
-repokit adopt . --dry-run
+repokit adopt . --license mit --language python --dry-run
 
 echo "3. Ready for GitHub deployment!"
 echo "   Run: repokit store-credentials --publish-to github --token YOUR_TOKEN"
-echo "   Then: repokit adopt . --publish-to github --private-repo"
+echo "   Then: repokit adopt . --license mit --language python --publish-to github --private-repo"
 echo ""
 echo "Demo project created in: $(pwd)"
 ```
 
-Save this as `demo.sh`, make it executable with `chmod +x demo.sh`, and run it to test RepoKit's capabilities!
+Save this as `demo.sh`, make it executable with `chmod +x demo.sh`, and run it to see what RepoKit would do. Delete the `repokit-demo-test` folder when you are done.
 
 ## Summary
 
 RepoKit's universal bootstrap system provides:
 
-✅ **Intelligent Analysis**: Understands any project type and complexity  
-✅ **Safe Migration**: Preserves existing code and Git history  
-✅ **Automated Deployment**: One-command GitHub deployment  
-✅ **Flexible Authentication**: Multiple secure token methods  
-✅ **Professional Structure**: Industry-standard repository organization  
-✅ **AI Integration**: Optional Claude AI development assistance
+- **Project analysis**: Reads the project type, language and Git state, and recommends a migration strategy and a branch strategy
+- **Safe migration**: Preserves existing code and Git history
+- **One-command deployment**: `--publish-to github`, or `create --github` through the `gh` CLI
+- **Several token methods**: `GITHUB_TOKEN`, stored credentials, a token command
+- **Standard repository structure**: directories, files, license and hooks
+- **AI integration**: Claude files by default, `--ai none` to skip
 
-Whether you're starting fresh or migrating complex legacy projects, RepoKit makes professional repository setup and deployment effortless.
+Whether you are starting fresh or migrating legacy projects, RepoKit sets up the repository structure and the GitHub deployment in one command.

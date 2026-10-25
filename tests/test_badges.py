@@ -2,7 +2,7 @@
 
 The rules come from an audit of the house's 107 projects and djdarcy's
 answers (2026-10-25): the templates' members and order, Platform closing
-the line, the release shown once, CI as a filler, and the licence's colour
+the line, the release shown once, CI as a filler, and the license's color
 contrasting its neighbours.
 """
 import re
@@ -64,12 +64,12 @@ def test_ci_fills_a_row_but_never_starts_one_alone():
     assert "CI" not in ids(badges.render(["ci", "runtime"], VALUES, ci="off"))
 
 
-def test_no_ci_file_no_floor_no_licence_means_no_badge():
+def test_no_ci_file_no_floor_no_license_means_no_badge():
     bare = {**VALUES, "ci": "", "python": "", "license_badge": ""}
     assert ids(badges.render(["ci", "runtime", "license", "platform"], bare)) == ["Platform"]
 
 
-def test_the_licence_takes_its_house_colour_unless_a_neighbour_has_it():
+def test_the_license_takes_its_house_color_unless_a_neighbour_has_it():
     mit = {**VALUES, **badges.license_values("mit", "MIT")}
     assert "license-MIT-yellow" in badges.render(["runtime", "license"], mit)
     assert "license-GPL%20v3-green" in badges.render(["runtime", "license"], VALUES)

@@ -1,5 +1,5 @@
 [build-system]
-# 77: the PEP 639 licence fields below (an SPDX `license` string and
+# 77: the PEP 639 license fields below (an SPDX `license` string and
 # `license-files`); it also covers 62.3's recursive ** in package-data
 requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
@@ -8,8 +8,8 @@ build-backend = "setuptools.build_meta"
 # PyPI's trusted publisher is registered for this name (DazzleTools/git-repokit,
 # publish.yml, environment pypi); the command stays `repokit`
 name = "git-repokit"
-version = "0.9.10"
-description = "Create standardized Git repositories: language presets, licences, GitHub setup, and a private notes vault"
+version = "0.9.11"
+description = "Create standardized Git repositories: language presets, licenses, GitHub setup, and a private notes vault"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]

@@ -1,10 +1,14 @@
 # Git Workflow Guide for RepoKit
 
-This guide explains the branching strategy used by RepoKit and provides practical examples of common workflows.
+This guide explains the multi-branch workflow RepoKit can set up and provides practical examples of common workflows.
+
+## Which Workflow Do You Have?
+
+A bare `repokit create my-project` makes a **main-only** repository: one branch, `main`, in the project folder itself, with `private/` kept as its own separate git repository that never reaches `main`. There is nothing to promote: you work on `main` (or on short-lived feature branches you create yourself), commit, and push. The rest of this guide describes the **private-branch model**, which you get with `--branch-strategy standard` (or `simple`, `gitflow`, `github-flow`, `minimal`) on `create` or `adopt`. `adopt` uses `standard` unless you say otherwise. See [Branch-Strategies.md](./Branch-Strategies.md) for the strategies side by side.
 
 ## Branching Strategy Overview
 
-RepoKit sets up a structured branching model with the following branches, arranged in order of stability:
+With `--branch-strategy standard`, RepoKit sets up a structured branching model with the following branches, arranged in order of stability:
 
 ```
 private → feature-XYZ → dev → main → test → staging → live
@@ -21,6 +25,8 @@ Each branch has a specific purpose:
 | `test` | For QA testing | Yes |
 | `staging` | Pre-release validation | Yes |
 | `live` | Production-ready code | Yes |
+
+The repository sits in `my-project/local/` (on `private`); `main` is checked out in `my-project/github/` and `dev` in `my-project/dev/`. A branch can be checked out in only one worktree at a time, so to work on `main` or `dev`, go to its folder instead of running `git checkout` from another one. The examples below show plain git commands; run them in the folder where the branch you start from is checked out (for `private`, that is `local/`).
 
 ## Common Workflows
 
@@ -124,10 +130,20 @@ git push origin staging
 
 ### 5. Working with Private Branch
 
-The `private` branch is for your personal development and should never be pushed to remote repositories. Use it to experiment, store private notes, or work on changes before they're ready to be shared.
+The `private` branch is for your personal development and should never be pushed to remote repositories. Use it to experiment, store private notes, or work on changes before they're ready to be shared. RepoKit installs hooks (git-repokit-common's, or its own guard) that refuse private files on public branches, and `repokit create --github` and `repokit publish` never push `private`.
+
+To move finished work from `private` to a public branch, preview first and then merge with private content left behind:
 
 ```bash
-# Switch to private branch
+# From the public branch's folder (for example my-project/dev/)
+repokit safe-merge private --preview
+repokit safe-merge private --no-ff --no-commit
+```
+
+`repokit safe-merge-dev feature/x --preview` does the same for development branches, squashing prototype and experiment branches so their working history stays out of the public log. To keep the history of a hand-picked set of files instead, copy them across as shown below.
+
+```bash
+# Switch to private branch (it is checked out in my-project/local/)
 git checkout private
 
 # Make experimental changes
@@ -147,10 +163,10 @@ git push -u origin feature-my-new-idea
 
 ### 6. Using Worktrees
 
-RepoKit sets up Git worktrees to allow you to work on multiple branches simultaneously without switching branches.
+The private-branch strategies set up Git worktrees (`local/`, `dev/` and `github/` for `standard`) to allow you to work on multiple branches simultaneously without switching branches. Which branches get a folder depends on the strategy; `--worktrees` and `--branch-dir-main` / `--branch-dir-dev` change it. A main-only repository has no worktrees unless you create them with `git worktree add`; then link its `private/` folder to the main one so the notes stay in one place.
 
 ```bash
-# Navigate to the branch directory
+# From the private worktree (my-project/local/), go to the dev worktree
 cd ../dev/
 
 # This directory is already on the dev branch
@@ -183,10 +199,11 @@ cd ../local/
 
 ## Alternative Workflows
 
-While RepoKit defaults to a GitFlow-like model with multiple environments, your team might prefer other approaches:
+RepoKit's default is main-only, and the `standard` strategy described above is a multi-environment model; your team might prefer other approaches:
 
-- **Trunk-Based Development**: Focus on the main branch with very short-lived feature branches.
-- **GitHub Flow**: Feature branches that merge directly to main, which is always deployable.
+- **Trunk-Based Development**: Focus on the main branch with very short-lived feature branches. This is what main-only gives you.
+- **GitHub Flow**: Feature branches that merge directly to main, which is always deployable (`--branch-strategy github-flow`).
+- **GitFlow**: `develop`, `release` and `hotfix` branches (`--branch-strategy gitflow`).
 - **GitLab Flow**: Similar to GitHub Flow but with explicit environment branches.
 
 The RepoKit structure can adapt to these workflows by adjusting which branches you actively use.
@@ -196,5 +213,5 @@ The RepoKit structure can adapt to these workflows by adjusting which branches y
 For any Git-related questions or issues with your RepoKit setup, please:
 
 1. Check the official [Git documentation](https://git-scm.com/doc)
-2. Visit [RepoKit's GitHub repository](https://github.com/your-username/repokit)
+2. Visit [RepoKit's GitHub repository](https://github.com/DazzleTools/git-repokit)
 3. Open an issue if you encounter bugs or have feature requests

@@ -49,7 +49,7 @@ DECLARED_CONTENT = {
     ".github/CODEOWNERS": "the tool writes the git identity, the template the GitHub handle",
     ".github/workflows/release.yml": "line endings only on a Windows checkout (both LF after git normalises)",
     ".gitignore": "the vault's ignore lines and the tool's comment block",
-    ".repokit.json": "the tool's record: version, layers, licence, extras, created_at",
+    ".repokit.json": "the tool's record: version, layers, license, extras, created_at",
     "CONTRIBUTING.md": "the tool's own text (Code of Conduct) vs the template's Development Setup",
     "README.md": "the tool's badges and sections",
     "demo/__init__.py": "wording",
@@ -146,7 +146,7 @@ class TestTemplateParity(RepoKitTestCase):
     def test_python_matches_the_template_route_apart_from_the_declared_differences(self):
         mirrored = mirror_template(Path(self.test_dir, "mirror"))
         # the house style through the global config, the way a person has it: the
-        # licence, every extra, the GitHub handle the template route derived from the owner
+        # license, every extra, the GitHub handle the template route derived from the owner
         home = Path(self.test_dir, "home")
         (home / ".repokit").mkdir(parents=True)
         (home / ".repokit" / "config.json").write_text(json.dumps(
@@ -172,7 +172,7 @@ class TestTemplateParity(RepoKitTestCase):
         self.assertEqual(sorted(set(differ) - set(DECLARED_CONTENT)), [], "content drift in shared files: declare or fix")
         print("shared files whose content differs, all declared:", differ)
 
-    def test_licence_and_extras_land_for_every_language(self):
+    def test_license_and_extras_land_for_every_language(self):
         for lang in ("c-cpp", "js-ts"):
             self.assert_repokit_success(["create", f"p-{lang}", "--language", lang, "--license", "gpl-3.0",
                                          "--extras", "all", "--no-push"])

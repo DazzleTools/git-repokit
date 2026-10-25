@@ -2,6 +2,14 @@
 
 Quick solutions for common RepoKit use cases. Copy, paste, and adapt these recipes for your projects.
 
+Before you start:
+
+- **Install**: `pip install git-repokit` (also published as `dazzle-git-repokit`). It needs Python 3.10 or newer, and the command is `repokit`.
+- **`create` and `adopt` are different**: `create` makes a new project and defaults to the `main-only` layout (the project folder is the repository, on `main`, with `private/` as its own nested git repository). `adopt` works on an existing repository and still uses the private-branch layouts (`local/` and `github/` folders) chosen with `--branch-strategy`.
+- **A license is required**: `create` refuses to run unless you pass `--license` (for example `--license mit`) or `~/.repokit/config.json` names a `license`. `adopt` does not need it: it keeps the project's own license file (`LICENSE`, `LICENSE.md`, `COPYING`, ...), writes the config's `license` when there is none, or adopts the project without one and says so. Pass `--license` to `adopt` only to choose one; it replaces the project's own file. `repokit list` shows the catalogue.
+- **Verbosity goes first**: `-v`, `-vv` and `-q` belong before the command (`repokit -vv adopt ./my-project`), not after it.
+- **Languages**: `generic`, `python`, `c-cpp` and `js-ts`. Pick a project type below the language with `--with` (see `repokit list`).
+
 ## 📋 Table of Contents
 
 1. [Quick Start Recipes](#quick-start-recipes)
@@ -17,15 +25,44 @@ Quick solutions for common RepoKit use cases. Copy, paste, and adapt these recip
 ### Recipe: "Help me create a simple new project locally"
 
 ```bash
-repokit create ./my-project \
+repokit create my-project \
   --language python \
-  --branch-strategy simple \
+  --license mit \
   --dir-profile standard \
-  --private-repo \
   --user-name name \
   --user-email id+user@users.noreply.github.com \
   --ai claude
 ```
+
+This uses the default `main-only` layout. If you want the older private-branch layout (a `local/` folder for private work, a `github/` folder for the public branch), add `--branch-strategy simple`.
+
+### Recipe: "Create a project and put it on GitHub in one step"
+
+```bash
+repokit create my-project \
+  --language python \
+  --license mit \
+  --github \
+  --github-setup labels,issues,pin,topics \
+  --topics python,cli \
+  --description "What my project does"
+```
+
+`--github` creates the repository with the `gh` CLI (it uses your `gh` login, so no token is needed) and pushes the public branches. It is private unless you add `--public`. Add `--no-push` to create the repository without pushing. `--github-setup` also accepts `discussions`, `pypi-environment`, `traffic` and `all`.
+
+### Recipe: "Pick a project type, badges and extra files"
+
+```bash
+repokit list
+
+repokit create my-lib \
+  --with python/pypi \
+  --license apache-2.0 \
+  --badges pypi \
+  --extras funding,dependabot,roadmap
+```
+
+`--with` takes a preset such as `python/pypi` or `js-ts/node-package` and implies its language. `--extras` adds optional files, and `--badges` picks the README badge line.
 
 ### Recipe: "I just want to organize my code"
 
@@ -45,6 +82,8 @@ repokit adopt ./my-project \
   --private-repo \
   --backup
 ```
+
+`--publish-to github` talks to the GitHub REST API with a token (see [Auth-Guide.md](./Auth-Guide.md)). `adopt` has no `--github` flag; that one belongs to `create`. `--clean-history` needs `git-filter-repo` installed (`pip install git-filter-repo`).
 
 ### Recipe: "Put my project on GitHub (Public)"
 ```bash
@@ -123,7 +162,7 @@ repokit adopt ./flask-api \
 #### Recipe: Node.js Application
 ```bash
 repokit adopt ./node-app \
-  --language javascript \
+  --language js-ts \
   --directories "src,tests,public,config" \
   --sensitive-files ".env,.env.local,config/keys.js" \
   --sensitive-patterns "node_modules/*,*.log,dist/*,build/*" \
@@ -134,7 +173,7 @@ repokit adopt ./node-app \
 #### Recipe: React Application
 ```bash
 repokit adopt ./react-app \
-  --language javascript \
+  --language js-ts \
   --directories "src,public,tests,docs" \
   --sensitive-patterns "node_modules/*,build/*,.env.local,*.log" \
   --branch-strategy github-flow \
@@ -145,7 +184,7 @@ repokit adopt ./react-app \
 #### Recipe: Express.js API
 ```bash
 repokit adopt ./express-api \
-  --language javascript \
+  --language js-ts \
   --directories "routes,middleware,models,tests" \
   --sensitive-files ".env,config/database.js" \
   --sensitive-patterns "node_modules/*,logs/*,uploads/*" \
@@ -383,10 +422,9 @@ repokit adopt ./outdated-project \
 # Fix permissions first
 chmod -R u+w ./problematic-project
 
-# Then adopt
-repokit adopt ./problematic-project \
-  --backup \
-  --verbose
+# Then adopt (-v is a top-level option: it goes before "adopt")
+repokit -v adopt ./problematic-project \
+  --backup
 ```
 
 ### Recipe: Handle Large Files
@@ -406,15 +444,14 @@ repokit adopt . \
 
 ### Recipe: Recover from Failed Adoption
 ```bash
-# Restore from backup
-rm -rf ./failed-project
+# Restore from backup (move the failed copy aside rather than deleting it)
+mv ./failed-project ./failed-project-broken
 cp -r ./failed-project-backup ./failed-project
 
-# Try again with safer options
-repokit adopt ./failed-project \
+# Try again with safer options, previewing first
+repokit -v adopt ./failed-project \
   --migration-strategy safe \
-  --dry-run \
-  --verbose
+  --dry-run
 ```
 
 ### Recipe: Fix Git Issues
@@ -477,7 +514,7 @@ repokit adopt ./learning-project \
 repokit adopt ./hackathon-project \
   --branch-strategy github-flow \
   --directories "src,demos,presentations" \
-  --language javascript \
+  --language js-ts \
   --publish-to github \
   --repo-name hackathon-awesome-project \
   --description "Project built during XYZ Hackathon"
@@ -515,13 +552,14 @@ repokit adopt ./linux-project \
 1. **Always test first**: Use `--dry-run` to preview changes
 2. **Always backup**: Use `--backup` for important projects
 3. **Start simple**: Begin with basic options, add complexity later
-4. **Use verbose output**: Add `-v` or `-vv` for debugging
+4. **Use verbose output**: Put `-v` or `-vv` before the command (`repokit -vv adopt ./my-project`) for debugging
 5. **Read the output**: RepoKit tells you what it's doing
 
 ## 📞 Getting More Help
 
-- **Check the docs**: See other files in the `docs/` directory
-- **Use verbose mode**: Add `-vv` to see detailed operations
+- **Check the docs**: See other files in the `docs/` directory, including [Configuration.md](./Configuration.md), [Languages-and-Layers.md](./Languages-and-Layers.md), [GitHub-Setup.md](./GitHub-Setup.md) and [The-Vault.md](./The-Vault.md)
+- **Read the command help**: `repokit <command> --help` lists every flag that exists
+- **Use verbose mode**: Put `-vv` before the command to see detailed operations
 - **Test first**: Always use `--dry-run` when unsure
 - **Start simple**: Begin with basic recipes and evolve
 

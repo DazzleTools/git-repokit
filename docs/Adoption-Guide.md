@@ -16,8 +16,10 @@ This guide walks you through adopting RepoKit for your existing projects, from s
 
 **Test first** (always recommended):
 ```bash
-repokit adopt ./my-project --dry-run -vv
+repokit -vv adopt ./my-project --dry-run
 ```
+
+(`-v` / `-vv` belong to `repokit` itself, so they go before `adopt`.)
 
 **Basic adoption**:
 ```bash
@@ -57,6 +59,8 @@ my-project/
 └── .git/           # Git repository with professional structure
 ```
 
+This is the private-branch layout with RepoKit's `standard` strategy, which `adopt` uses unless you pass `--branch-strategy` (see [Branch-Strategies.md](./Branch-Strategies.md)). `adopt` does not make the main-only layout that a bare `repokit create` makes. Which folders appear depends on the strategy (`simple` has `local/` and `github/` only).
+
 ## 📖 Basic Adoption Tutorial
 
 ### Step 1: Prepare Your Project
@@ -76,7 +80,7 @@ ls -la
 
 **Run a dry-run** to see what would happen:
 ```bash
-repokit adopt . --dry-run --verbose
+repokit --verbose adopt . --dry-run
 ```
 
 This shows you:
@@ -125,7 +129,8 @@ ls local/
 # Your code is here, now organized
 
 git branch
-# You should see: private, main, dev branches
+# With the default strategy (standard) you should see: private, main, dev, staging, test, live
+# (with --branch-strategy simple: private, main, dev)
 ```
 
 **Test switching between branches**:
@@ -143,10 +148,8 @@ git log --oneline
 
 ### Step 1: Prepare for GitHub
 
-**Ensure you have GitHub credentials**:
+**Ensure you have GitHub credentials**. `adopt --publish-to github` talks to GitHub with a personal access token (the `GITHUB_TOKEN` environment variable, `repokit store-credentials`, or `--token-command`); the `gh` login that `repokit create --github` uses is not read by `adopt`. See [Auth-Guide.md](./Auth-Guide.md) for setting up a token. You also need a git identity:
 ```bash
-gh auth status
-# or
 git config --global user.name "Your Name"
 git config --global user.email "your.email@example.com"
 ```
@@ -199,7 +202,7 @@ repokit adopt ./unctools-project \
 ```
 
 **What this does**:
-- Creates simple branch structure (main, dev, private)
+- Creates simple branch structure (main, dev, private), with `local/` and `github/` folders (`dev` is a branch without a folder in this strategy)
 - Uses safe migration (preserves everything)
 - Sets up standard directories
 - Configures for Python project
@@ -242,7 +245,7 @@ repokit adopt ./data-science-project \
 ```bash
 repokit adopt ./my-webapp \
   --branch-strategy gitflow \
-  --language javascript \
+  --language js-ts \
   --directories "src,public,tests,docs" \
   --publish-to github \
   --repo-name my-webapp
@@ -267,6 +270,7 @@ repokit adopt ./legacy-project \
   --clean-history \
   --cleaning-recipe pre-open-source \
   --backup \
+  --publish-to github \
   --private-repo \
   --organization mycompany
 ```
@@ -310,13 +314,16 @@ repokit adopt . --sensitive-patterns "*.env,secrets/*,private_notes.txt"
 ```
 
 #### Issue: GitHub authentication failed
+`adopt` publishes with a token, not the `gh` login.
+
 **Solution**:
 ```bash
-# Set up GitHub CLI
-gh auth login
+# Provide a token through the environment (see Auth-Guide.md)
+export GITHUB_TOKEN=your_github_token
+repokit adopt . --publish-to github
 
-# Or use token
-repokit adopt . --publish-to github --token your_github_token
+# Or fetch it from a password manager
+repokit adopt . --publish-to github --token-command "pass show github/repokit-token"
 ```
 
 #### Issue: Large files causing problems
@@ -332,20 +339,19 @@ repokit adopt .
 
 #### If adoption goes wrong:
 ```bash
-# Restore from backup
-rm -rf my-project
+# Restore from backup: set the adopted folder aside rather than deleting it
+mv my-project my-project-adopted-attempt
 cp -r my-project-backup my-project
 
-# Or reset git state
+# Or step back one commit (this discards uncommitted changes in that worktree)
 cd my-project/local
-git reset --hard HEAD~1  # Go back one commit
+git reset --hard HEAD~1
 ```
 
 #### If GitHub deployment fails:
 ```bash
-# Deployment can be re-run
-cd my-project/local
-repokit adopt . --publish-to github --repo-name my-project-fixed
+# Publishing can be re-run on its own
+repokit publish my-project/local --publish-to github --repo-name my-project --private-repo
 ```
 
 ## 📚 Best Practices
@@ -468,7 +474,7 @@ repokit adopt ./unctools \
 - **Documentation**: Check other files in `docs/` directory
 - **Examples**: See `repokit adopt --help` for more examples
 - **Issues**: Check project issues on GitHub
-- **Verbose output**: Use `-vv` flag for detailed logging
+- **Verbose output**: Use `repokit -vv adopt ...` for detailed logging (the flag goes before `adopt`)
 
 ---
 

@@ -1,7 +1,7 @@
 """`repokit create --license` at the CLI (0.9.0, U2): a catalogue id renders
 with holder and year, file= copies bytes, none writes nothing, nothing named
 is refused before a file is written, and a private repository takes the
-config's license_private. The suite's own licence is REPOKIT_LICENSE=mit from
+config's license_private. The suite's own license is REPOKIT_LICENSE=mit from
 tests/conftest.py; the refusal tests remove it.
 
 Design: 2026-10-22__22-06-57__dev-workflow-process__0-9-x-parity-with-the-old-route.md.
@@ -29,6 +29,22 @@ class TestLicenseFlag(RepoKitTestCase):
         self.assertNotIn("__RK_", text)
         self.assertEqual(self._meta("demo")["license"], "mit")
 
+    def test_proprietary_evaluation_names_the_project_holder_and_contact(self):
+        """0.9.11: the ZeroMeld|View license, with its project line and contact filled."""
+        self.assert_repokit_success(["create", "widget-pro", "--language", "python", "--license",
+                                     "proprietary-evaluation", "--user-name", "Ada Example",
+                                     "--user-email", "ada@example.com", "--no-push"])
+        project = Path(self.test_dir, "widget-pro")
+        text = (project / "LICENSE").read_text(encoding="utf-8")
+        self.assertTrue(text.startswith("widget-pro\nCopyright (C) "))
+        self.assertIn("Ada Example. All Rights Reserved.", text)
+        self.assertIn("PROPRIETARY AND CONFIDENTIAL", text)
+        self.assertIn("Ada Example\nada@example.com\n", text)
+        self.assertNotIn("__RK_", text)
+        self.assertNotIn("Dustin", text)
+        self.assertEqual(self._meta("widget-pro")["license"], "proprietary-evaluation")
+        self.assertIn("All rights reserved", (project / "README.md").read_text(encoding="utf-8"))
+
     def test_an_or_later_variant_carries_its_notice(self):
         self.assert_repokit_success(["create", "demo", "--language", "generic", "--license", "gpl-3.0-or-later", "--no-push"])
         text = (Path(self.test_dir, "demo") / "LICENSE").read_text(encoding="utf-8")
@@ -52,14 +68,14 @@ class TestLicenseFlag(RepoKitTestCase):
             os.environ.pop("REPOKIT_LICENSE", None)
             code, out, err = self.run_repokit(["create", "demo", "--language", "python", "--no-push"])
         self.assertNotEqual(code, 0)
-        self.assertIn("no licence named", out + err)
+        self.assertIn("no license named", out + err)
         self.assertIn("the catalogue has", out + err)
         self.assertFalse(Path(self.test_dir, "demo").exists())
 
     def test_an_unknown_id_is_refused_naming_the_catalogue(self):
         code, out, err = self.run_repokit(["create", "demo", "--language", "generic", "--license", "wtfpl", "--no-push"])
         self.assertNotEqual(code, 0)
-        self.assertIn("unknown licence 'wtfpl'", out + err)
+        self.assertIn("unknown license 'wtfpl'", out + err)
         self.assertFalse(Path(self.test_dir, "demo").exists())
 
     def test_the_global_config_names_the_default_and_the_private_default(self):

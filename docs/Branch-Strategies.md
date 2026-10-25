@@ -39,7 +39,7 @@ repokit create my-project --no-common      # without git-repokit-common
 
 The strategies below keep your working history on a local-only `private` branch and move finished work to the public branches -- squashed, fast-forwarded, or selectively, leaving private files and folders behind. The repository lives in `my-project/local/` (on `private`), with `main` checked out in `my-project/github/`.
 
-This is a valid workflow, and it is what RepoKit was first built for. It is also the more involved one: keeping private material off public branches takes care, which is why RepoKit installs hooks that refuse private files on public branches. If you only need private notes, main-only with `private/` kept out of git is simpler and recommended; choose a strategy below when you want private work in git history on its own branch.
+This is a valid workflow, and it is what RepoKit was first built for. It is also the more involved one: keeping private material off public branches takes care, which is why RepoKit installs hooks that refuse private files on public branches. If you only need private notes, main-only with `private/` kept out of git is simpler and recommended; choose a strategy below when you want private work in git history on its own branch. Choose one with `--branch-strategy` on `create` or `adopt` (`adopt` uses `standard` when you give none). `standard`, which this guide does not describe separately, is `private`, `main`, `dev`, `staging`, `test` and `live`, with worktrees for `private`, `main` and `dev`; see [Workflow-Guide.md](./Workflow-Guide.md).
 
 ## 🤔 Understanding Branch Strategies
 
@@ -74,9 +74,10 @@ main        # Clean, deployable version
 ```
 my-project/
 ├── local/      # private branch - your personal workspace
-├── dev/        # dev branch - development and testing
 └── github/     # main branch - clean version for GitHub
 ```
+
+`dev` is a branch here, but it has no folder of its own. The commands below that use `my-project/dev` assume you have added one: `git worktree add ../dev dev`, run inside `local/`.
 
 ### Typical Workflow:
 ```bash
@@ -242,15 +243,19 @@ main           # Public version
 1. **Work in `private`**: All development happens here
 2. **Clean up for `main`**: Manually clean and organize for public
 
+`main` has no worktree in this strategy; `main` is a branch you switch to from `local/`.
+
 ### Typical Workflow:
 ```bash
 # Work in private
 cd my-project/local
 # ... develop everything ...
 
-# Clean up for public
-cd ../github
-# Manually copy/clean files for public consumption
+# Clean up for public: switch to main, bring across what is ready, switch back
+git checkout main
+git checkout private -- src/ README.md
+git commit -m "Publish first cut"
+git checkout private
 ```
 
 ### Advantages:
@@ -287,10 +292,14 @@ repokit adopt ./my-project \
 
 ## 🎯 When to Use Each Strategy
 
-### Choose **Simple** when:
+### Choose **main-only** (the default) when:
 - ✅ You're new to Git or RepoKit
+- ✅ You only need private notes kept out of the public history
+- ✅ Working solo or with a small team
+
+### Choose **Simple** when:
+- ✅ You want private work in git history on its own branch
 - ✅ Working solo or with a small team (2-3 people)
-- ✅ Building most types of projects
 - ✅ Want to learn good Git habits
 - ✅ Need something that "just works"
 
@@ -397,7 +406,7 @@ git checkout -b feature/new-feature develop
 
 ## 📞 Need Help?
 
-- **Start simple**: When in doubt, use the Simple strategy
+- **Start simple**: When in doubt, use main-only (the default); pick Simple when you want a private branch
 - **Experiment**: Try different strategies with test projects
 - **Ask for guidance**: Check the adoption guide or project documentation
 - **Practice**: The best way to learn is by doing

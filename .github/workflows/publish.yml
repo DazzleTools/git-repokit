@@ -5,9 +5,9 @@ name: Publish to PyPI
 # is registered for this workflow, this repository and the `pypi`
 # environment, so no token is stored anywhere.
 #
-# The dazzle-git-repokit alias joins as a second publish job once its own
-# trusted publisher exists on PyPI (djdarcy, 2026-10-25: after this one
-# works); until then an alias job would fail on every release.
+# The alias dazzle-git-repokit publishes from its own job. Its trusted
+# publisher on PyPI names this same workflow file, repository and
+# environment (djdarcy, 2026-10-25, after git-repokit's first publish worked).
 
 on:
   release:
@@ -49,6 +49,23 @@ jobs:
         name: dist
         path: dist/
 
+    # The alias, dazzle-git-repokit: built beside git-repokit, into its own
+    # folder, so the steps above stay as they were when git-repokit first
+    # published (0.9.10)
+    - name: Build the alias (dazzle-git-repokit)
+      run: python -m build packages/dazzle-git-repokit-alias/ --outdir dist-alias/
+
+    - name: Verify the alias carries nothing private
+      run: python scripts/check_dist_no_leak.py dist-alias/
+
+    - name: Check the alias's metadata
+      run: twine check --strict dist-alias/*
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: dist-alias
+        path: dist-alias/
+
   publish:
     name: Publish git-repokit
     needs: build
@@ -70,4 +87,26 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         # a re-run of the same release finds its files already there
+        skip-existing: true
+
+  publish-alias:
+    name: Publish dazzle-git-repokit
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/dazzle-git-repokit
+
+    permissions:
+      id-token: write
+
+    steps:
+    - uses: actions/download-artifact@v8
+      with:
+        name: dist-alias
+        path: dist/
+
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
         skip-existing: true

@@ -74,7 +74,7 @@ class TestOwner(GhStubCase):
         self.assertIn("@stub-user", files[".github/CODEOWNERS"])
         self.assertIn("github: stub-user", files[".github/FUNDING.yml"])
 
-    def test_the_manifests_say_the_chosen_licence_and_the_topics(self):
+    def test_the_manifests_say_the_chosen_license_and_the_topics(self):
         self.create("--no-push")
         files = tracked_text(os.path.join(self.test_dir, "demo"))
         py = files["pyproject.toml"]

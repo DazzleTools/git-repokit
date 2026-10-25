@@ -1,86 +1,40 @@
-# RepoKit Documentation Guide
+# git-repokit documentation
 
-This directory contains comprehensive documentation for RepoKit. Here's the recommended reading order based on your needs:
+Start with the [main README](../README.md): what a project gets, installation, and the Quick Start. These guides go further.
 
-## 🆕 New to RepoKit? Start Here
+## Making projects
 
-1. **[Why RepoKit Exists](Why-RepoKit-Exists.md)** ⭐ *Start here*
-   - Simple explanation of the problem RepoKit solves
-   - Before/after comparisons showing the transformation
-   - Perfect for understanding the value proposition
+1. **[Configuration](Configuration.md)**: every config key and the flag that matches it, and how to keep your house style in `~/.repokit/config.json`
+2. **[Languages and layers](Languages-and-Layers.md)**: the presets for Python, C/C++ and JavaScript/TypeScript, `--with`, several languages, and adding a language
+3. **[GitHub setup](GitHub-Setup.md)**: `--github`, the `--github-setup` steps, and what is still done by hand
+4. **[The vault](The-Vault.md)**: `private/`, the files it starts with, and the sessions that use it
+5. **[Recipes and how-tos](Recipes-And-Howtos.md)**: commands for common cases
 
-2. **[Main README](../README.md)** 
-   - Quick overview, installation, and basic usage
-   - Links to all other documentation
+## Existing projects
 
-## 🛠️ Ready to Use RepoKit?
+- **[Adoption guide](Adoption-Guide.md)**: adding repokit's structure to a project you already have, step by step
+- **[Migration guide](Migration-Guide.md)**: the harder cases, from loose folders to repositories with history
 
-3. **[Adoption Guide](Adoption-Guide.md)** ⭐ *Primary tutorial*
-   - Step-by-step tutorials for adopting existing projects
-   - Real examples from simple folders to GitHub deployment
-   - Troubleshooting and best practices
+## Branches and workflow
 
-4. **[Recipes and How-Tos](Recipes-And-Howtos.md)** ⭐ *Recipe book*
-   - Copy-paste commands for common scenarios
-   - Language-specific examples (Python, JavaScript, etc.)
-   - GitHub deployment recipes
+- **[Branch strategies](Branch-Strategies.md)**: main-only (the default) and the private-branch strategies
+- **[Workflow guide](Workflow-Guide.md)**: day-to-day work under the private-branch strategies
+- **[Deployment demo](Deployment-Demo.md)**: worked examples, from a new project to GitHub
 
-## 🌳 Understanding Workflows
+## Credentials
 
-5. **[Branch Strategies](Branch-Strategies.md)**
-   - Explanation of different branching approaches
-   - When to use simple vs. GitFlow vs. GitHub Flow
-   - Custom branch configuration
+- **[Auth guide](Auth-Guide.md)**: the `gh` login for `--github`, and tokens for `--publish-to`
 
-## 📂 Documentation Structure
+## Platforms
 
-```
-docs/
-├── README.md                 # This guide (start here)
-├── Why-RepoKit-Exists.md    # The "why" - problem and solution
-├── Adoption-Guide.md         # The "how" - step-by-step tutorials  
-├── Recipes-And-Howtos.md    # The "cookbook" - copy-paste examples
-├── Branch-Strategies.md      # The "workflow" - branching explained
-├── Auth-Guide.md            # Authentication setup
-├── Migration-Guide.md       # Legacy migration scenarios
-├── Workflow-Guide.md        # Development workflows
-└── Deployment-Demo.md       # Deployment examples
-```
+- **[Platform support](platform-support.md)**: what runs where on Windows, Linux and macOS, and what each needs
 
-## 🎯 Quick Navigation by Goal
+## Background
 
-### "I want to understand what RepoKit does"
-→ [Why RepoKit Exists](Why-RepoKit-Exists.md)
+- **[Why repokit exists](Why-RepoKit-Exists.md)**: the problem it solves
 
-### "I have a messy project folder and want to organize it"
-→ [Adoption Guide](Adoption-Guide.md) → Section: Basic Adoption Tutorial
+## Getting help
 
-### "I want to put my project on GitHub professionally"
-→ [Adoption Guide](Adoption-Guide.md) → Section: GitHub Deployment Tutorial
-
-### "I need a specific command for my use case"
-→ [Recipes and How-Tos](Recipes-And-Howtos.md)
-
-### "I want to understand the branching workflow"
-→ [Branch Strategies](Branch-Strategies.md)
-
-### "I'm working with a complex/legacy codebase"
-→ [Migration Guide](Migration-Guide.md)
-
-## 💡 Pro Tips
-
-- **Always start with `--dry-run`** to preview changes
-- **Use `--backup`** for safety when adopting existing projects
-- **Read the recipes** - they contain real-world tested commands
-- **Check the troubleshooting sections** if you encounter issues
-
-## 🆘 Getting Help
-
-- **CLI Help**: `repokit --help` or `repokit adopt --help`
-- **Examples**: Every command has examples in the help text
-- **Issues**: [GitHub Issues](https://github.com/djdarcy/git-repokit/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/djdarcy/git-repokit/discussions)
-
----
-
-*This documentation is organized to get you productive quickly while providing depth when you need it.*
+- `repokit --help`, and `repokit <command> --help` for each command's options and examples
+- `repokit list` for the languages, presets and layers
+- [Issues](https://github.com/DazzleTools/git-repokit/issues) and [Discussions](https://github.com/DazzleTools/git-repokit/discussions)

@@ -2,7 +2,7 @@
 
 The live golden (2026-10-24) and a real consumer's create found the README a
 skeleton, its badges hard-coded (version 1.0.0, Python >=3.7, MIT), the
-pypi preset's licence fixed at GPL, keywords empty, and labels the project's
+pypi preset's license fixed at GPL, keywords empty, and labels the project's
 own files name missing from the repository. These are the unit checks of the
 pieces that now say what the project is.
 """
@@ -45,26 +45,26 @@ def test_node_floor_is_package_json_engines():
         assert engines == ">=" + readme_blocks.floors(preset)["node"], preset
 
 
-# --- the licence: SPDX ids and PyPI classifiers ---
+# --- the license: SPDX ids and PyPI classifiers ---
 
 def test_spdx_ids_come_from_the_catalogue():
     assert licenses.spdx("gpl-3.0") == "GPL-3.0"
     assert licenses.spdx("MIT") == "MIT"
     assert licenses.spdx("gpl-3.0-or-later") == "GPL-3.0-or-later"
     assert licenses.spdx("all-rights-reserved").startswith("LicenseRef")
-    assert licenses.spdx("no-such-licence") is None
+    assert licenses.spdx("no-such-license") is None
 
 
-def test_licence_titles_come_from_the_catalogue():
+def test_license_titles_come_from_the_catalogue():
     assert licenses.title("mit") == "MIT License"
     assert licenses.title("gpl-3.0") == "GNU General Public License v3.0"
     assert licenses.title("gpl-3.0-or-later") == "GNU General Public License v3.0 or later"
     assert licenses.title("all-rights-reserved") == "All rights reserved"
-    assert licenses.title("no-such-licence") is None
+    assert licenses.title("no-such-license") is None
 
 
-def test_the_pypi_preset_declares_its_licence_the_pep_639_way():
-    # setuptools 77+ refuses a `License ::` classifier beside a licence
+def test_the_pypi_preset_declares_its_license_the_pep_639_way():
+    # setuptools 77+ refuses a `License ::` classifier beside a license
     # expression (measured 2026-10-25), so the preset carries neither the old
     # table form nor a classifier, and requires the setuptools that reads it
     text = (LAYERS / "python/pypi/pyproject.toml").read_text(encoding="utf-8")
@@ -106,7 +106,7 @@ def test_plugin_sections_install_through_the_marketplace():
 
 # --- the layer tokens ---
 
-def test_tokens_carry_the_owner_the_licence_and_the_keywords():
+def test_tokens_carry_the_owner_the_license_and_the_keywords():
     ctx = token_context({"project_name": "p", "github_org": "someorg", "github_user": "me",
                          "license_expression": "MIT", "license_spdx": "MIT", "license_file_written": True,
                          "topics": ["cli", "demo"]})
@@ -117,13 +117,13 @@ def test_tokens_carry_the_owner_the_licence_and_the_keywords():
     assert ctx["RK_KEYWORDS"] == '"cli", "demo"'
 
 
-def test_a_file_licence_ships_its_file_without_an_spdx_claim():
+def test_a_file_license_ships_its_file_without_an_spdx_claim():
     ctx = token_context({"project_name": "p", "license_expression": "SEE LICENSE IN LICENSE",
                          "license_spdx": "", "license_file_written": True})
     assert ctx["RK_LICENSE_FIELD"] == "" and ctx["RK_LICENSE_FILES"] == 'license-files = ["LICENSE"]'
 
 
-def test_no_topics_and_no_licence_leave_valid_empty_values():
+def test_no_topics_and_no_license_leave_valid_empty_values():
     ctx = token_context({"project_name": "p"})
     assert ctx["RK_KEYWORDS"] == ""
     assert ctx["RK_LICENSE_FIELD"] == "" and ctx["RK_LICENSE_FILES"] == ""

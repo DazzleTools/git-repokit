@@ -1,6 +1,6 @@
-# The licence catalogue: where each text came from, and its fingerprint
+# The license catalogue: where each text came from, and its fingerprint
 
-Source: `github/choosealicense.com`, `_licenses/<id>.txt`, commit `f66c5dd01866041688edd87f658b6d5ac3304f1b` (branch gh-pages, fetched 2026-10-23 by `tests/one-offs/thinking/p4-fetch-licenses/fetch.py`). Each file's YAML front matter was stripped and the placeholders `[year]`, `[yyyy]`, `[fullname]`, `[name of copyright owner]` became `__RK_YEAR__` and `__RK_HOLDER__`; nothing else changed. `all-rights-reserved.txt` is authored here, not fetched. The "or-later" variants (`gpl-3.0-or-later`, `lgpl-3.0-or-later`, `agpl-3.0-or-later`) are not files: `repokit.licenses` renders them from the base text with a notice line, because the licence text is identical and only the project's notice says "or later".
+Source: `github/choosealicense.com`, `_licenses/<id>.txt`, commit `f66c5dd01866041688edd87f658b6d5ac3304f1b` (branch gh-pages, fetched 2026-10-23 by `tests/one-offs/thinking/p4-fetch-licenses/fetch.py`). Each file's YAML front matter was stripped and the placeholders `[year]`, `[yyyy]`, `[fullname]`, `[name of copyright owner]` became `__RK_YEAR__` and `__RK_HOLDER__`; nothing else changed. `all-rights-reserved.txt` is authored here, not fetched. The "or-later" variants (`gpl-3.0-or-later`, `lgpl-3.0-or-later`, `agpl-3.0-or-later`) are not files: `repokit.licenses` renders them from the base text with a notice line, because the license text is identical and only the project's notice says "or later".
 
 `tests/test_licenses.py` checks every shipped file against its shipped sha256; a changed file without a new row here fails.
 
@@ -25,3 +25,6 @@ Source: `github/choosealicense.com`, `_licenses/<id>.txt`, commit `f66c5dd018660
 | mpl-2.0 | MPL-2.0 | Mozilla Public License 2.0 | 0e03b8171b7b830a6a416b403eced17d39baed5b3a60563971f8b27aaa4f29e6 | 3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04 | none |
 | unlicense | Unlicense | The Unlicense | ddc2e070df0bb25ce951b0954d9c1b5d22b17f150d58eac66bda653d044bb5ed | 6b0382b16279f26ff69014300541967a356a666eb0b91b422f6862f6b7dad17e | none |
 | all-rights-reserved | LicenseRef-AllRightsReserved | All rights reserved (authored here) | - | 1025ba5f1f4d5a5583b50ea511aa986aa557b1a417ef92f52fe0696b4e5565c9 | holder, year |
+| proprietary-evaluation | LicenseRef-Proprietary-Evaluation | Proprietary, evaluation and non-commercial use only (authored here) | 6c84c87e1855527bced991938b199e66f9d4de7de8afe487c34b30a8e421f098 | fa2b9e07dcd8a9ce0d5b0207ba81153d2b145062d145046bd8dba2d086b7e6b8 | holder, year, project, email |
+
+`proprietary-evaluation.txt` is the license of ZeroMeld|View's ValidateMe (`C:\code\ZMView-ValidateMe\LICENSE`, commit 421570f, 2025-07-07), with its line endings made LF and four placeholders: the product line became `__RK_PROJECT__`, the year `__RK_YEAR__`, the name `__RK_HOLDER__` (twice more in the body), the contact address `__RK_EMAIL__`. Nothing else changed.

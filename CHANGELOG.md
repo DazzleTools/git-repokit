@@ -5,10 +5,38 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.11] - 2026-10-25
+
+### Added
+- **`dazzle-git-repokit` on PyPI** - an alias: `pip install dazzle-git-repokit` installs git-repokit
+  - Published beside git-repokit from the same release, at the same version
+  - Declares the `repokit` command too, so `pipx install dazzle-git-repokit` works
+- **New guides** - Configuration (every config key and its flag), Languages and layers, GitHub setup, The vault, Platform support
+- `repokit list` ends with the license catalogue, as `--license`'s help always said it did
+- **`--license proprietary-evaluation`** - all rights reserved, evaluation and non-commercial use until revoked
+  - The ZeroMeld|View license, with the project's name, holder, year and contact email filled in
+
+### Changed
+- **`adopt` no longer asks for a license** - it fills in what the project lacks
+  - The project's own license file is kept: `LICENSE`, `LICENSE.md`, `COPYING`, ... (it used to be only `LICENSE`)
+  - With none, the config's `license` is written; with nothing named, the project is adopted without one, and the run says so
+  - `--license` still chooses one, replacing the project's own file
+  - `create` still requires a license
+- **US spelling** - "license" and "color" throughout; the `badge_types` key `colour` is now `color`
+- **The README, rewritten** - what a project gets, a Quick Start that makes a full project on GitHub, the multi-branch workflow, Related Projects, and the house ending
+- **The 2025 guides, corrected** - every command checked against the CLI's own help
+  - `--github` described beside the older `--publish-to` token path
+  - `adopt`'s real layout: the private-branch model, with `main` and `dev` in sibling folders
+
+### Fixed
+- `repokit analyze` suggested `adopt --strategy`, a flag that does not exist (it is `--migration-strategy`)
+- `repokit analyze` could suggest a language `create` refuses (`javascript` is `js-ts`; others are left out)
+- Help examples used `--language javascript`
+
 ## [0.9.10] - 2026-10-25
 
 ### Fixed
-- The licence texts are checked out byte for byte on every system (`.gitattributes`); a Windows checkout used to convert their line endings
+- The license texts are checked out byte for byte on every system (`.gitattributes`); a Windows checkout used to convert their line endings
 
 ## [0.9.9] - 2026-10-25
 
@@ -27,9 +55,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - **Python 3.10 or newer** - 3.9 and older do not work; `tomli` is installed on 3.10
-- **Licences declared the current way** - in git-repokit and in created Python projects
-  - `license = "<SPDX id>"` and `license-files`, no licence classifier, setuptools 77 or newer
-  - Builds no longer warn about the licence fields
+- **Licenses declared the current way** - in git-repokit and in created Python projects
+  - `license = "<SPDX id>"` and `license-files`, no license classifier, setuptools 77 or newer
+  - Builds no longer warn about the license fields
 
 ## [0.9.7] - 2026-10-25
 
@@ -40,7 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Your own templates and badges in `~/.repokit/config.json` (`badge_templates`, `badge_types`)
   - Badges always render in one order, with Platform last
   - CI is added only where it fills a row
-  - The licence badge takes a colour that stands apart from its neighbours
+  - The license badge takes a color that stands apart from its neighbours
 
 ### Changed
 - **The README ends as the house's projects do** - Contributing, the support button, then License last
@@ -54,10 +82,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - The `gh` login is read before any file is written
   - `--org` owns the URLs; the login owns CODEOWNERS and FUNDING
   - A create with no login known says so
-- **README badges from the project** - the latest release, the preset's Python or Node minimum, the licence chosen
+- **README badges from the project** - the latest release, the preset's Python or Node minimum, the license chosen
   - Were version 1.0.0, Python >=3.7 and MIT for every project
 - **README and CONTRIBUTING with real commands** - install, usage, setup and tests for each preset
-- **The licence chosen in `pyproject.toml` and the plugin manifest** - they always said GPL; `keywords` come from `--topics`
+- **The license chosen in `pyproject.toml` and the plugin manifest** - they always said GPL; `keywords` come from `--topics`
 - CI workflows use current action versions, so Dependabot opens no pull requests on the first push
 - The labels step also creates the labels the project's own files use (`bug`, `enhancement`, `dependencies`, ...)
 - `.repokit.json` is committed with the project, with its author filled in
@@ -129,10 +157,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 The 0.9 line makes `repokit create` produce everything the old route did: git-repokit-template's file tree, then what `/create-project`, `/github-issues-setup`, `/obsidian-init` and `dz private-init` added by hand. Every piece is optional, so one person's house style lives in their global config. **0.9.0 is the milestone: template parity**, git-repokit's original goal; the versions after it are the perfecting.
 
 ### Added
-- **`--license`** - writes `LICENSE` from a catalogue of the licences GitHub and GitLab offer
+- **`--license`** - writes `LICENSE` from a catalogue of the licenses GitHub and GitLab offer
   - Holder and year filled from the git identity and the clock
   - `all-rights-reserved` for a private project, `file=<path>` for any text, `none` for no file
-  - Required: with no licence named on the command line or in the config, the create refuses and lists the catalogue
+  - Required: with no license named on the command line or in the config, the create refuses and lists the catalogue
 - **Extras** - the optional files git-repokit-template carried, each named in `--extras` or the config's `extras`
   - `funding`, `dependabot`, `stale`, `pr-template`, `release-template`, `roadmap`, `platform-support`, `vscode-settings`, `placeholders`, or `all`
   - Off unless named; `.repokit.json` records which were written

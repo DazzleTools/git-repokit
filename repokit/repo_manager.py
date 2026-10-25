@@ -128,7 +128,7 @@ class RepoManager:
         try:
             self.logger.info(f"Setting up repository: {self.project_name}")
 
-            # The licence is a parameter and is required: settle it before a
+            # The license is a parameter and is required: settle it before a
             # single file is written, so a refusal leaves nothing behind.
             self._license = self._resolve_license()
             # The extras too: an unknown name is refused before anything is written
@@ -788,9 +788,18 @@ class RepoManager:
         a private repository, else `license`; nothing named is a refusal
         (repokit.licenses.resolve), unless an adopted project already has one."""
         from . import licenses
-        existing = os.path.join(self.repo_root, "LICENSE")
-        if self.config.get("preserve_existing") and os.path.exists(existing) and not self.config.get("license_cli"):
-            return ("existing", None)
+        if self.config.get("preserve_existing") and not self.config.get("license_cli"):
+            # adopt fills in what is missing (0.9.11): a license file of the
+            # project's own is kept with no flag, and with no file and nothing
+            # named the project is adopted without one -- only create refuses
+            found = licenses.find_existing(self.repo_root)
+            if found:
+                return ("existing", found)
+            private = bool(self.config.get("private_repo"))
+            if not (self.config.get("license") or (private and self.config.get("license_private"))):
+                self.logger.warning("No license found in the project and none named, so none was added; "
+                                    "add a LICENSE file, or name one with --license <id>")
+                return ("none", None)
         spec = self.config.get("license") if self.config.get("license_cli") else None
         return licenses.resolve(spec, self.config.get("license"),
                                 bool(self.config.get("private_repo")), self.config.get("license_private"))
@@ -853,7 +862,8 @@ class RepoManager:
             self.logger.info(f"LICENSE copied from {value}")
             return
         holder = (self.config.get("user") or {}).get("name") or context.get("author") or "the copyright holder"
-        text = licenses.render(value, holder)
+        email = (self.config.get("user") or {}).get("email") or context.get("author_email")
+        text = licenses.render(value, holder, project=self.project_name, email=email)
         with open(path, "w", encoding="utf-8", newline="\n") as f:
             f.write(text)
         self.logger.info(f"LICENSE written: {value} ({holder})")
@@ -2663,13 +2673,22 @@ exit 0
             self.logger.warning(f"Failed to generate RepoKit configuration: {str(e)}")
 
     def _license_record(self) -> str:
-        """What .repokit.json says about the licence: the id, `file:<name>`, `none` or `existing`."""
+        """What .repokit.json says about the license: the id, `file:<name>`,
+        `existing:<name>` (an adopted project's own file) or `none`."""
         kind, value = getattr(self, "_license", None) or ("none", None)
         if kind == "catalogue":
             return value
         if kind == "file":
             return "file:" + os.path.basename(value)
+        if kind == "existing":
+            return "existing:" + (value or "LICENSE")
         return kind
+
+    def _license_file_name(self) -> str:
+        """The license file the project's links and manifests name: an
+        adopted project's own (LICENSE.md, COPYING, ...), else LICENSE."""
+        kind, value = getattr(self, "_license", None) or ("none", None)
+        return (value or "LICENSE") if kind == "existing" else "LICENSE"
 
     GITHUB_PLACEHOLDER = "YOUR_GITHUB_USERNAME"
 
@@ -2720,7 +2739,7 @@ exit 0
                                 types=self.config.get("badge_types"))
 
     def _license_spdx(self) -> Optional[str]:
-        """The SPDX id of the catalogue licence this project got, else None."""
+        """The SPDX id of the catalogue license this project got, else None."""
         kind, value = getattr(self, "_license", None) or ("none", None)
         if kind != "catalogue" or not value:
             return None
@@ -2729,7 +2748,7 @@ exit 0
 
     def _docs_context(self) -> Dict[str, str]:
         """What README.md and CONTRIBUTING.md place beyond the badges (0.9.6):
-        the preset's install, usage, setup and test commands, the licence line,
+        the preset's install, usage, setup and test commands, the license line,
         and the support line when FUNDING is written."""
         from .readme_blocks import sections
         login, owner = self._github_names()
@@ -2742,7 +2761,7 @@ exit 0
         spdx = self._license_spdx()
         # The License section, last in the README, in the house projects'
         # words (claude-bookmarks, Claude-Session-Backup): the copyright line,
-        # then the licence by name. There is no Acknowledgements section: a
+        # then the license by name. There is no Acknowledgements section: a
         # project does not credit its own author (djdarcy, 2026-10-24).
         notice = f"{self.project_name}, Copyright (C) {datetime.date.today().year} {self._holder()}"
         if spdx and spdx.startswith("LicenseRef"):
@@ -2751,13 +2770,16 @@ exit 0
             docs["license_line"] = (f"{notice}\n\nLicensed under the {licenses.title(lid) or spdx} ({spdx}) "
                                     "-- see [LICENSE](LICENSE).")
         elif kind in ("file", "existing"):
-            docs["license_line"] = "See [LICENSE](LICENSE)."
+            name = self._license_file_name()
+            docs["license_line"] = f"See [{name}]({name})."
         else:
-            docs["license_line"] = "No licence has been chosen yet."
-        # what the layers' manifests say about the licence and the keywords
+            docs["license_line"] = "No license has been chosen yet."
+        # what the layers' manifests say about the license and the keywords
         docs["license_expression"] = (spdx if spdx else
-                                      "SEE LICENSE IN LICENSE" if kind in ("file", "existing") else "UNLICENSED")
-        # PEP 639 (0.9.8): the SPDX id only for a catalogue licence (a file has
+                                      f"SEE LICENSE IN {self._license_file_name()}" if kind in ("file", "existing")
+                                      else "UNLICENSED")
+        docs["license_file_name"] = self._license_file_name()
+        # PEP 639 (0.9.8): the SPDX id only for a catalogue license (a file has
         # none), and whether a LICENSE file is written at all
         docs["license_spdx"] = spdx or ""
         docs["license_file_written"] = kind in ("catalogue", "file", "existing")

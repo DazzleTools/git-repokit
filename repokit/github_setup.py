@@ -25,7 +25,7 @@ from typing import Callable, List, Optional, Tuple
 
 STEPS = ("labels", "issues", "pin", "discussions", "topics", "pypi-environment", "traffic")
 
-# /github-issues-setup, Step 1 (names, colours, descriptions as the skill has them)
+# /github-issues-setup, Step 1 (names, colors, descriptions as the skill has them)
 LABELS = [
     ("pinned", "d4c5f9", "Permanently open issue"),
     ("evergreen", "2ea44f", "Never close -- living document updated over time"),
@@ -38,7 +38,7 @@ LABELS = [
     ("NextTask", "e6b800", "Next item to pick up"),
 ]
 # Labels a created project's own files name (its issue templates' `labels:`,
-# dependabot.yml's `labels:`), with GitHub's and Dependabot's usual colours.
+# dependabot.yml's `labels:`), with GitHub's and Dependabot's usual colors.
 # A repository created by gh has no default labels, so without these an issue
 # filed from the bug template, or a Dependabot pull request, would ask for a
 # label that does not exist (0.9.6; the live golden had them from the template).
