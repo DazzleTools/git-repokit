@@ -5,6 +5,11 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.10] - 2026-10-25
+
+### Fixed
+- The licence texts are checked out byte for byte on every system (`.gitattributes`); a Windows checkout used to convert their line endings
+
 ## [0.9.9] - 2026-10-25
 
 ### Fixed

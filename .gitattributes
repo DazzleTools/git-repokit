@@ -1,1 +1,5 @@
 repokit/templates/** text eol=lf
+# The licence texts are checked byte for byte against the sha256 in
+# repokit/licenses/LICENSES.md, so no checkout may convert them (a Windows
+# runner with core.autocrlf=true did, 2026-10-25)
+repokit/licenses/*.txt -text
