@@ -64,7 +64,7 @@ def test_labels_creates_the_missing_ones_and_a_second_run_nothing():
     assert _setup(fake).labels()[0].startswith("labels: created evergreen")
     assert fake.labels >= {n for n, _, _ in LABELS}
     before = len(fake.calls)
-    assert _setup(fake).labels() == ["labels: all nine already there"]
+    assert _setup(fake).labels() == ["labels: all already there"]
     assert all(c[:2] != ["label", "create"] for c in fake.calls[before:])
 
 

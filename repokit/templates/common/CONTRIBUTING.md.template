@@ -2,32 +2,30 @@
 
 Thank you for considering contributing to $project_name!
 
-## Code of Conduct
+## Development Setup
 
-Please note that this project is released with a Contributor Code of Conduct.
-By participating in this project you agree to abide by its terms.
+### Prerequisites
 
-## How Can I Contribute?
+$prerequisites
 
-### Reporting Bugs
+### Clone and set up
 
-This section guides you through submitting a bug report.
+$setup_block
 
-### Suggesting Enhancements
+### Run the tests
 
-This section guides you through submitting an enhancement suggestion.
+$test_block
 
-### Pull Requests
+## Key Design Principles
 
-The process described here has several goals:
+1. **Tests are important** -- write tests for new features
+2. **One-offs graduate** -- quick checks in `tests/one-offs/` can be promoted to proper tests
+3. **Cross-platform** -- works on Windows, Linux and macOS
+4. **Clean commits** -- use the conventional commit format
 
-1. Maintain the project's quality
-2. Fix problems that are important to users
-3. Enable a sustainable system for maintainers to review contributions
+## Pull Requests
 
-Please follow these steps to have your contribution considered by the maintainers:
-
-1. Fork the repository
-2. Create a new branch
-3. Make your changes
-4. Submit a pull request
+1. Fork the repository and create a branch
+2. Make your change, with tests
+3. Run the tests
+4. Open a pull request describing what changed and why

@@ -1,0 +1,988 @@
+# End-of-line check, part 1: created plugins vs claude-bookmarks
+
+(created demo-plugin at C:\Users\Extreme\AppData\Local\Temp\claude\C--code-git-repokit-common\b7f808a4-2f0e-4deb-8393-1ae52ea876ba\scratchpad\eol\demo-plugin)
+## demo-plugin (166 tracked files) vs claude-bookmarks (463)
+
+In both (13):
+    .claude-plugin/marketplace.json
+    .github/CODEOWNERS
+    .github/ISSUE_TEMPLATE/bug-report.md
+    .github/ISSUE_TEMPLATE/feature-request.md
+    .gitignore
+    .repokit-common.toml
+    CHANGELOG.md
+    CONTRIBUTING.md
+    LICENSE
+    README.md
+    plugin/.claude-plugin/plugin.json
+    plugin/README.md
+    plugin/hooks/hooks.json
+
+Only in the created project (8):
+    .editorconfig
+    .gitattributes
+    .github/workflows/ci-js-ts.yml
+    .vscode/launch.json
+    VERSION
+    package.json
+    plugin/hooks/scripts/session-start.mjs
+    plugin/tests/manifest.test.js
+
+Only in claude-bookmarks, scaffold level (50):
+    .github/FUNDING.yml
+    .github/dependabot.yml
+    .github/pull_request_template.md
+    .github/release-template.md
+    .github/stale.yml
+    .github/workflows/ci.yml
+    .repokit.json
+    .vscode/settings.json
+    PRIVACY.md
+    ROADMAP.md
+    SECURITY.md
+    plugin/.claude-plugin/icon.png
+    plugin/LICENSE
+    plugin/hooks/README.md
+    plugin/hooks/handlers/README.md
+    plugin/hooks/scripts/README.md
+    plugin/templates/data-readme.md
+    plugin/tests/after-action.test.ts
+    plugin/tests/band.test.ts
+    plugin/tests/check.test.ts
+    plugin/tests/debug.test.ts
+    plugin/tests/deletion.test.ts
+    plugin/tests/delmarks.test.ts
+    plugin/tests/diagnostics.test.ts
+    plugin/tests/filter.test.ts
+    plugin/tests/footnotes.test.ts
+    plugin/tests/goldens.test.ts
+    plugin/tests/guard.test.ts
+    plugin/tests/harness.ts
+    plugin/tests/highlight-links.test.ts
+    plugin/tests/index.test.ts
+    plugin/tests/keymap-config.test.ts
+    plugin/tests/loader.test.ts
+    plugin/tests/migration.test.ts
+    plugin/tests/note.test.ts
+    plugin/tests/palette.test.ts
+    plugin/tests/pane-keys.test.ts
+    plugin/tests/pane-text.test.ts
+    plugin/tests/promote.test.ts
+    plugin/tests/reading.test.ts
+    plugin/tests/readme.test.ts
+    plugin/tests/seams.test.ts
+    plugin/tests/settings.test.ts
+    plugin/tests/tool.test.ts
+    plugin/tsconfig.json
+    plugin/types/index.d.ts
+    tests/conftest.py
+    tests/output/.gitkeep
+    tests/test_version.py
+    version.py
+
+Own-work folders in claude-bookmarks (presence only): docs/, plugin/hooks/*.ts(x)/.ps1 sources, plugin/hooks/core/, plugin/hooks/engine/, plugin/hooks/views/, plugin/images/, scripts/repokit-common/, tests/checklists/, tests/core/, tests/mutation/, tests/one-offs/, tests/probes/
+Own-work folders in the created project: scripts/repokit-common/
+
+Keys of plugin/.claude-plugin/plugin.json:
+    created:   ['author', 'description', 'displayName', 'documentationUrl', 'homepage', 'keywords', 'name', 'repository', 'version']
+    bookmarks: ['author', 'description', 'displayName', 'documentationUrl', 'homepage', 'keywords', 'license', 'name', 'privacyPolicyUrl', 'repository', 'supportUrl', 'termsOfServiceUrl', 'types', 'userConfig', 'version']
+    only created: []
+    only bookmarks: ['license', 'privacyPolicyUrl', 'supportUrl', 'termsOfServiceUrl', 'types', 'userConfig']
+
+Keys of .claude-plugin/marketplace.json:
+    created:   ['metadata', 'name', 'owner', 'plugins']
+    bookmarks: ['metadata', 'name', 'owner', 'plugins']
+    only created: []
+    only bookmarks: []
+
+Keys of plugin/hooks/hooks.json:
+    created:   ['hooks']
+    bookmarks: ['modules']
+    only created: ['hooks']
+    only bookmarks: ['modules']
+
+Keys of package.json:
+    created:   ['description', 'engines', 'name', 'private', 'scripts', 'type', 'version']
+    bookmarks: ['<absent>']
+    only created: ['description', 'engines', 'name', 'private', 'scripts', 'type', 'version']
+    only bookmarks: ['<absent>']
+
+Keys of .repokit.json:
+    created:   ['archetype', 'author', 'branch_strategy', 'created_at', 'description', 'extras', 'generated_by', 'language', 'languages', 'layers', 'license', 'private_branch', 'private_mode', 'project_name', 'repokit_common', 'repokit_managed', 'version']
+    bookmarks: ['author', 'branch_strategy', 'description', 'generated_by', 'language', 'private_branch', 'project_name', 'repokit_managed', 'version']
+    only created: ['archetype', 'created_at', 'extras', 'languages', 'layers', 'license', 'private_mode', 'repokit_common']
+    only bookmarks: []
+
+--- created .repokit-common.toml ---
+# git-repokit-common settings for demo-plugin, a Claude Code plugin.
+#
+# The plugin lives in plugin/ with its own README for the marketplace; this
+# root holds the repository's tooling. The version lives in VERSION; the
+# vendored tool at scripts/repokit-common/ keeps package.json and the plugin
+# manifest in step. "human" tags (v0.1.0) match the version Claude Code reads
+# from plugin/.claude-plugin/plugin.json.
+
+[tool.repokit-common]
+version-source = "VERSION"
+changelog = "CHANGELOG.md"
+repo-url = "https://github.com/YOUR_GITHUB_USERNAME/demo-plugin"
+tag-prefix = "v"
+tag-format = "human"
+private-patterns = ["private/", "local/", ".env"]
+# What a push runs: npm test, once the dependencies are installed (see the
+# js-ts language layer's settings for why the guard is there).
+test-command = "if [ -d node_modules ] || ! grep -q devDependencies package.json; then npm test; else echo dependencies not installed: run npm install and the push will run npm test; fi"
+
+[[tool.repokit-common.extra-targets]]
+path = "package.json"
+type = "json"
+field = "version"
+
+[[tool.repokit-common.extra-targets]]
+path = "plugin/.claude-plugin/plugin.json"
+type = "json"
+field = "version"
+
+--- bookmarks .repokit-common.toml ---
+# git-repokit-common settings for claude-bookmarks.
+#
+# The product is a Claude Code plugin (TypeScript, under plugin/), so there is
+# no pyproject.toml: this is repokit-common's own config file for projects that
+# are not Python packages. It configures the vendored copy at
+# scripts/repokit-common/ (version sync, CHANGELOG links, git hooks).
+# The table header stays [tool.repokit-common], as in a pyproject.toml.
+#
+# Tests: `test-command` below replaces the hook's pytest default, so a push
+# runs what guards this repository -- the core suite under Node, the version
+# tests under pytest, the strict type check and the plugin validator. The kit
+# suite (`claude plugin test plugin`) stays out of the hook for speed; run it
+# yourself, and CI runs it on every push. The hook runs the command with
+# `sh -c` from the repository root; a
+# non-zero exit blocks a push to a gated branch and warns on any other.
+
+[tool.repokit-common]
+# Source of truth for version components (MAJOR/MINOR/PATCH/PHASE).
+version-source = "version.py"
+changelog = "CHANGELOG.md"
+repo-url = "https://github.com/DazzleML/claude-bookmarks"
+tag-prefix = "v"
+# "human" tags (v0.1.0, v0.1.0-alpha) match the version Claude Code reads
+# from .claude-plugin/plugin.json.
+tag-format = "human"
+private-patterns = ["private/", "local/", ".env"]
+# What a push must pass (see the header). Kept in the table above the
+# extra-targets array, where repokit_config.py reads the plain keys.
+test-command = "node --test tests/core/*.test.ts && python -P -m pytest tests/ -q && npx tsc -p plugin --noEmit && claude plugin validate ./plugin"
+
+# Keep the plugin manifest's "version" in step with version.py: every sync,
+# --bump, --set and --phase writes it too (git-repokit-common v0.3.2+), and
+# tests/test_version.py checks the two still match.
+[[tool.repokit-common.extra-targets]]
+path = "plugin/.claude-plugin/plugin.json"
+
+--- created plugin/.claude-plugin/plugin.json ---
+{
+  "name": "demo-plugin",
+  "displayName": "demo-plugin",
+  "description": "A demo plugin made by the end-of-line check",
+  "version": "0.1.0",
+  "author": {
+    "name": "Demo Maker",
+    "email": "demo@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/YOUR_GITHUB_USERNAME/demo-plugin",
+  "repository": "https://github.com/YOUR_GITHUB_USERNAME/demo-plugin",
+  "documentationUrl": "https://github.com/YOUR_GITHUB_USERNAME/demo-plugin/blob/main/plugin/README.md",
+  "keywords": []
+}
+
+--- bookmarks plugin/.claude-plugin/plugin.json ---
+{
+  "name": "bookmarks",
+  "displayName": "Bookmarks",
+  "version": "0.6.24",
+  "description": "Bookmarks and vim-style marks inside Claude Code conversations: mark a line, jump back, keep a reading position, browse your prompts, and let Claude cite earlier places as clickable links.",
+  "author": {
+    "name": "DazzleML",
+    "github": "https://github.com/DazzleML"
+  },
+  "repository": "https://github.com/DazzleML/claude-bookmarks",
+  "homepage": "https://github.com/DazzleML/claude-bookmarks",
+  "privacyPolicyUrl": "https://github.com/DazzleML/claude-bookmarks/blob/main/PRIVACY.md",
+  "supportUrl": "https://github.com/DazzleML/claude-bookmarks/issues",
+  "documentationUrl": "https://github.com/DazzleML/claude-bookmarks/tree/main/docs",
+  "termsOfServiceUrl": "https://github.com/DazzleML/claude-bookmarks/blob/main/LICENSE",
+  "license": "GPL-3.0",
+  "keywords": [
+    "bookmarks",
+    "pins",
+    "marks",
+    "vim-marks",
+    "vim",
+    "navigation",
+    "conversation",
+    "jump-to-message",
+    "tui",
+    "claude-code"
+  ],
+  "userConfig": {
+    "listOpensAt": {
+      "type": "string",
+      "title": "Prompts list opens at",
+      "description": "nearest: centred on the prompt nearest your view; newest: at the newest prompt",
+      "default": "nearest",
+      "options": [
+        "nearest",
+        "newest"
+      ]
+    },
+    "followHere": {
+      "type": "string",
+      "title": "Prompts list follows the view",
+      "description": "when-idle: slides to keep the yellow row showing unless you are typing a number; always; never",
+      "default": "when-idle",
+      "options": [
+        "when-idle",
+        "always",
+        "never"
+      ]
+    },
+    "closeShare": {
+      "type": "number",
+      "title": "Closeness for the earlier prompt",
+      "description": "An earlier exchange is \"nearest\" while it holds at least this share of the screen lines the biggest one holds (0 to 1)",
+      "default": 0.6,
+      "min": 0,
+      "max": 1
+    },
+    "paneAfterJump": {
+      "type": "string",
+      "title": "Prompts or bookmarks list after you pick a row",
+      "description": "close: clicking a row (or Enter on a number) jumps there and closes the list; stay: the list stays open for the next pick",
+      "default": "close",
+      "options": [
+        "close",
+        "stay"
+      ]
+    },
+    "paneWhileTyping": {
+      "type": "string",
+      "title": "A list while you type",
+      "description": "stay: typing in the input box leaves an open list where it is; close: typing closes it",
+      "default": "stay",
+      "options": [
+        "close",
+        "stay"
+      ]
+    },
+    "afterActionFocus": {
+      "type": "string",
+      "title": "Keyboard after an action",
+      "description": "input: back to the input box once Claude Code allows a plugin to do it; band: stay in the band",
+      "default": "input",
+      "options": [
+        "input",
+        "band"
+      ]
+    },
+    "debugDefault": {
+      "type": "string",
+      "title": "Debug echo by default",
+      "description": "Whether the plugin's log lines are echoed into a conversation that has not chosen; /bm-debug decides per conversation",
+      "default": "off",
+      "options": [
+        "off",
+        "on"
+      ]
+    },
+    "debugText": {
+      "type": "string",
+      "title": "Conversation text in the debug log",
+      "description": "auto: off in an installed plugin, always in one loaded from a folder; off: log lines name places by id only; with-debug: they also quote the conversation while this conversation's debugging is on; always: they always quote it",
+      "default": "auto",
+      "options": [
+        "auto",
+        "off",
+        "with-debug",
+        "always"
+      ]
+    },
+    "debugTextLength": {
+      "type": "string",
+      "title": "How much text a debug line quotes",
+      "description": "reference: a short excerpt, enough to find the place; full: the whole text",
+      "default": "reference",
+      "options": [
+        "reference",
+        "full"
+      ]
+    },
+    "palette": {
+      "type": "string",
+      "title": "Colour overrides",
+      "description": "JSON, e.g. {\"here\": {\"color\": \"cyan\"}, \"markBand\": {\"backgroundColor\": \"#203040\"}}. Roles: here, pinned, footnote, legend, heading, mark, markBand, used, unused, unreached, emphasis, search. A colour is a theme key (warning, subtle, ...), a terminal colour name or #rrggbb; anything else is ignored",
+      "default": ""
+    },
+    "footnotes": {
+      "type": "string",
+      "title": "Footnotes in the prompts list",
+      "description": "folded: a prompt with footnotes (your slash commands, ! shell commands, interruptions) shows an ellipsis, and . unfolds them; shown: always listed under their prompt; hidden: never listed",
+      "default": "folded",
+      "options": [
+        "folded",
+        "shown",
+        "hidden"
+      ]
+    },
+    "promptTextBudget": {
+      "type": "number",
+      "title": "Prompt text kept for the filter (bytes)",
+      "description": "How much of your prompts the filter searches, across the conversation; 0 = unlimited (for machines with room to spare). The default keeps whole prompts in most conversations",
+      "default": 2000000,
+      "min": 0,
+      "max": 1000000000
+    },
+    "band": {
+      "type": "string",
+      "title": "The band",
+      "description": "full: the command field, the labelled commands and ? for the rest; field: the command field alone, one short row (the leader still lands there; ? shows the commands)",
+      "default": "full",
+      "options": [
+        "full",
+        "field"
+      ]
+    },
+    "chords": {
+      "type": "string",
+      "title": "Chords on their own keybindings",
+      "description": "on: mark, jump, prompts and read also answer the keybindings bound to their borrowed actions (docs: Optional fast keys); off: only the leader and the band's field",
+      "default": "on",
+      "options": [
+        "on",
+        "off"
+      ]
+    },
+    "panes": {
+      "type": "string",
+      "title": "Lists in a pane",
+      "description": "on: the prompts and bookmarks lists open in a pane beside the conversation; off: p and b take a number in the band and jump, with no pane",
+      "default": "on",
+      "options": [
+        "on",
+        "off"
+      ]
+    },
+    "rowLines": {
+      "type": "number",
+      "title": "Lines per row in the lists",
+      "description": "How many lines each prompt in the prompts list, and each mark in the jump list, may take (1 to 5); the text is cut with an ellipsis at the end of the last line",
+      "default": 2,
+      "min": 1,
+      "max": 5
+    },
+    "keysShown": {
+      "type": "string",
+      "title": "Keys: show the key rows",
+      "description": "shown: the rows below set the band's keys, one per command, and the list keys; hidden: they are folded away (your keys stay as set)",
+      "default": "hidden",
+      "options": [
+        "hidden",
+        "shown"
+      ]
+    },
+    "keyMark": {
+      "type": "string",
+      "title": "Keys: mark",
+      "description": "Keys for mark, separated by spaces (default: m); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyJump": {
+      "type": "string",
+      "title": "Keys: jump",
+      "description": "Keys for jump, separated by spaces (default: ' j); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyPrompts": {
+      "type": "string",
+      "title": "Keys: prompts",
+      "description": "Keys for prompts, separated by spaces (default: p); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyRead": {
+      "type": "string",
+      "title": "Keys: reading position",
+      "description": "Keys for reading position, separated by spaces (default: Space r); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyBookmarks": {
+      "type": "string",
+      "title": "Keys: bookmarks",
+      "description": "Keys for bookmarks, separated by spaces (default: b); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyPromote": {
+      "type": "string",
+      "title": "Keys: promote a mark",
+      "description": "Keys for promote a mark, separated by spaces (default: P); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyDelete": {
+      "type": "string",
+      "title": "Keys: clear a mark",
+      "description": "Keys for clear a mark, separated by spaces (default: d); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyForget": {
+      "type": "string",
+      "title": "Keys: forget a mark",
+      "description": "Keys for forget a mark, separated by spaces (default: D); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyBack": {
+      "type": "string",
+      "title": "Keys: back",
+      "description": "Keys for back, separated by spaces (default: o); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyForward": {
+      "type": "string",
+      "title": "Keys: forward",
+      "description": "Keys for forward, separated by spaces (default: i); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyClose": {
+      "type": "string",
+      "title": "Keys: close",
+      "description": "Keys for close, separated by spaces (default: q); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyHelp": {
+      "type": "string",
+      "title": "Keys: help",
+      "description": "Keys for help, separated by spaces (default: ?); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyList": {
+      "type": "string",
+      "title": "Keys: in a list",
+      "description": "The list keys in order: next previous pin previous-group next-group claim remove close (default: j k s h l c d q); empty = the defaults",
+      "default": ""
+    },
+    "keyLeader": {
+      "type": "string",
+      "title": "Keys: the leader",
+      "description": "The leader is a Claude Code keybinding (abovePrompt:focus in ~/.claude/keybindings.json), not set here",
+      "default": ""
+    }
+  },
+  "types": "./types/index.d.ts"
+}
+
+--- created plugin/hooks/hooks.json ---
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-start.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+
+--- bookmarks plugin/hooks/hooks.json ---
+{
+  "modules": ["./register.tsx"]
+}
+
+(created py-plugin at C:\Users\Extreme\AppData\Local\Temp\claude\C--code-git-repokit-common\b7f808a4-2f0e-4deb-8393-1ae52ea876ba\scratchpad\eol\py-plugin)
+## py-plugin (165 tracked files) vs claude-bookmarks (463)
+
+In both (13):
+    .claude-plugin/marketplace.json
+    .github/CODEOWNERS
+    .github/ISSUE_TEMPLATE/bug-report.md
+    .github/ISSUE_TEMPLATE/feature-request.md
+    .gitignore
+    .repokit-common.toml
+    CHANGELOG.md
+    CONTRIBUTING.md
+    LICENSE
+    README.md
+    plugin/.claude-plugin/plugin.json
+    plugin/README.md
+    plugin/hooks/hooks.json
+
+Only in the created project (7):
+    .gitattributes
+    .github/workflows/ci-python.yml
+    .vscode/launch.json
+    VERSION
+    plugin/hooks/scripts/run-hook.mjs
+    plugin/hooks/scripts/session_start.py
+    plugin/tests/test_manifest.py
+
+Only in claude-bookmarks, scaffold level (50):
+    .github/FUNDING.yml
+    .github/dependabot.yml
+    .github/pull_request_template.md
+    .github/release-template.md
+    .github/stale.yml
+    .github/workflows/ci.yml
+    .repokit.json
+    .vscode/settings.json
+    PRIVACY.md
+    ROADMAP.md
+    SECURITY.md
+    plugin/.claude-plugin/icon.png
+    plugin/LICENSE
+    plugin/hooks/README.md
+    plugin/hooks/handlers/README.md
+    plugin/hooks/scripts/README.md
+    plugin/templates/data-readme.md
+    plugin/tests/after-action.test.ts
+    plugin/tests/band.test.ts
+    plugin/tests/check.test.ts
+    plugin/tests/debug.test.ts
+    plugin/tests/deletion.test.ts
+    plugin/tests/delmarks.test.ts
+    plugin/tests/diagnostics.test.ts
+    plugin/tests/filter.test.ts
+    plugin/tests/footnotes.test.ts
+    plugin/tests/goldens.test.ts
+    plugin/tests/guard.test.ts
+    plugin/tests/harness.ts
+    plugin/tests/highlight-links.test.ts
+    plugin/tests/index.test.ts
+    plugin/tests/keymap-config.test.ts
+    plugin/tests/loader.test.ts
+    plugin/tests/migration.test.ts
+    plugin/tests/note.test.ts
+    plugin/tests/palette.test.ts
+    plugin/tests/pane-keys.test.ts
+    plugin/tests/pane-text.test.ts
+    plugin/tests/promote.test.ts
+    plugin/tests/reading.test.ts
+    plugin/tests/readme.test.ts
+    plugin/tests/seams.test.ts
+    plugin/tests/settings.test.ts
+    plugin/tests/tool.test.ts
+    plugin/tsconfig.json
+    plugin/types/index.d.ts
+    tests/conftest.py
+    tests/output/.gitkeep
+    tests/test_version.py
+    version.py
+
+Own-work folders in claude-bookmarks (presence only): docs/, plugin/hooks/*.ts(x)/.ps1 sources, plugin/hooks/core/, plugin/hooks/engine/, plugin/hooks/views/, plugin/images/, scripts/repokit-common/, tests/checklists/, tests/core/, tests/mutation/, tests/one-offs/, tests/probes/
+Own-work folders in the created project: scripts/repokit-common/
+
+Keys of plugin/.claude-plugin/plugin.json:
+    created:   ['author', 'description', 'displayName', 'documentationUrl', 'homepage', 'keywords', 'name', 'repository', 'version']
+    bookmarks: ['author', 'description', 'displayName', 'documentationUrl', 'homepage', 'keywords', 'license', 'name', 'privacyPolicyUrl', 'repository', 'supportUrl', 'termsOfServiceUrl', 'types', 'userConfig', 'version']
+    only created: []
+    only bookmarks: ['license', 'privacyPolicyUrl', 'supportUrl', 'termsOfServiceUrl', 'types', 'userConfig']
+
+Keys of .claude-plugin/marketplace.json:
+    created:   ['metadata', 'name', 'owner', 'plugins']
+    bookmarks: ['metadata', 'name', 'owner', 'plugins']
+    only created: []
+    only bookmarks: []
+
+Keys of plugin/hooks/hooks.json:
+    created:   ['hooks']
+    bookmarks: ['modules']
+    only created: ['hooks']
+    only bookmarks: ['modules']
+
+Keys of .repokit.json:
+    created:   ['archetype', 'author', 'branch_strategy', 'created_at', 'description', 'extras', 'generated_by', 'language', 'languages', 'layers', 'license', 'private_branch', 'private_mode', 'project_name', 'repokit_common', 'repokit_managed', 'version']
+    bookmarks: ['author', 'branch_strategy', 'description', 'generated_by', 'language', 'private_branch', 'project_name', 'repokit_managed', 'version']
+    only created: ['archetype', 'created_at', 'extras', 'languages', 'layers', 'license', 'private_mode', 'repokit_common']
+    only bookmarks: []
+
+--- created .repokit-common.toml ---
+# git-repokit-common settings for py-plugin, a Claude Code plugin with Python hooks.
+#
+# The plugin lives in plugin/ with its own README for the marketplace; this
+# root holds the repository's tooling. The version lives in VERSION; the
+# vendored tool at scripts/repokit-common/ keeps the plugin manifest in step.
+# "human" tags (v0.1.0) match the version Claude Code reads from
+# plugin/.claude-plugin/plugin.json. A push runs the plugin's own tests.
+
+[tool.repokit-common]
+version-source = "VERSION"
+changelog = "CHANGELOG.md"
+repo-url = "https://github.com/YOUR_GITHUB_USERNAME/py-plugin"
+tag-prefix = "v"
+tag-format = "human"
+private-patterns = ["private/", "local/", ".env"]
+test-command = "python -m pytest plugin/tests -q"
+
+[[tool.repokit-common.extra-targets]]
+path = "plugin/.claude-plugin/plugin.json"
+type = "json"
+field = "version"
+
+--- bookmarks .repokit-common.toml ---
+# git-repokit-common settings for claude-bookmarks.
+#
+# The product is a Claude Code plugin (TypeScript, under plugin/), so there is
+# no pyproject.toml: this is repokit-common's own config file for projects that
+# are not Python packages. It configures the vendored copy at
+# scripts/repokit-common/ (version sync, CHANGELOG links, git hooks).
+# The table header stays [tool.repokit-common], as in a pyproject.toml.
+#
+# Tests: `test-command` below replaces the hook's pytest default, so a push
+# runs what guards this repository -- the core suite under Node, the version
+# tests under pytest, the strict type check and the plugin validator. The kit
+# suite (`claude plugin test plugin`) stays out of the hook for speed; run it
+# yourself, and CI runs it on every push. The hook runs the command with
+# `sh -c` from the repository root; a
+# non-zero exit blocks a push to a gated branch and warns on any other.
+
+[tool.repokit-common]
+# Source of truth for version components (MAJOR/MINOR/PATCH/PHASE).
+version-source = "version.py"
+changelog = "CHANGELOG.md"
+repo-url = "https://github.com/DazzleML/claude-bookmarks"
+tag-prefix = "v"
+# "human" tags (v0.1.0, v0.1.0-alpha) match the version Claude Code reads
+# from .claude-plugin/plugin.json.
+tag-format = "human"
+private-patterns = ["private/", "local/", ".env"]
+# What a push must pass (see the header). Kept in the table above the
+# extra-targets array, where repokit_config.py reads the plain keys.
+test-command = "node --test tests/core/*.test.ts && python -P -m pytest tests/ -q && npx tsc -p plugin --noEmit && claude plugin validate ./plugin"
+
+# Keep the plugin manifest's "version" in step with version.py: every sync,
+# --bump, --set and --phase writes it too (git-repokit-common v0.3.2+), and
+# tests/test_version.py checks the two still match.
+[[tool.repokit-common.extra-targets]]
+path = "plugin/.claude-plugin/plugin.json"
+
+--- created plugin/.claude-plugin/plugin.json ---
+{
+  "name": "py-plugin",
+  "displayName": "py-plugin",
+  "description": "A demo plugin made by the end-of-line check",
+  "version": "0.1.0",
+  "author": {
+    "name": "Demo Maker",
+    "email": "demo@users.noreply.github.com"
+  },
+  "homepage": "https://github.com/YOUR_GITHUB_USERNAME/py-plugin",
+  "repository": "https://github.com/YOUR_GITHUB_USERNAME/py-plugin",
+  "documentationUrl": "https://github.com/YOUR_GITHUB_USERNAME/py-plugin/blob/main/plugin/README.md",
+  "keywords": []
+}
+
+--- bookmarks plugin/.claude-plugin/plugin.json ---
+{
+  "name": "bookmarks",
+  "displayName": "Bookmarks",
+  "version": "0.6.24",
+  "description": "Bookmarks and vim-style marks inside Claude Code conversations: mark a line, jump back, keep a reading position, browse your prompts, and let Claude cite earlier places as clickable links.",
+  "author": {
+    "name": "DazzleML",
+    "github": "https://github.com/DazzleML"
+  },
+  "repository": "https://github.com/DazzleML/claude-bookmarks",
+  "homepage": "https://github.com/DazzleML/claude-bookmarks",
+  "privacyPolicyUrl": "https://github.com/DazzleML/claude-bookmarks/blob/main/PRIVACY.md",
+  "supportUrl": "https://github.com/DazzleML/claude-bookmarks/issues",
+  "documentationUrl": "https://github.com/DazzleML/claude-bookmarks/tree/main/docs",
+  "termsOfServiceUrl": "https://github.com/DazzleML/claude-bookmarks/blob/main/LICENSE",
+  "license": "GPL-3.0",
+  "keywords": [
+    "bookmarks",
+    "pins",
+    "marks",
+    "vim-marks",
+    "vim",
+    "navigation",
+    "conversation",
+    "jump-to-message",
+    "tui",
+    "claude-code"
+  ],
+  "userConfig": {
+    "listOpensAt": {
+      "type": "string",
+      "title": "Prompts list opens at",
+      "description": "nearest: centred on the prompt nearest your view; newest: at the newest prompt",
+      "default": "nearest",
+      "options": [
+        "nearest",
+        "newest"
+      ]
+    },
+    "followHere": {
+      "type": "string",
+      "title": "Prompts list follows the view",
+      "description": "when-idle: slides to keep the yellow row showing unless you are typing a number; always; never",
+      "default": "when-idle",
+      "options": [
+        "when-idle",
+        "always",
+        "never"
+      ]
+    },
+    "closeShare": {
+      "type": "number",
+      "title": "Closeness for the earlier prompt",
+      "description": "An earlier exchange is \"nearest\" while it holds at least this share of the screen lines the biggest one holds (0 to 1)",
+      "default": 0.6,
+      "min": 0,
+      "max": 1
+    },
+    "paneAfterJump": {
+      "type": "string",
+      "title": "Prompts or bookmarks list after you pick a row",
+      "description": "close: clicking a row (or Enter on a number) jumps there and closes the list; stay: the list stays open for the next pick",
+      "default": "close",
+      "options": [
+        "close",
+        "stay"
+      ]
+    },
+    "paneWhileTyping": {
+      "type": "string",
+      "title": "A list while you type",
+      "description": "stay: typing in the input box leaves an open list where it is; close: typing closes it",
+      "default": "stay",
+      "options": [
+        "close",
+        "stay"
+      ]
+    },
+    "afterActionFocus": {
+      "type": "string",
+      "title": "Keyboard after an action",
+      "description": "input: back to the input box once Claude Code allows a plugin to do it; band: stay in the band",
+      "default": "input",
+      "options": [
+        "input",
+        "band"
+      ]
+    },
+    "debugDefault": {
+      "type": "string",
+      "title": "Debug echo by default",
+      "description": "Whether the plugin's log lines are echoed into a conversation that has not chosen; /bm-debug decides per conversation",
+      "default": "off",
+      "options": [
+        "off",
+        "on"
+      ]
+    },
+    "debugText": {
+      "type": "string",
+      "title": "Conversation text in the debug log",
+      "description": "auto: off in an installed plugin, always in one loaded from a folder; off: log lines name places by id only; with-debug: they also quote the conversation while this conversation's debugging is on; always: they always quote it",
+      "default": "auto",
+      "options": [
+        "auto",
+        "off",
+        "with-debug",
+        "always"
+      ]
+    },
+    "debugTextLength": {
+      "type": "string",
+      "title": "How much text a debug line quotes",
+      "description": "reference: a short excerpt, enough to find the place; full: the whole text",
+      "default": "reference",
+      "options": [
+        "reference",
+        "full"
+      ]
+    },
+    "palette": {
+      "type": "string",
+      "title": "Colour overrides",
+      "description": "JSON, e.g. {\"here\": {\"color\": \"cyan\"}, \"markBand\": {\"backgroundColor\": \"#203040\"}}. Roles: here, pinned, footnote, legend, heading, mark, markBand, used, unused, unreached, emphasis, search. A colour is a theme key (warning, subtle, ...), a terminal colour name or #rrggbb; anything else is ignored",
+      "default": ""
+    },
+    "footnotes": {
+      "type": "string",
+      "title": "Footnotes in the prompts list",
+      "description": "folded: a prompt with footnotes (your slash commands, ! shell commands, interruptions) shows an ellipsis, and . unfolds them; shown: always listed under their prompt; hidden: never listed",
+      "default": "folded",
+      "options": [
+        "folded",
+        "shown",
+        "hidden"
+      ]
+    },
+    "promptTextBudget": {
+      "type": "number",
+      "title": "Prompt text kept for the filter (bytes)",
+      "description": "How much of your prompts the filter searches, across the conversation; 0 = unlimited (for machines with room to spare). The default keeps whole prompts in most conversations",
+      "default": 2000000,
+      "min": 0,
+      "max": 1000000000
+    },
+    "band": {
+      "type": "string",
+      "title": "The band",
+      "description": "full: the command field, the labelled commands and ? for the rest; field: the command field alone, one short row (the leader still lands there; ? shows the commands)",
+      "default": "full",
+      "options": [
+        "full",
+        "field"
+      ]
+    },
+    "chords": {
+      "type": "string",
+      "title": "Chords on their own keybindings",
+      "description": "on: mark, jump, prompts and read also answer the keybindings bound to their borrowed actions (docs: Optional fast keys); off: only the leader and the band's field",
+      "default": "on",
+      "options": [
+        "on",
+        "off"
+      ]
+    },
+    "panes": {
+      "type": "string",
+      "title": "Lists in a pane",
+      "description": "on: the prompts and bookmarks lists open in a pane beside the conversation; off: p and b take a number in the band and jump, with no pane",
+      "default": "on",
+      "options": [
+        "on",
+        "off"
+      ]
+    },
+    "rowLines": {
+      "type": "number",
+      "title": "Lines per row in the lists",
+      "description": "How many lines each prompt in the prompts list, and each mark in the jump list, may take (1 to 5); the text is cut with an ellipsis at the end of the last line",
+      "default": 2,
+      "min": 1,
+      "max": 5
+    },
+    "keysShown": {
+      "type": "string",
+      "title": "Keys: show the key rows",
+      "description": "shown: the rows below set the band's keys, one per command, and the list keys; hidden: they are folded away (your keys stay as set)",
+      "default": "hidden",
+      "options": [
+        "hidden",
+        "shown"
+      ]
+    },
+    "keyMark": {
+      "type": "string",
+      "title": "Keys: mark",
+      "description": "Keys for mark, separated by spaces (default: m); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyJump": {
+      "type": "string",
+      "title": "Keys: jump",
+      "description": "Keys for jump, separated by spaces (default: ' j); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyPrompts": {
+      "type": "string",
+      "title": "Keys: prompts",
+      "description": "Keys for prompts, separated by spaces (default: p); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyRead": {
+      "type": "string",
+      "title": "Keys: reading position",
+      "description": "Keys for reading position, separated by spaces (default: Space r); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyBookmarks": {
+      "type": "string",
+      "title": "Keys: bookmarks",
+      "description": "Keys for bookmarks, separated by spaces (default: b); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyPromote": {
+      "type": "string",
+      "title": "Keys: promote a mark",
+      "description": "Keys for promote a mark, separated by spaces (default: P); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyDelete": {
+      "type": "string",
+      "title": "Keys: clear a mark",
+      "description": "Keys for clear a mark, separated by spaces (default: d); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyForget": {
+      "type": "string",
+      "title": "Keys: forget a mark",
+      "description": "Keys for forget a mark, separated by spaces (default: D); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyBack": {
+      "type": "string",
+      "title": "Keys: back",
+      "description": "Keys for back, separated by spaces (default: o); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyForward": {
+      "type": "string",
+      "title": "Keys: forward",
+      "description": "Keys for forward, separated by spaces (default: i); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyClose": {
+      "type": "string",
+      "title": "Keys: close",
+      "description": "Keys for close, separated by spaces (default: q); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyHelp": {
+      "type": "string",
+      "title": "Keys: help",
+      "description": "Keys for help, separated by spaces (default: ?); Space spells the space key; end with hidden to take its button off the bar; empty = the default",
+      "default": ""
+    },
+    "keyList": {
+      "type": "string",
+      "title": "Keys: in a list",
+      "description": "The list keys in order: next previous pin previous-group next-group claim remove close (default: j k s h l c d q); empty = the defaults",
+      "default": ""
+    },
+    "keyLeader": {
+      "type": "string",
+      "title": "Keys: the leader",
+      "description": "The leader is a Claude Code keybinding (abovePrompt:focus in ~/.claude/keybindings.json), not set here",
+      "default": ""
+    }
+  },
+  "types": "./types/index.d.ts"
+}
+
+--- created plugin/hooks/hooks.json ---
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/scripts/run-hook.mjs\" session_start.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+
+--- bookmarks plugin/hooks/hooks.json ---
+{
+  "modules": ["./register.tsx"]
+}
+

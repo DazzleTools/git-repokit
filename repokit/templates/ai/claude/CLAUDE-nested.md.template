@@ -1,0 +1,25 @@
+# CLAUDE.md -- $project_name
+
+$description
+
+Guidance for Claude Code sessions in this repository. It stays short: the project's notes, designs and boards live in the private vault.
+
+## Start here
+
+- `private/CLAUDE.md` -- the vault: where the design documents, postmortems, notes and boards are, and how to write there.
+- `README.md` -- what the project is, and how to install, run and test it.
+
+## Commands
+
+Setup:
+
+$setup_block
+
+Tests:
+
+$test_block
+
+## Rules
+
+- `private/` is its own git repository, ignored by this one and never pushed. Commit vault files from inside it, by named path.
+- Commit and push only when the person asks.

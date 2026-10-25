@@ -81,10 +81,15 @@ class TestCLICommands(RepoKitTestCase):
         self.assert_file_exists(project_dir, "CLAUDE.md")
         private_dir = os.path.join(project_dir, "private")
 
-        # Instructions land in the private repository
-        instructions_dir = os.path.join(private_dir, "claude", "instructions")
-        self.assertTrue(os.path.exists(instructions_dir))
+        # Nested mode (0.9.6): the root CLAUDE.md is a short pointer to the
+        # vault's own, and the private-branch model's instruction files are
+        # not written into the vault
         self.assertTrue(os.path.isdir(os.path.join(private_dir, ".git")))
+        with open(os.path.join(project_dir, "CLAUDE.md"), encoding="utf-8") as f:
+            claude_md = f.read()
+        self.assertIn("private/CLAUDE.md", claude_md)
+        self.assertNotIn("Private Branch Guidelines", claude_md)
+        self.assertFalse(os.path.exists(os.path.join(private_dir, "claude", "instructions")))
         
     def test_analyze_empty_directory(self):
         """Test analyze command on empty directory."""

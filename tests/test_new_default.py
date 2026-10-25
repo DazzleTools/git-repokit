@@ -92,8 +92,10 @@ class TestBareCreate(RepoKitTestCase):
         self.assertIn(STUB_MARKER, hook_text(self.repo))
 
     def test_tree_is_clean(self):
+        # nothing left over, .repokit.json included: it is committed (0.9.6)
         status = git(self.repo, "status", "--porcelain").stdout.split("\n")
-        self.assertEqual([s for s in status if s and ".repokit.json" not in s], [])
+        self.assertEqual([s for s in status if s], [])
+        self.assertIn(".repokit.json", git(self.repo, "ls-files").stdout.split())
 
 
 @needs_common

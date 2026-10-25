@@ -2830,6 +2830,16 @@ def main() -> int:
             logger.error(str(e))
             return 1
 
+        # The GitHub login, before any file is written: the files' URLs,
+        # CODEOWNERS and FUNDING name it (0.9.6; before, they carried the
+        # YOUR_GITHUB_USERNAME placeholder even with --github)
+        if getattr(args, "github", False) and not args.no_push:
+            from .github_create import gh_login
+            config["github_create"] = True
+            login = gh_login(os.getcwd())
+            if login:
+                config["github_login"] = login
+
         try:
             # Initialize RepoManager with the merged configuration
             repo_manager = RepoManager(

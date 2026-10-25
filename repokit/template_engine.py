@@ -6,6 +6,7 @@ Handles loading and rendering templates from the package's template directory.
 """
 
 import datetime
+import json
 import os
 import logging
 import re
@@ -36,7 +37,10 @@ def token_context(context: Dict[str, Any], archetype: Optional[str] = None) -> D
     name = str(context.get("project_name") or "project")
     words = [w for w in re.split(r"[-_\s]+", name) if w] or [name]
     github = context.get("github")
-    org = (context.get("organization")
+    # github_org is the repository's owner the structure templates use, so
+    # both dialects name the same owner (0.9.6)
+    org = (context.get("github_org")
+           or context.get("organization")
            or (github.get("username") if isinstance(github, dict) else None)
            or context.get("github_user") or "your-org")
     today = datetime.date.today()
@@ -54,6 +58,12 @@ def token_context(context: Dict[str, Any], archetype: Optional[str] = None) -> D
         "RK_GUID_SOLUTION": str(uuid.uuid4()).upper(),
         "RK_AUTHOR": str(context.get("author") or context.get("author_name") or ""),
         "RK_EMAIL": str(context.get("author_email") or ""),
+        # 0.9.6: the licence the create wrote, its PyPI classifier line, and the
+        # topics as keywords (one form valid in a TOML or a JSON array)
+        "RK_LICENSE": str(context.get("license_expression") or "UNLICENSED"),
+        "RK_LICENSE_CLASSIFIER": (json.dumps(context["license_classifier"]) + ","
+                                  if context.get("license_classifier") else ""),
+        "RK_KEYWORDS": ", ".join(json.dumps(str(t)) for t in (context.get("topics") or [])),
     }
     return {**context, **tokens}
 

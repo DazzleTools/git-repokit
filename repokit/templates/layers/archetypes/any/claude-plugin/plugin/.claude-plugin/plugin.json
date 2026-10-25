@@ -10,5 +10,6 @@
   "homepage": "https://github.com/__RK_ORG__/__RK_PROJECT__",
   "repository": "https://github.com/__RK_ORG__/__RK_PROJECT__",
   "documentationUrl": "https://github.com/__RK_ORG__/__RK_PROJECT__/blob/main/plugin/README.md",
-  "keywords": []
+  "license": "__RK_LICENSE__",
+  "keywords": [__RK_KEYWORDS__]
 }

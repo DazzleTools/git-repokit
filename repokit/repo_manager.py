@@ -167,6 +167,11 @@ class RepoManager:
                 from .vault import ensure_parent_ignores
                 ensure_parent_ignores(self.repo_root)
 
+            # The record, before the commit that carries it (0.9.6): it holds
+            # only what is settled by now, and written after the last commit it
+            # was left untracked in every project and never reached GitHub
+            self._generate_repokit_config()
+
             # Create initial commit
             self._create_initial_commit()
 
@@ -211,9 +216,6 @@ class RepoManager:
                 if problem:
                     self.logger.warning(f"repokit-common hooks not installed: {problem}")
                     self.logger.warning("Run: sh scripts/repokit-common/install-hooks.sh")
-
-            # Generate RepoKit configuration file with signature
-            self._generate_repokit_config()
 
             self.logger.info(f"Repository setup complete: {self.project_name}")
             self._print_next_steps()
@@ -496,6 +498,7 @@ class RepoManager:
                 "description": self.config.get("description", "A new project"),
                 "language": language,
                 "badges": self._generate_badges(language),
+                **self._docs_context(),
             }
 
             # Enhance context with comprehensive git user information
@@ -694,9 +697,7 @@ class RepoManager:
         self._resolve_layers()
         language = self.config.get("language", "generic")
 
-        github_config = self.config.get("github", {})
-        github_user = (github_config.get("username") if isinstance(github_config, dict) else None) \
-            or "YOUR_GITHUB_USERNAME"
+        github_user, github_owner = self._github_names()
         import datetime
 
         # Context for template rendering with enhanced git config
@@ -705,14 +706,14 @@ class RepoManager:
             "language": language,
             "description": self.config.get("description", ""),
             "badges": self._generate_badges(language),
+            # the person's GitHub login (CODEOWNERS, FUNDING)
             "github_user": github_user,
-            # the owner of the repository on GitHub: the organisation when one is
-            # named (--org, or github.organization in the config), else the user
-            "github_org": self.config.get("organization")
-                          or (github_config.get("organization") if isinstance(github_config, dict) else None)
-                          or github_user,
+            # the repository's owner (every URL): the organisation when one is
+            # named, else the person
+            "github_org": github_owner,
             "package_name": self.project_name.replace("-", "_"),
             "date": datetime.date.today().isoformat(),
+            **self._docs_context(),
         }
         
         # Enhance context with comprehensive git user information
@@ -1870,12 +1871,18 @@ exit 0
             # Flat layout (main-only)
             print(f"\nRepository: {self.repo_root}  (branch: main)")
             print("Private work goes in private/, which git ignores.")
-            print("\nNext steps:")
-            print("1. Set up a remote GitHub repository")
-            print("2. Add it as a remote and push:")
-            print(f"   cd {self.repo_root}")
-            print("   git remote add origin https://github.com/username/repo.git")
-            print("   git push -u origin main")
+            _, owner = self._github_names()
+            if self.config.get("github_create"):
+                # --github: the repository is made and pushed next (0.9.6;
+                # before, this said to set up the remote --github was about to make)
+                print(f"\nGitHub: https://github.com/{owner}/{self.project_name} is created and pushed next.")
+            else:
+                print("\nNext steps:")
+                print("1. Create the repository on GitHub (or rerun with --github)")
+                print("2. Add it as a remote and push:")
+                print(f"   cd {self.repo_root}")
+                print(f"   git remote add origin https://github.com/{owner}/{self.project_name}.git")
+                print("   git push -u origin main")
             print("=" * 80)
             return
 
@@ -2237,7 +2244,7 @@ exit 0
         if ai_provider == "claude":
             claude_dir = os.path.join(self.repo_root, "private", "claude")
             instructions_dir = os.path.join(claude_dir, "instructions")
-            os.makedirs(instructions_dir, exist_ok=True)
+            os.makedirs(claude_dir, exist_ok=True)
 
             # Context for AI templates
             import datetime
@@ -2250,18 +2257,23 @@ exit 0
                 "test_command": self._get_test_command(),
                 "lint_command": self._get_lint_command(),
                 "build_command": self._get_build_command(),
+                **self._docs_context(),
             }
 
-            # Generate CLAUDE.md
+            # Generate CLAUDE.md. Nested mode (the default) gets a short pointer
+            # to the vault's own CLAUDE.md with the project's real commands
+            # (0.9.6); the long template describes the private-branch model.
+            nested = self.private_mode == "nested"
             self.template_engine.render_template_to_file(
-                "CLAUDE.md",
+                "CLAUDE-nested.md" if nested else "CLAUDE.md",
                 os.path.join(self.repo_root, "CLAUDE.md"),
                 context,
                 category=f"ai/{ai_provider}",
             )
 
-            # Copy instruction files
-            instruction_files = [
+            # Copy instruction files (the private-branch model's; the nested
+            # vault carries its own guidance)
+            instruction_files = [] if nested else [
                 "step1_context_rebuilder.md",
                 "step2_dev_workflow_process.md",
                 "step3_context_bridge.md",
@@ -2281,6 +2293,7 @@ exit 0
                     )
 
                 if src_path and os.path.exists(src_path):
+                    os.makedirs(instructions_dir, exist_ok=True)
                     dest_path = os.path.join(instructions_dir, instruction_file)
                     shutil.copy2(src_path, dest_path)
                     self.logger.debug(f"Copied instruction file: {instruction_file}")
@@ -2624,8 +2637,20 @@ exit 0
         if self.config.get("description"):
             repokit_config["description"] = self.config["description"]
         
-        if self.config.get("user"):
-            repokit_config["author"] = self.config["user"]
+        # The config's user, else the git identity the LICENSE and the
+        # manifests were filled from (0.9.6: it used to be recorded empty)
+        user = dict(self.config.get("user") or {})
+        if not user.get("name") or not user.get("email"):
+            # the identity this repository's commits are made with: every
+            # scope git reads, the environment's overrides included
+            def effective(key: str) -> str:
+                r = subprocess.run(["git", "config", key], cwd=self.repo_root, capture_output=True,
+                                   text=True, encoding="utf-8", errors="replace")
+                return r.stdout.strip() if r.returncode == 0 else ""
+            user["name"] = user.get("name") or effective("user.name")
+            user["email"] = user.get("email") or effective("user.email")
+        if user.get("name") or user.get("email"):
+            repokit_config["author"] = {"name": user.get("name", ""), "email": user.get("email", "")}
         
         # Write configuration file
         try:
@@ -2646,13 +2671,32 @@ exit 0
             return "file:" + os.path.basename(value)
         return kind
 
+    GITHUB_PLACEHOLDER = "YOUR_GITHUB_USERNAME"
+
+    def _github_names(self) -> Tuple[str, str]:
+        """(the person's GitHub login, the repository's owner), one answer for
+        every file (0.9.6).
+
+        The login: the one gh reported for --github (`github_login`, read by
+        the CLI before anything is written), else the config's
+        github.username. The owner: --org, else github.organization, else the
+        login. With neither known the files get YOUR_GITHUB_USERNAME, and the
+        create says so once.
+        """
+        gh_cfg = self.config.get("github") if isinstance(self.config.get("github"), dict) else {}
+        login = self.config.get("github_login") or gh_cfg.get("username")
+        owner = self.config.get("organization") or gh_cfg.get("organization") or login
+        if not login and not getattr(self, "_warned_github_names", False):
+            self._warned_github_names = True
+            where = "CODEOWNERS and FUNDING" if owner else "the URLs, CODEOWNERS and FUNDING"
+            self.logger.warning(
+                f"No GitHub login known: {where} say {self.GITHUB_PLACEHOLDER}. "
+                "Use --github, or set github.username in ~/.repokit/config.json")
+        return (login or self.GITHUB_PLACEHOLDER, owner or self.GITHUB_PLACEHOLDER)
+
     def _generate_badges(self, language: str) -> str:
         """Generate GitHub workflow badges based on language and configuration."""
-        # Get GitHub username from config if available
-        github_config = self.config.get("github", {})
-        if not isinstance(github_config, dict):
-            github_config = {}
-        github_user = github_config.get("username", "YOUR_GITHUB_USERNAME")
+        _, github_user = self._github_names()  # the repository's owner: the URLs
 
         # Base badges
         badges = []
@@ -2670,68 +2714,96 @@ exit 0
                 ]
             )
 
-        # Version badge
-        badges.append("[![Version][version-badge]][version-url]")
-        badge_links.extend(
-            [
-                "[version-badge]: https://img.shields.io/badge/version-1.0.0-blue",
-                f"[version-url]: https://github.com/{github_user}/{self.project_name}/releases",
-            ]
-        )
+        # Every value below comes from the project (0.9.6). Until then the
+        # version said 1.0.0, Python said >=3.7 and the licence said MIT
+        # whatever the project was, and a project in any other language got
+        # a "build passing" badge that checked nothing.
+        from .readme_blocks import floors
+        repo = f"https://github.com/{github_user}/{self.project_name}"
 
-        # Language-specific badges
-        if language == "python":
+        # The latest release, read live (none until the first release)
+        badges.append("[![Release][release-badge]][release-url]")
+        badge_links.extend([
+            f"[release-badge]: https://img.shields.io/github/v/release/{github_user}/{self.project_name}"
+            "?include_prereleases&sort=semver",
+            f"[release-url]: {repo}/releases",
+        ])
+
+        # The runtime floor the preset's own files declare
+        floor = floors(self.config.get("archetype"))
+        if "python" in floor:
             badges.append("[![Python][python-badge]][python-url]")
-            badge_links.extend(
-                [
-                    "[python-badge]: https://img.shields.io/badge/python-%3E%3D3.7-darkgreen",
-                    "[python-url]: https://python.org/downloads",
-                ]
-            )
-        elif language == "javascript":
+            badge_links.extend([
+                f"[python-badge]: https://img.shields.io/badge/python-%3E%3D{floor['python']}-blue",
+                "[python-url]: https://www.python.org/downloads/",
+            ])
+        if "node" in floor:
             badges.append("[![Node][node-badge]][node-url]")
-            badge_links.extend(
-                [
-                    "[node-badge]: https://img.shields.io/badge/node-%3E%3D14.0.0-darkgreen",
-                    "[node-url]: https://nodejs.org/en/download",
-                ]
-            )
-        elif language == "java":
-            badges.append("[![Java][java-badge]][java-url]")
-            badge_links.extend(
-                [
-                    "[java-badge]: https://img.shields.io/badge/java-%3E%3D11-darkgreen",
-                    "[java-url]: https://openjdk.java.net",
-                ]
-            )
+            badge_links.extend([
+                f"[node-badge]: https://img.shields.io/badge/node-%3E%3D{floor['node']}-green",
+                "[node-url]: https://nodejs.org/en/download",
+            ])
+
+        # The licence the create wrote (none for a file, `none` or all rights reserved)
+        spdx = self._license_spdx()
+        if spdx and not spdx.startswith("LicenseRef"):
+            badges.append("[![License][license-badge]][license-url]")
+            badge_links.extend([
+                "[license-badge]: https://img.shields.io/badge/license-"
+                + spdx.replace("-", "--").replace("_", "__").replace(" ", "%20") + "-orange",
+                "[license-url]: LICENSE",
+            ])
+
+        # Discussions, when --github turns them on
+        from .github_setup import setup_names
+        try:
+            steps = setup_names(self.config.get("github_setup"))
+        except ValueError:
+            steps = []
+        if self.config.get("github_login") and "discussions" in steps:
+            badges.append("[![GitHub Discussions][discussions-badge]][discussions-url]")
+            badge_links.extend([
+                "[discussions-badge]: https://img.shields.io/badge/discussions-welcome-lightgrey",
+                f"[discussions-url]: {repo}/discussions",
+            ])
+
+        return "\n".join(badges) + "\n\n" + "\n".join(badge_links)
+
+    def _license_spdx(self) -> Optional[str]:
+        """The SPDX id of the catalogue licence this project got, else None."""
+        kind, value = getattr(self, "_license", None) or ("none", None)
+        if kind != "catalogue" or not value:
+            return None
+        from . import licenses
+        return licenses.spdx(value)
+
+    def _docs_context(self) -> Dict[str, str]:
+        """What README.md and CONTRIBUTING.md place beyond the badges (0.9.6):
+        the preset's install, usage, setup and test commands, the licence line,
+        and the support line when FUNDING is written."""
+        from .readme_blocks import sections
+        login, owner = self._github_names()
+        docs = sections(self.config.get("archetype"), self.config.get("language", "generic"),
+                        self.project_name, owner,
+                        bool(getattr(self, "with_common", False)) and not self.config.get("is_adoption", False))
+        kind, _ = getattr(self, "_license", None) or ("none", None)
+        spdx = self._license_spdx()
+        if spdx and spdx.startswith("LicenseRef"):
+            docs["license_line"] = "All rights reserved. See [LICENSE](LICENSE)."
+        elif spdx:
+            docs["license_line"] = f"{spdx}. See [LICENSE](LICENSE) for details."
+        elif kind in ("file", "existing"):
+            docs["license_line"] = "See [LICENSE](LICENSE)."
         else:
-            badges.append("[![Build][build-badge]][build-url]")
-            badge_links.extend(
-                [
-                    "[build-badge]: https://img.shields.io/badge/build-passing-brightgreen",
-                    f"[build-url]: https://github.com/{github_user}/{self.project_name}/actions",
-                ]
-            )
-
-        # License badge
-        badges.append("[![License][license-badge]][license-url]")
-        badge_links.extend(
-            [
-                "[license-badge]: https://img.shields.io/badge/license-MIT-orange",
-                f"[license-url]: https://github.com/{github_user}/{self.project_name}/blob/main/LICENSE",
-            ]
-        )
-
-        # Discussions badge
-        badges.append("[![GitHub Discussions][discussions-badge]][discussions-url]")
-        badge_links.extend(
-            [
-                "[discussions-badge]: https://img.shields.io/badge/discussions-Welcome-lightgrey",
-                f"[discussions-url]: https://github.com/{github_user}/{self.project_name}/discussions",
-            ]
-        )
-
-        # Combine badges and links
-        badge_section = "\n".join(badges) + "\n\n" + "\n".join(badge_links)
-
-        return badge_section
+            docs["license_line"] = "No licence has been chosen yet."
+        # what the layers' manifests say about the licence and the keywords
+        from . import licenses
+        _, lid = getattr(self, "_license", None) or ("none", None)
+        docs["license_expression"] = (spdx if spdx else
+                                      "SEE LICENSE IN LICENSE" if kind in ("file", "existing") else "UNLICENSED")
+        docs["license_classifier"] = licenses.CLASSIFIERS.get(lid or "", "") if kind == "catalogue" else ""
+        docs["topics"] = list(self.config.get("topics") or [])
+        funding = "funding" in (self.config.get("extras") or []) and login != self.GITHUB_PLACEHOLDER
+        docs["support_line"] = (f"Like the project? [Support it](https://github.com/sponsors/{login}).\n\n"
+                                if funding else "")
+        return docs

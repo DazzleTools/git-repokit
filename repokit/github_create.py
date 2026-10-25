@@ -40,6 +40,19 @@ def _run(cmd: List[str], cwd: str) -> Tuple[int, str]:
     return result.returncode, (result.stdout + result.stderr).strip()
 
 
+def gh_login(cwd: str) -> Optional[str]:
+    """The account gh is logged into, or None when gh is absent, logged out or
+    unreadable. Read before any file is written (0.9.6), so the project's URLs,
+    CODEOWNERS and FUNDING carry the real owner rather than a placeholder;
+    create_on_github still checks the login itself and reports any problem."""
+    gh = gh_command()
+    if gh is None:
+        return None
+    rc, out = _run(gh + ["api", "user", "-q", ".login"], cwd)
+    login = out.splitlines()[-1].strip() if rc == 0 and out else ""
+    return login or None
+
+
 def branches_to_push(config: dict, private_branch: Optional[str], existing: List[str]) -> List[str]:
     """The strategy's public branches that exist locally; never the private branch."""
     wanted = strategy_push_branches(config.get("branch_strategy", "main-only")) or ["main"]
@@ -97,7 +110,7 @@ def create_on_github(repo_root: str, name: str, config: dict, private_branch: Op
     setup = github_setup.GhSetup(gh, f"{owner}/{name}", lambda cmd: _run(cmd, repo_root))
     project = config.get("name") or name
     if "labels" in steps:
-        report += setup.labels()
+        report += setup.labels(github_setup.referenced_labels(repo_root))
     if "issues" in steps:
         drafts = os.path.join(repo_root, "private", "claude", "issues")
         report += setup.issues(project, drafts if os.path.isdir(drafts) else None)

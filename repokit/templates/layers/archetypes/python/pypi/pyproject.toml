@@ -7,17 +7,17 @@ name = "__RK_PROJECT__"
 dynamic = ["version"]
 description = "__RK_DESCRIPTION__"
 readme = "README.md"
-license = {text = "GPL-3.0-or-later"}
+license = {text = "__RK_LICENSE__"}
 requires-python = ">=3.10"
 authors = [
     {name = "__RK_AUTHOR__", email = "__RK_EMAIL__"},
 ]
-keywords = []
+keywords = [__RK_KEYWORDS__]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Environment :: Console",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    __RK_LICENSE_CLASSIFIER__
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",

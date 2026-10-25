@@ -1,15 +1,11 @@
 # These owners will be the default owners for everything in
 # the repo. Unless a later match takes precedence,
-# $author will be requested for review when someone opens a pull request.
-*       @$author
-
-# Core implementation
-*.js    @$author
-*.py    @$author
+# @$github_user will be requested for review when someone opens a pull request.
+*       @$github_user
 
 # Documentation
-/docs/   @$author
-*.md     @$author
+/docs/   @$github_user
+*.md     @$github_user
 
 # GitHub CI/CD
-/.github/ @$author
+/.github/ @$github_user

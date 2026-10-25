@@ -1,0 +1,40 @@
+PASS  2a LICENSE from the house licence (gpl-3.0), tracked
+PASS  2a extra .github/FUNDING.yml tracked
+PASS  2a extra .github/dependabot.yml tracked
+PASS  2a extra .github/stale.yml tracked
+PASS  2a extra .github/pull_request_template.md tracked
+PASS  2a extra .github/release-template.md tracked
+NOTE  2a ROADMAP.md -- not in the house list of five; on with `all` or by name
+NOTE  2a docs/platform-support.md -- not in the house list of five; on with `all` or by name
+NOTE  2a .vscode/settings.json -- not in the house list of five; on with `all` or by name
+NOTE  2a tests/output/.gitkeep -- not in the house list of five; on with `all` or by name
+PASS  2a .vscode/launch.json (debugpy)
+PASS  2a pyproject description from --description
+PASS  2a pyproject authors from the git identity
+PASS  2a golden_tool/__init__.py tracked
+PASS  2a golden_tool/cli.py tracked
+PASS  2a tests/test_version.py tracked
+PASS  2a .github/workflows/release.yml tracked
+PASS  2a repokit-common vendored
+PASS  2a hooks installed -- pre-commit, post-commit, pre-push
+GAP   the record .repokit.json tracked -- written after the last commit, so it is left untracked
+GAP   the record's author -- {'name': '', 'email': ''}
+PASS  the record's licence and extras -- gpl-3.0, ['funding', 'dependabot', 'stale', 'pr-template', 'release-template']
+NOTE  working tree after create -- ?? .repokit.json
+PASS  2c private/ is its own repository
+PASS  2c vault CLAUDE.md
+PASS  2c vault claude/_maps/MOC-project.md
+PASS  2c vault claude/_oracle/manifest.md
+PASS  2c vault claude/_todo/OPEN-LOOPS.md
+PASS  2c vault claude/_todo/ACTIVE-WORK.md
+PASS  2c the oracle's first prompt written -- bootstrap-prompt.md
+NOTE  2c backlinks -- the stub ships; not run at create (map row: partly)
+PASS  the created project's own pytest --   warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+PASS  the pre-commit hook on the created tree -- exit 0
+NOTE  2b the first release -- no notes draft written; /github-release stays the person's (Q261022-06)
+PASS  2b the nine labels
+PASS  2b issues #1 and #2 -- 2 Quick Notes -- Bugs, Features, Ideas; 1 Roadmap
+PASS  2b both issues pinned -- [1, 2]
+PASS  2b discussions enabled
+PASS  2b topics -- repokit, throwaway
+PASS  2b the pypi environment -- pypi

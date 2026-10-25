@@ -37,6 +37,55 @@ LABELS = [
     ("CurrentTask", "0e8a16", "Currently being worked on"),
     ("NextTask", "e6b800", "Next item to pick up"),
 ]
+# Labels a created project's own files name (its issue templates' `labels:`,
+# dependabot.yml's `labels:`), with GitHub's and Dependabot's usual colours.
+# A repository created by gh has no default labels, so without these an issue
+# filed from the bug template, or a Dependabot pull request, would ask for a
+# label that does not exist (0.9.6; the live golden had them from the template).
+REFERENCED = {
+    "bug": ("d73a4a", "Something isn't working"),
+    "enhancement": ("a2eeef", "New feature or request"),
+    "documentation": ("0075ca", "Improvements or additions to documentation"),
+    "dependencies": ("0366d6", "Pull requests that update a dependency file"),
+    "github-actions": ("000000", "Pull requests that update GitHub Actions"),
+    "pip": ("2b67c6", "Pull requests that update Python dependencies"),
+}
+
+
+def referenced_labels(repo_root: str) -> List[str]:
+    """Every label the project's issue templates and dependabot.yml name, in
+    the order first seen."""
+    names: List[str] = []
+    gh_dir = Path(repo_root, ".github")
+    for path in sorted((gh_dir / "ISSUE_TEMPLATE").glob("*.md")) if (gh_dir / "ISSUE_TEMPLATE").is_dir() else []:
+        m = re.search(r"^labels:\s*(.+)$", path.read_text(encoding="utf-8"), re.M)
+        if m:
+            names += [n.strip().strip("'\"") for n in m.group(1).split(",")]
+    dependabot = gh_dir / "dependabot.yml"
+    if dependabot.is_file():
+        names += re.findall(r'^\s*-\s*"?([A-Za-z0-9_.-]+)"?\s*$',
+                            "\n".join(_labels_blocks(dependabot.read_text(encoding="utf-8"))), re.M)
+    seen: List[str] = []
+    for n in names:
+        if n and n not in seen:
+            seen.append(n)
+    return seen
+
+
+def _labels_blocks(text: str) -> List[str]:
+    """The list items under each `labels:` key of a YAML file, as lines."""
+    out, lines = [], text.splitlines()
+    for i, line in enumerate(lines):
+        if line.strip() == "labels:":
+            indent = len(line) - len(line.lstrip())
+            for nxt in lines[i + 1:]:
+                if nxt.strip().startswith("-") and len(nxt) - len(nxt.lstrip()) >= indent:
+                    out.append(nxt)
+                else:
+                    break
+    return out
+
+
 ISSUES = [  # title, labels, template
     ("Roadmap", "pinned,roadmap,evergreen", "roadmap.md.template"),
     ("Quick Notes -- Bugs, Features, Ideas", "pinned,scratchpad,evergreen", "notes.md.template"),
@@ -74,20 +123,28 @@ class GhSetup:
 
     # --- before the first push ------------------------------------------------
 
-    def labels(self) -> List[str]:
+    def labels(self, referenced: Optional[List[str]] = None) -> List[str]:
+        """The nine house labels, then any label the project's own files name
+        (referenced_labels) that the repository lacks."""
         rc, out = self._gh("label", "list", "--repo", self.repo, "--limit", "200", "--json", "name")
         if rc != 0:
             return [f"labels: could not list them: {out}"]
         have = {l["name"] for l in json.loads(out or "[]")}
+        wanted = list(LABELS) + [(n, *REFERENCED.get(n, ("ededed", ""))) for n in (referenced or [])
+                                 if n not in {l[0] for l in LABELS}]
         made = []
-        for name, color, desc in LABELS:
+        for name, color, desc in wanted:
             if name in have:
                 continue
-            rc, out = self._gh("label", "create", name, "--repo", self.repo, "--color", color, "--description", desc)
+            cmd = ["label", "create", name, "--repo", self.repo, "--color", color]
+            if desc:
+                cmd += ["--description", desc]
+            rc, out = self._gh(*cmd)
             if rc != 0:
                 return [f"labels: creating {name} failed: {out}"]
             made.append(name)
-        return [f"labels: created {', '.join(made)}" if made else "labels: all nine already there"]
+            have.add(name)
+        return [f"labels: created {', '.join(made)}" if made else "labels: all already there"]
 
     def _issues(self) -> Optional[list]:
         rc, out = self._gh("issue", "list", "--repo", self.repo, "--state", "all", "--limit", "100", "--json", "number,title")

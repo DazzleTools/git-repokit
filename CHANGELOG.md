@@ -5,6 +5,23 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.6] - 2026-10-24
+
+### Fixed
+- **The real GitHub owner in every file** - no more `YOUR_GITHUB_USERNAME` with `--github`
+  - The `gh` login is read before any file is written
+  - `--org` owns the URLs; the login owns CODEOWNERS and FUNDING
+  - A create with no login known says so
+- **README badges from the project** - the latest release, the preset's Python or Node minimum, the licence chosen
+  - Were version 1.0.0, Python >=3.7 and MIT for every project
+- **README and CONTRIBUTING with real commands** - install, usage, setup and tests for each preset
+- **The licence chosen in `pyproject.toml` and the plugin manifest** - they always said GPL; `keywords` come from `--topics`
+- CI workflows use current action versions, so Dependabot opens no pull requests on the first push
+- The labels step also creates the labels the project's own files use (`bug`, `enhancement`, `dependencies`, ...)
+- `.repokit.json` is committed with the project, with its author filled in
+- With `--github`, the closing text names the repository instead of asking you to set up a remote
+- In the default layout, the root `CLAUDE.md` is a short pointer to the vault's own
+
 ## [0.9.5] - 2026-10-24
 
 ### Changed

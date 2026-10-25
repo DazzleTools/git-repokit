@@ -16,10 +16,12 @@ DEFAULT_PRIVATE_DIRS = [
     "convos"
 ]
 
-# Default sensitive files that should not appear in public branches
+# Default sensitive files that should not appear in public branches.
+# `.repokit.json` left this list in 0.9.6 (djdarcy, 2026-10-24: "Track it"):
+# the record of how a project was made is committed with it, as the template
+# route and git-repokit itself do; it holds nothing private.
 DEFAULT_SENSITIVE_FILES = [
     "CLAUDE.md",
-    ".repokit.json"
 ]
 
 # Default sensitive file patterns (supports glob patterns)
