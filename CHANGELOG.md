@@ -5,6 +5,20 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.12] - 2026-10-27
+
+### Fixed
+- **The private-branch strategies build real public branches** - `standard`, `simple`, `gitflow`, `github-flow` and `minimal`
+  - Each public branch was meant to be cut from the private branch, but `git reset --hard private` failed as ambiguous beside the `private/` folder: public branches held only the initial commit, and the create still exited 0
+  - They now hold the project's files, without its private ones
+- **The private checkout keeps its files** - the step after that reset deleted `.env`, logs and backups from `local/` on disk; now they stay on disk, and only the public branches leave them untracked
+- **The `.github` step works only in the default branch's own worktree** - no stray `<name>/github` folder, and a create inside another repository no longer commits into it
+- **A public branch that cannot be built fails the create** - a non-zero exit, after `local/` is back on the private branch
+- **Branch names match exactly** - `dev` no longer counts as `develop`
+- **A Python project's guard covers `CLAUDE.md`** - the private entries are added to the `private-patterns` its `pyproject.toml` already has
+- **Removing a private file from a public branch is allowed** - the project's pre-commit guard no longer reads a deletion as an added file
+- The guard in a git worktree reads the project's own settings with git-repokit-common 0.4.2 or later, which `--with-common` vendors
+
 ## [0.9.11] - 2026-10-25
 
 ### Added

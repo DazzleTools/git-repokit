@@ -2,7 +2,7 @@
 # Pre-commit hook to prevent committing private content
 
 # Check for private directories
-for file in $(git diff --cached --name-only); do
+for file in $(git diff --cached --name-only --diff-filter=ACMR); do
     if echo "$file" | grep -q -E "^private/|^convos/|^logs/|__private__"; then
         echo "ERROR: Attempting to commit private content: $file"
         echo "Private content should not be committed to the repository."
@@ -15,7 +15,7 @@ PRIVATE_PATTERNS=(
 $private_dirs_patterns
 )
 
-for file in $(git diff --cached --name-only); do
+for file in $(git diff --cached --name-only --diff-filter=ACMR); do
     for pattern in "${PRIVATE_PATTERNS[@]}"; do
         if echo "$file" | grep -q -E "$pattern"; then
             echo "ERROR: Attempting to commit private content: $file"

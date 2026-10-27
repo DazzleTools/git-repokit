@@ -504,12 +504,50 @@ def test_write_settings_merges_missing_keys_and_never_overwrites(tmp_path):
     assert common_kit.write_settings(str(tmp_path), {"private-patterns": ["CLAUDE.md"], "languages": ["NOT-THIS"]}) == ".repokit-common.toml"
     assert f.read_bytes() == (b'[tool.repokit-common]\r\nprivate-patterns = ["CLAUDE.md"]\r\n'
                               b'version-source = "include/x/version.h"\r\nlanguages = ["c-cpp"]\r\n')
-    assert common_kit.write_settings(str(tmp_path), {"private-patterns": ["other"]}) is None   # present: untouched
+    assert common_kit.write_settings(str(tmp_path), {"languages": ["other"]}) is None   # present: untouched
     py = tmp_path / "pyproject.toml"
     py.write_text('[project]\nname = "p"\n\n[tool.repokit-common]\nversion-source = "p/_version.py"\n\n[tool.other]\nx = 1\n')
     assert common_kit.write_settings(str(tmp_path), {"private-branches": ["private", "scratch"]}) == "pyproject.toml"
     assert py.read_text() == ('[project]\nname = "p"\n\n[tool.repokit-common]\nprivate-branches = ["private", "scratch"]\n'
                               'version-source = "p/_version.py"\n\n[tool.other]\nx = 1\n')
+
+
+def test_write_settings_adds_the_private_patterns_an_existing_list_lacks(tmp_path):
+    """0.9.12: a table that already has private-patterns (the pypi layer's
+    pyproject.toml ships one) keeps its entries and gains the ones the
+    private-branch model needs -- skipping the key dropped CLAUDE.md from
+    the guard on public branches. Other keys are still never overwritten."""
+    py = tmp_path / "pyproject.toml"
+    py.write_text('[tool.repokit-common]\nversion-source = "p/_version.py"\n'
+                  'private-patterns = ["private/", "local/", ".env"]\n\n[tool.other]\nx = ["CLAUDE.md"]\n')
+    settings = {"private-patterns": ["CLAUDE.md", "private/", "convos/"], "version-source": ["NOT-THIS"]}
+    assert common_kit.write_settings(str(tmp_path), settings) == "pyproject.toml"
+    assert py.read_text() == ('[tool.repokit-common]\nversion-source = "p/_version.py"\n'
+                              'private-patterns = ["private/", "local/", ".env", "CLAUDE.md", "convos/"]\n\n'
+                              '[tool.other]\nx = ["CLAUDE.md"]\n')
+    assert common_kit.write_settings(str(tmp_path), settings) is None   # nothing missing any more
+
+    toml = tmp_path / "sub"
+    toml.mkdir()
+    f = toml / ".repokit-common.toml"
+    f.write_bytes(b"[tool.repokit-common]\r\nprivate-patterns = [\r\n    'private/',\r\n]\r\n")
+    assert common_kit.write_settings(str(toml), {"private-patterns": ["CLAUDE.md"]}) == ".repokit-common.toml"
+    assert f.read_bytes() == b"[tool.repokit-common]\r\nprivate-patterns = [\r\n    'private/', \"CLAUDE.md\"\r\n]\r\n"
+
+
+def test_write_settings_union_stays_in_its_own_list_and_table(tmp_path):
+    """0.9.12: the union reads single-quoted entries as present, adds only to
+    the private-patterns list (not to a list after it), and the table ends at
+    the next header -- a key of the same name in a later table neither counts
+    as present nor receives anything. Found by the 0.9.12 mutation sweep."""
+    py = tmp_path / "pyproject.toml"
+    py.write_text("[tool.repokit-common]\nprivate-patterns = ['private/', \"local/\"]\nlanguages = [\"python\"]\n\n"
+                  "[tool.other]\nprivate-branches = [\"x\"]\n")
+    settings = {"private-patterns": ["private/", "CLAUDE.md"], "private-branches": ["private", "scratch"]}
+    assert common_kit.write_settings(str(tmp_path), settings) == "pyproject.toml"
+    assert py.read_text() == ("[tool.repokit-common]\nprivate-branches = [\"private\", \"scratch\"]\n"
+                              "private-patterns = ['private/', \"local/\", \"CLAUDE.md\"]\nlanguages = [\"python\"]\n\n"
+                              "[tool.other]\nprivate-branches = [\"x\"]\n")
 
 
 # --- U2.3: packaging ----------------------------------------------------------

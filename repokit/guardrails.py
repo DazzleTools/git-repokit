@@ -214,7 +214,7 @@ except ImportError:
     
     if branch not in ['private', 'local']:
         # Check for obvious private files
-        result = subprocess.run(['git', 'diff', '--cached', '--name-only'],
+        result = subprocess.run(['git', 'diff', '--cached', '--name-only', '--diff-filter=ACMR'],
                               capture_output=True, text=True)
         files = result.stdout.strip().split('\\n')
         

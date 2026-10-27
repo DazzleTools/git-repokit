@@ -1,0 +1,177 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_layers.py",
+      "-k",
+      "write_settings"
+    ],
+    "timestamp": "2026-10-26T22:17:36-04:00"
+  },
+  "results": [
+    {
+      "id": "U1",
+      "file": "repokit/common_kit.py",
+      "note": "Dedupe dropped: entries already in the private-patterns list are appended again.",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "============================= FAILURES ===================================\n____ test_write_settings_adds_the_private_patterns_an_existing_list_lacks _____\n\ntmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-14319/test_write_settings_adds_the_p0')\n\n    def test_write_settings_adds_the_private_patterns_an_existing_list_lacks(tmp_path):\n        \"\"\"0.9.12: a table that already has private-patterns (the pypi layer's\n        pyproject.toml ships one) keeps its entries and gains the ones the\n        private-branch model needs -- skipping the key dropped CLAUDE.md from\n        the guard on public branches. Other keys are still never overwritten.\"\"\"\n        py = tmp_path / \"pyproject.toml\"\n        py.write_text('[tool.repokit-common]\\nversion-source = \"p/_version.py\"\\n'\n                      'private-patterns = [\"private/\", \"local/\", \".env\"]\\n\\n[tool.other]\\nx = [\"CLAUDE.md\"]\\n')\n        settings = {\"private-patterns\": [\"CLAUDE.md\", \"private/\", \"convos/\"], \"version-source\": [\"NOT-THIS\"]}\n        assert common_kit.write_settings(str(tmp_path), settings) == \"pyproject.toml\"\n>       assert py.read_text() == ('[tool.repokit-common]\\nversion-source = \"p/_version.py\"\\n'\n                                  'private-patterns = [\"private/\", \"local/\", \".env\", \"CLAUDE.md\", \"convos/\"]\\n\\n'\n                                  '[tool.other]\\nx = [\"CLAUDE.md\"]\\n')\nE       assert '[tool.repoki...CLAUDE.md\"]\\n' == '[tool.repoki...CLAUDE.md\"]\\n'\nE         \nE         Skipping 109 identical leading characters in diff, use -v to show\nE         - UDE.md\", \"convos/\"]\nE         + UDE.md\", \"private/\", \"convos/\"]\nE         ?         ++++++++++++\nE           \nE           [tool.other]\nE           x = [\"CLAUDE.md\"]\n\ntests\\test_layers.py:525: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks\n1 failed, 1 passed, 30 deselected in 0.27s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks"
+      ]
+    },
+    {
+      "id": "U2",
+      "file": "repokit/common_kit.py",
+      "note": "Single-quoted entries are no longer recognised, so they get duplicated as double-quoted entries.",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "U3",
+      "file": "repokit/common_kit.py",
+      "note": "Separator logic flattened: an empty list becomes [, \"x\"] and a trailing-comma list becomes ,, (invalid TOML).",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "ath):\n        \"\"\"0.9.12: a table that already has private-patterns (the pypi layer's\n        pyproject.toml ships one) keeps its entries and gains the ones the\n        private-branch model needs -- skipping the key dropped CLAUDE.md from\n        the guard on public branches. Other keys are still never overwritten.\"\"\"\n        py = tmp_path / \"pyproject.toml\"\n        py.write_text('[tool.repokit-common]\\nversion-source = \"p/_version.py\"\\n'\n                      'private-patterns = [\"private/\", \"local/\", \".env\"]\\n\\n[tool.other]\\nx = [\"CLAUDE.md\"]\\n')\n        settings = {\"private-patterns\": [\"CLAUDE.md\", \"private/\", \"convos/\"], \"version-source\": [\"NOT-THIS\"]}\n        assert common_kit.write_settings(str(tmp_path), settings) == \"pyproject.toml\"\n        assert py.read_text() == ('[tool.repokit-common]\\nversion-source = \"p/_version.py\"\\n'\n                                  'private-patterns = [\"private/\", \"local/\", \".env\", \"CLAUDE.md\", \"convos/\"]\\n\\n'\n                                  '[tool.other]\\nx = [\"CLAUDE.md\"]\\n')\n        assert common_kit.write_settings(str(tmp_path), settings) is None   # nothing missing any more\n    \n        toml = tmp_path / \"sub\"\n        toml.mkdir()\n        f = toml / \".repokit-common.toml\"\n        f.write_bytes(b\"[tool.repokit-common]\\r\\nprivate-patterns = [\\r\\n    'private/',\\r\\n]\\r\\n\")\n        assert common_kit.write_settings(str(toml), {\"private-patterns\": [\"CLAUDE.md\"]}) == \".repokit-common.toml\"\n>       assert f.read_bytes() == b\"[tool.repokit-common]\\r\\nprivate-patterns = [\\r\\n    'private/', \\\"CLAUDE.md\\\"\\r\\n]\\r\\n\"\nE       assert b'[tool.repok....md\"\\r\\n]\\r\\n' == b'[tool.repok....md\"\\r\\n]\\r\\n'\nE         \nE         At index 60 diff: b',' != b' '\nE         Use -v to get more diff\n\ntests\\test_layers.py:535: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks\n1 failed, 1 passed, 30 deselected in 0.27s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks"
+      ]
+    },
+    {
+      "id": "U4",
+      "file": "repokit/common_kit.py",
+      "note": "Trailing whitespace/newline goes before the new entries, so a multi-line list is not kept as written.",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "th):\n        \"\"\"0.9.12: a table that already has private-patterns (the pypi layer's\n        pyproject.toml ships one) keeps its entries and gains the ones the\n        private-branch model needs -- skipping the key dropped CLAUDE.md from\n        the guard on public branches. Other keys are still never overwritten.\"\"\"\n        py = tmp_path / \"pyproject.toml\"\n        py.write_text('[tool.repokit-common]\\nversion-source = \"p/_version.py\"\\n'\n                      'private-patterns = [\"private/\", \"local/\", \".env\"]\\n\\n[tool.other]\\nx = [\"CLAUDE.md\"]\\n')\n        settings = {\"private-patterns\": [\"CLAUDE.md\", \"private/\", \"convos/\"], \"version-source\": [\"NOT-THIS\"]}\n        assert common_kit.write_settings(str(tmp_path), settings) == \"pyproject.toml\"\n        assert py.read_text() == ('[tool.repokit-common]\\nversion-source = \"p/_version.py\"\\n'\n                                  'private-patterns = [\"private/\", \"local/\", \".env\", \"CLAUDE.md\", \"convos/\"]\\n\\n'\n                                  '[tool.other]\\nx = [\"CLAUDE.md\"]\\n')\n        assert common_kit.write_settings(str(tmp_path), settings) is None   # nothing missing any more\n    \n        toml = tmp_path / \"sub\"\n        toml.mkdir()\n        f = toml / \".repokit-common.toml\"\n        f.write_bytes(b\"[tool.repokit-common]\\r\\nprivate-patterns = [\\r\\n    'private/',\\r\\n]\\r\\n\")\n        assert common_kit.write_settings(str(toml), {\"private-patterns\": [\"CLAUDE.md\"]}) == \".repokit-common.toml\"\n>       assert f.read_bytes() == b\"[tool.repokit-common]\\r\\nprivate-patterns = [\\r\\n    'private/', \\\"CLAUDE.md\\\"\\r\\n]\\r\\n\"\nE       assert b'[tool.repok...AUDE.md\"]\\r\\n' == b'[tool.repok....md\"\\r\\n]\\r\\n'\nE         \nE         At index 60 diff: b'\\r' != b' '\nE         Use -v to get more diff\n\ntests\\test_layers.py:535: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks\n1 failed, 1 passed, 30 deselected in 0.25s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks"
+      ]
+    },
+    {
+      "id": "U5",
+      "file": "repokit/common_kit.py",
+      "note": "Comparison flipped: an existing private-patterns list is never unioned.",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "====================\n____ test_write_settings_adds_the_private_patterns_an_existing_list_lacks _____\n\ntmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-14323/test_write_settings_adds_the_p0')\n\n    def test_write_settings_adds_the_private_patterns_an_existing_list_lacks(tmp_path):\n        \"\"\"0.9.12: a table that already has private-patterns (the pypi layer's\n        pyproject.toml ships one) keeps its entries and gains the ones the\n        private-branch model needs -- skipping the key dropped CLAUDE.md from\n        the guard on public branches. Other keys are still never overwritten.\"\"\"\n        py = tmp_path / \"pyproject.toml\"\n        py.write_text('[tool.repokit-common]\\nversion-source = \"p/_version.py\"\\n'\n                      'private-patterns = [\"private/\", \"local/\", \".env\"]\\n\\n[tool.other]\\nx = [\"CLAUDE.md\"]\\n')\n        settings = {\"private-patterns\": [\"CLAUDE.md\", \"private/\", \"convos/\"], \"version-source\": [\"NOT-THIS\"]}\n>       assert common_kit.write_settings(str(tmp_path), settings) == \"pyproject.toml\"\nE       AssertionError: assert None == 'pyproject.toml'\nE        +  where None = <function write_settings at 0x0000029C291C9760>('C:\\\\Users\\\\Extreme\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-Extreme\\\\pytest-14323\\\\test_write_settings_adds_the_p0', {'private-patterns': ['CLAUDE.md', 'private/', 'convos/'], 'version-source': ['NOT-THIS']})\nE        +    where <function write_settings at 0x0000029C291C9760> = common_kit.write_settings\nE        +    and   'C:\\\\Users\\\\Extreme\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-Extreme\\\\pytest-14323\\\\test_write_settings_adds_the_p0' = str(WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-14323/test_write_settings_adds_the_p0'))\n\ntests\\test_layers.py:524: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks\n1 failed, 1 passed, 30 deselected in 0.28s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks"
+      ]
+    },
+    {
+      "id": "U6",
+      "file": "repokit/common_kit.py",
+      "note": "and/or swap: missing keys are not added when the union changed nothing, and a union-only change is still reported.",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "ing_list_lacks _____\n\ntmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-14324/test_write_settings_adds_the_p0')\n\n    def test_write_settings_adds_the_private_patterns_an_existing_list_lacks(tmp_path):\n        \"\"\"0.9.12: a table that already has private-patterns (the pypi layer's\n        pyproject.toml ships one) keeps its entries and gains the ones the\n        private-branch model needs -- skipping the key dropped CLAUDE.md from\n        the guard on public branches. Other keys are still never overwritten.\"\"\"\n        py = tmp_path / \"pyproject.toml\"\n        py.write_text('[tool.repokit-common]\\nversion-source = \"p/_version.py\"\\n'\n                      'private-patterns = [\"private/\", \"local/\", \".env\"]\\n\\n[tool.other]\\nx = [\"CLAUDE.md\"]\\n')\n        settings = {\"private-patterns\": [\"CLAUDE.md\", \"private/\", \"convos/\"], \"version-source\": [\"NOT-THIS\"]}\n>       assert common_kit.write_settings(str(tmp_path), settings) == \"pyproject.toml\"\nE       AssertionError: assert None == 'pyproject.toml'\nE        +  where None = <function write_settings at 0x000001E2F3FF5760>('C:\\\\Users\\\\Extreme\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-Extreme\\\\pytest-14324\\\\test_write_settings_adds_the_p0', {'private-patterns': ['CLAUDE.md', 'private/', 'convos/'], 'version-source': ['NOT-THIS']})\nE        +    where <function write_settings at 0x000001E2F3FF5760> = common_kit.write_settings\nE        +    and   'C:\\\\Users\\\\Extreme\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-Extreme\\\\pytest-14324\\\\test_write_settings_adds_the_p0' = str(WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-14324/test_write_settings_adds_the_p0'))\n\ntests\\test_layers.py:524: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_write_settings_merges_missing_keys_and_never_overwrites\nFAILED tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks\n2 failed, 30 deselected in 0.27s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks",
+        "tests/test_layers.py::test_write_settings_merges_missing_keys_and_never_overwrites"
+      ]
+    },
+    {
+      "id": "U7",
+      "file": "repokit/common_kit.py",
+      "note": "MULTILINE dropped from the presence check: only the table's first line is seen, so an existing key further down is re-added.",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "st_write_settings_adds_the_private_patterns_an_existing_list_lacks(tmp_path):\n        \"\"\"0.9.12: a table that already has private-patterns (the pypi layer's\n        pyproject.toml ships one) keeps its entries and gains the ones the\n        private-branch model needs -- skipping the key dropped CLAUDE.md from\n        the guard on public branches. Other keys are still never overwritten.\"\"\"\n        py = tmp_path / \"pyproject.toml\"\n        py.write_text('[tool.repokit-common]\\nversion-source = \"p/_version.py\"\\n'\n                      'private-patterns = [\"private/\", \"local/\", \".env\"]\\n\\n[tool.other]\\nx = [\"CLAUDE.md\"]\\n')\n        settings = {\"private-patterns\": [\"CLAUDE.md\", \"private/\", \"convos/\"], \"version-source\": [\"NOT-THIS\"]}\n        assert common_kit.write_settings(str(tmp_path), settings) == \"pyproject.toml\"\n>       assert py.read_text() == ('[tool.repokit-common]\\nversion-source = \"p/_version.py\"\\n'\n                                  'private-patterns = [\"private/\", \"local/\", \".env\", \"CLAUDE.md\", \"convos/\"]\\n\\n'\n                                  '[tool.other]\\nx = [\"CLAUDE.md\"]\\n')\nE       assert '[tool.repoki...CLAUDE.md\"]\\n' == '[tool.repoki...CLAUDE.md\"]\\n'\nE         \nE           [tool.repokit-common]\nE         + private-patterns = [\"CLAUDE.md\", \"private/\", \"convos/\"]\nE           version-source = \"p/_version.py\"\nE         - private-patterns = [\"private/\", \"local/\", \".env\", \"CLAUDE.md\", \"convos/\"]\nE         ?                                                 ------------------------\nE         + private-patterns = [\"private/\", \"local/\", \".env\"]...\nE         \nE         ...Full output truncated (3 lines hidden), use '-vv' to show\n\ntests\\test_layers.py:525: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_write_settings_merges_missing_keys_and_never_overwrites\nFAILED tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks\n2 failed, 30 deselected in 0.28s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks",
+        "tests/test_layers.py::test_write_settings_merges_missing_keys_and_never_overwrites"
+      ]
+    },
+    {
+      "id": "U8",
+      "file": "repokit/common_kit.py",
+      "note": "Table boundary removed: a key or list in a later table counts as present (or gets unioned) in [tool.repokit-common].",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "U9",
+      "file": "repokit/common_kit.py",
+      "note": "Union result discarded on the return: list growth is lost.",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "                          [100%]\n================================== FAILURES ===================================\n____ test_write_settings_adds_the_private_patterns_an_existing_list_lacks _____\n\ntmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-14327/test_write_settings_adds_the_p0')\n\n    def test_write_settings_adds_the_private_patterns_an_existing_list_lacks(tmp_path):\n        \"\"\"0.9.12: a table that already has private-patterns (the pypi layer's\n        pyproject.toml ships one) keeps its entries and gains the ones the\n        private-branch model needs -- skipping the key dropped CLAUDE.md from\n        the guard on public branches. Other keys are still never overwritten.\"\"\"\n        py = tmp_path / \"pyproject.toml\"\n        py.write_text('[tool.repokit-common]\\nversion-source = \"p/_version.py\"\\n'\n                      'private-patterns = [\"private/\", \"local/\", \".env\"]\\n\\n[tool.other]\\nx = [\"CLAUDE.md\"]\\n')\n        settings = {\"private-patterns\": [\"CLAUDE.md\", \"private/\", \"convos/\"], \"version-source\": [\"NOT-THIS\"]}\n        assert common_kit.write_settings(str(tmp_path), settings) == \"pyproject.toml\"\n>       assert py.read_text() == ('[tool.repokit-common]\\nversion-source = \"p/_version.py\"\\n'\n                                  'private-patterns = [\"private/\", \"local/\", \".env\", \"CLAUDE.md\", \"convos/\"]\\n\\n'\n                                  '[tool.other]\\nx = [\"CLAUDE.md\"]\\n')\nE       assert '[tool.repoki...CLAUDE.md\"]\\n' == '[tool.repoki...CLAUDE.md\"]\\n'\nE         \nE         Skipping 93 identical leading characters in diff, use -v to show\nE         - /\", \".env\", \"CLAUDE.md\", \"convos/\"]\nE         + /\", \".env\"]\nE           \nE           [tool.other]\nE           x = [\"CLAUDE.md\"]\n\ntests\\test_layers.py:525: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks\n1 failed, 1 passed, 30 deselected in 0.25s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks"
+      ]
+    },
+    {
+      "id": "U10",
+      "file": "repokit/common_kit.py",
+      "note": "Greedy match: the list runs to the last ] in the table, so entries get appended into a later key's list.",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "U11",
+      "file": "repokit/common_kit.py",
+      "note": "Guard removed: when nothing is missing the list is still rewritten, so the merge reports a change instead of None.",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "\n        pyproject.toml ships one) keeps its entries and gains the ones the\n        private-branch model needs -- skipping the key dropped CLAUDE.md from\n        the guard on public branches. Other keys are still never overwritten.\"\"\"\n        py = tmp_path / \"pyproject.toml\"\n        py.write_text('[tool.repokit-common]\\nversion-source = \"p/_version.py\"\\n'\n                      'private-patterns = [\"private/\", \"local/\", \".env\"]\\n\\n[tool.other]\\nx = [\"CLAUDE.md\"]\\n')\n        settings = {\"private-patterns\": [\"CLAUDE.md\", \"private/\", \"convos/\"], \"version-source\": [\"NOT-THIS\"]}\n        assert common_kit.write_settings(str(tmp_path), settings) == \"pyproject.toml\"\n        assert py.read_text() == ('[tool.repokit-common]\\nversion-source = \"p/_version.py\"\\n'\n                                  'private-patterns = [\"private/\", \"local/\", \".env\", \"CLAUDE.md\", \"convos/\"]\\n\\n'\n                                  '[tool.other]\\nx = [\"CLAUDE.md\"]\\n')\n>       assert common_kit.write_settings(str(tmp_path), settings) is None   # nothing missing any more\nE       AssertionError: assert 'pyproject.toml' is None\nE        +  where 'pyproject.toml' = <function write_settings at 0x00000166392CDA80>('C:\\\\Users\\\\Extreme\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-Extreme\\\\pytest-14329\\\\test_write_settings_adds_the_p0', {'private-patterns': ['CLAUDE.md', 'private/', 'convos/'], 'version-source': ['NOT-THIS']})\nE        +    where <function write_settings at 0x00000166392CDA80> = common_kit.write_settings\nE        +    and   'C:\\\\Users\\\\Extreme\\\\AppData\\\\Local\\\\Temp\\\\pytest-of-Extreme\\\\pytest-14329\\\\test_write_settings_adds_the_p0' = str(WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-14329/test_write_settings_adds_the_p0'))\n\ntests\\test_layers.py:528: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks\n1 failed, 1 passed, 30 deselected in 0.25s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks"
+      ]
+    },
+    {
+      "id": "U12",
+      "file": "repokit/common_kit.py",
+      "note": "CRLF detection dropped: added keys use LF in a CRLF file.",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "F.                                                                       [100%]\n================================== FAILURES ===================================\n________ test_write_settings_merges_missing_keys_and_never_overwrites _________\n\ntmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-14330/test_write_settings_merges_mis0')\n\n    def test_write_settings_merges_missing_keys_and_never_overwrites(tmp_path):\n        \"\"\"CONSEQUENCE: 9 (safety) -- a layer-supplied .repokit-common.toml keeps its\n        version-source and gains private-patterns; a pyproject table the same; an\n        existing key is untouched; CRLF survives.\"\"\"\n        f = tmp_path / \".repokit-common.toml\"\n        f.write_bytes(b'[tool.repokit-common]\\r\\nversion-source = \"include/x/version.h\"\\r\\nlanguages = [\"c-cpp\"]\\r\\n')\n        assert common_kit.write_settings(str(tmp_path), {\"private-patterns\": [\"CLAUDE.md\"], \"languages\": [\"NOT-THIS\"]}) == \".repokit-common.toml\"\n>       assert f.read_bytes() == (b'[tool.repokit-common]\\r\\nprivate-patterns = [\"CLAUDE.md\"]\\r\\n'\n                                  b'version-source = \"include/x/version.h\"\\r\\nlanguages = [\"c-cpp\"]\\r\\n')\nE       assert b'[tool.repok...[\"c-cpp\"]\\r\\n' == b'[tool.repok...[\"c-cpp\"]\\r\\n'\nE         \nE         At index 55 diff: b'\\n' != b'\\r'\nE         Use -v to get more diff\n\ntests\\test_layers.py:505: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_write_settings_merges_missing_keys_and_never_overwrites\n1 failed, 1 passed, 30 deselected in 0.19s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_write_settings_merges_missing_keys_and_never_overwrites"
+      ]
+    }
+  ],
+  "summary": {
+    "killed": 9,
+    "survived": 3
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_layers.py::test_write_settings_adds_the_private_patterns_an_existing_list_lacks": [
+        "U1",
+        "U11",
+        "U3",
+        "U4",
+        "U5",
+        "U6",
+        "U7",
+        "U9"
+      ],
+      "tests/test_layers.py::test_write_settings_merges_missing_keys_and_never_overwrites": [
+        "U12",
+        "U6",
+        "U7"
+      ]
+    },
+    "identical": [],
+    "contained": [],
+    "killed_without_names": []
+  }
+}

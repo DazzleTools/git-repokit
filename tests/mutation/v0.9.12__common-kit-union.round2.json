@@ -1,0 +1,36 @@
+{
+ "test_command": [
+  "python",
+  "-m",
+  "pytest",
+  "-q",
+  "-p",
+  "no:cacheprovider",
+  "tests/test_layers.py",
+  "-k",
+  "write_settings"
+ ],
+ "mutations": [
+  {
+   "id": "U2",
+   "file": "repokit/common_kit.py",
+   "original": "(m.group(1) if m.group(1) is not None else m.group(2))",
+   "mutated": "(m.group(1) if m.group(1) is not None else \"\")",
+   "note": "Single-quoted entries are no longer recognised, so they get duplicated as double-quoted entries."
+  },
+  {
+   "id": "U8",
+   "file": "repokit/common_kit.py",
+   "original": "    table = rest[: next_table.start()] if next_table else rest",
+   "mutated": "    table = rest",
+   "note": "Table boundary removed: a key or list in a later table counts as present (or gets unioned) in [tool.repokit-common]."
+  },
+  {
+   "id": "U10",
+   "file": "repokit/common_kit.py",
+   "original": "\\[)(.*?)(\\])",
+   "mutated": "\\[)(.*)(\\])",
+   "note": "Greedy match: the list runs to the last ] in the table, so entries get appended into a later key's list."
+  }
+ ]
+}

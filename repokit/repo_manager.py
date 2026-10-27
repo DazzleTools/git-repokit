@@ -239,9 +239,10 @@ class RepoManager:
         # Create local repository directory
         os.makedirs(self.repo_root, exist_ok=True)
 
-        # Create github directory for worktree (legacy layout only)
-        if self.github_root:
-            os.makedirs(self.github_root, exist_ok=True)
+        # No <name>/github is made ahead of time (0.9.12): `git worktree add`
+        # creates the folder when main is checked out there, and a strategy
+        # with no worktree for main (minimal), or one that checks main out
+        # elsewhere (--branch-dir-main), must not get a stray github/ folder.
 
         # Create standard subdirectories
         standard_dirs = self.config.get(
@@ -1070,6 +1071,29 @@ class RepoManager:
             else:
                 self.logger.info(f"Linked {path}/private to the private repository")
 
+    def _worktree_of(self, branch: str) -> Optional[str]:
+        """The folder where `branch` is checked out in a worktree other than
+        repo_root itself, from `git worktree list --porcelain`; None when it
+        has none (0.9.12)."""
+        out = self.run_git(["worktree", "list", "--porcelain"], cwd=self.repo_root, check=False) or ""
+        here = os.path.normcase(os.path.abspath(self.repo_root))
+        path = None
+        for line in out.splitlines():
+            if line.startswith("worktree "):
+                path = line[len("worktree "):].strip()
+            elif line.strip() == f"branch refs/heads/{branch}" and path:
+                if os.path.normcase(os.path.abspath(path)) != here:
+                    return path
+        return None
+
+    @staticmethod
+    def _branch_exists_in(repo: str, name: str) -> bool:
+        """Whether a local branch named exactly `name` exists in `repo`
+        (0.9.12: the old check matched by substring, so `dev` found `develop`)."""
+        result = subprocess.run(["git", "show-ref", "--verify", "--quiet", f"refs/heads/{name}"],
+                                cwd=repo, capture_output=True, stdin=subprocess.DEVNULL)
+        return result.returncode == 0
+
     def _setup_github_integration(self) -> None:
         """Set up GitHub integration."""
         self.logger.info("Setting up GitHub integration")
@@ -1083,6 +1107,19 @@ class RepoManager:
         # committed with everything else
         if not self.github_root:
             return
+
+        # Run git only in the default branch's real worktree (0.9.12). The
+        # folder is where `git worktree list` says the branch is checked out,
+        # not an assumed <name>/github: with no worktree there, `git add` and
+        # `git commit` walked up into whatever repository enclosed the
+        # project and committed in it. No worktree for the default branch
+        # means nothing to do -- the branch already carries .github, cut from
+        # the private branch.
+        main_worktree = self._worktree_of(self.config.get("default_branch", "main"))
+        if not main_worktree:
+            self.logger.info("No worktree for the default branch; its .github came with the branch")
+            return
+        self.github_root = main_worktree
 
         # Only proceed if the GitHub worktree exists
         if not os.path.exists(self.github_root):
@@ -1222,7 +1259,7 @@ class RepoManager:
 # Pre-commit hook to prevent committing private content
 
 # Check for private directories
-for file in $(git diff --cached --name-only); do
+for file in $(git diff --cached --name-only --diff-filter=ACMR); do
     if echo "$file" | grep -q -E "^private/|^convos/|^logs/|__private__"; then
         echo "ERROR: Attempting to commit private content: $file"
         echo "Private content should not be committed to the repository."
@@ -1427,6 +1464,10 @@ exit 0
         )
         private_branch = self.private_branch
 
+        # A public branch that cannot be built, or fails verification, fails
+        # the create (0.9.12): it used to be a warning and the create exited 0
+        # with every public branch holding only the initial commit.
+        failed = []
         for branch in branches:
             if branch != private_branch:  # Skip private branch
                 try:
@@ -1447,17 +1488,21 @@ exit 0
                         self.logger.info(f"Successfully created and verified clean public branch '{branch}'")
                     else:
                         self.logger.error(f"Branch '{branch}' failed verification - contains private content!")
-                        
+                        failed.append(branch)
+
                     if self.verbose >= 2:
                         approach = "selective" if is_adoption else "standard"
                         self.logger.debug(
                             f"Created clean public branch '{branch}' using {approach} approach"
                         )
                 except Exception as e:
-                    self.logger.warning(f"Failed to create clean public branch '{branch}': {str(e)}")
+                    self.logger.error(f"Failed to create clean public branch '{branch}': {str(e)}")
+                    failed.append(branch)
 
         # Switch back to private branch for continued development
         self.run_git(["checkout", private_branch], cwd=self.repo_root)
+        if failed:
+            raise RuntimeError(f"public branches not built: {', '.join(failed)}")
 
     def _get_working_directory_files(self) -> List[str]:
         """
@@ -1575,8 +1620,7 @@ exit 0
             current_branch = self.run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=self.repo_root).strip()
             
             # Check if branch already exists
-            existing_branches = self.run_git(["branch", "--list"], cwd=self.repo_root).splitlines()
-            branch_exists = any(branch_name in branch.strip() for branch in existing_branches)
+            branch_exists = self._branch_exists_in(self.repo_root, branch_name)  # exact name (0.9.12)
             
             if branch_exists:
                 self.logger.info(f"Branch '{branch_name}' already exists, will recreate with selective approach")
@@ -1660,17 +1704,22 @@ exit 0
             current_branch = self.run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=self.repo_root).strip()
             
             # Check if branch already exists
-            existing_branches = self.run_git(["branch", "--list"], cwd=self.repo_root).splitlines()
-            branch_exists = any(branch_name in branch.strip() for branch in existing_branches)
+            branch_exists = self._branch_exists_in(self.repo_root, branch_name)  # exact name (0.9.12)
             
+            # The source is always the BRANCH, never a folder of the same name:
+            # a private/ folder sits beside the private branch, and a bare
+            # `git reset --hard private` is refused as ambiguous (0.9.12;
+            # djdarcy: "The only private we care about in the private-public
+            # branch strategy is the "private" branch as the source").
+            source_ref = f"refs/heads/{source_branch}"
             if branch_exists:
                 # Branch exists, check it out and reset it
                 self.logger.info(f"Branch '{branch_name}' already exists, resetting it")
                 self.run_git(["checkout", branch_name], cwd=self.repo_root)
-                self.run_git(["reset", "--hard", source_branch], cwd=self.repo_root)
+                self.run_git(["reset", "--hard", source_ref], cwd=self.repo_root)
             else:
                 # Create the new branch from the source branch
-                self.run_git(["checkout", "-b", branch_name, source_branch], cwd=self.repo_root)
+                self.run_git(["checkout", "-b", branch_name, source_ref], cwd=self.repo_root)
             
             # Use existing BranchContext with configuration to identify private content
             context = BranchContext(self.repo_root, self._get_branch_config())
@@ -2059,8 +2108,8 @@ exit 0
                     else:
                         # For branches not in worktrees, we can update them directly
                         self.run_git(["checkout", branch], cwd=self.repo_root)
-                        self.run_git(
-                            ["reset", "--hard", private_branch], cwd=self.repo_root
+                        self.run_git(  # the branch, never a folder of the same name (0.9.12)
+                            ["reset", "--hard", f"refs/heads/{private_branch}"], cwd=self.repo_root
                         )
                         self.logger.info(
                             f"Updated branch '{branch}' from {private_branch}"
@@ -2366,12 +2415,14 @@ exit 0
 
     def _cleanup_sensitive_files(self, branch_context: Optional[str] = None, dry_run: bool = False) -> Dict[str, List[str]]:
         """
-        Branch-aware cleanup of sensitive files during repository adoption.
-        
-        This method performs intelligent cleanup based on branch context:
-        - For private branches: Only clean git index, preserve working directory
-        - For public branches: Clean both working directory and git index
-        
+        Take sensitive files out of a branch's git index, leaving them on disk.
+
+        Called while a public branch is cut. It removes tracked files matching
+        the sensitive patterns from the index (`git rm --cached`) and never
+        deletes anything from the working folder, which in the private-branch
+        model is the private checkout (0.9.12). The 'working_dir' list in the
+        result is always empty; it is kept for callers that read it.
+
         Args:
             branch_context: Branch we're cleaning for (e.g. 'private', 'dev', 'main')
             dry_run: If True, only report what would be cleaned
@@ -2411,65 +2462,18 @@ exit 0
         cleanup_logger.info(f"Is private branch: {is_private_branch}")
         cleanup_logger.info(f"Using {len(patterns_to_clean)} sensitive patterns: {patterns_to_clean}")
         
-        # For private branches, we preserve working directory files but clean git index
-        # For public branches, we clean both working directory and git index
-        clean_working_dir = not is_private_branch
+        # The working folder is never cleaned, for any branch (0.9.12). In the
+        # private-branch model a public branch is cut inside repo_root, which is
+        # the PRIVATE checkout (<name>/local), so deleting matching files from
+        # disk removed a person's untracked .env, logs and backups from their
+        # own working folder. It never ran before 0.9.12 only because the reset
+        # before it always failed. Taking files out of the public branch is the
+        # index clean below, which leaves them on disk.
+        clean_working_dir = False
         clean_git_index = True  # Always clean git index
-        
-        cleanup_logger.info(f"Will clean working directory: {clean_working_dir}")
-        cleanup_logger.info(f"Will clean git index: {clean_git_index}")
-        
-        # Clean working directory files (only for public branches)
-        if clean_working_dir:
-            cleanup_logger.debug("Scanning working directory for sensitive files")
-            for root, dirs, files in os.walk(self.repo_root):
-                # Skip .git directory
-                if ".git" in root.split(os.sep):
-                    continue
-                    
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    relative_path = os.path.relpath(file_path, self.repo_root)
-                    if self._is_vendored(relative_path):
-                        continue
 
-                    # Check if file matches any sensitive pattern
-                    should_remove = False
-                    matching_pattern = None
-                    
-                    for pattern in patterns_to_clean:
-                        # Cross-platform pattern matching using normalized paths
-                        normalized_relative = str(Path(relative_path)).replace('\\', '/')
-                        normalized_pattern = pattern.replace('\\', '/')
-                        
-                        # Check multiple match approaches for cross-platform compatibility
-                        matches = [
-                            fnmatch.fnmatch(normalized_relative, normalized_pattern),  # Full path
-                            fnmatch.fnmatch(file, normalized_pattern),                 # Filename only
-                            fnmatch.fnmatch(str(Path(file)), normalized_pattern),     # Filename as Path
-                        ]
-                        
-                        if any(matches):
-                            should_remove = True
-                            matching_pattern = pattern
-                            if self.verbose >= 3:
-                                cleanup_logger.debug(f"Pattern '{pattern}' matched file '{relative_path}' (normalized: '{normalized_relative}')")
-                            break
-                    
-                    if should_remove:
-                        cleanup_results["working_dir"].append(relative_path)
-                        
-                        if dry_run:
-                            cleanup_logger.info(f"Would remove (working dir): {relative_path} (pattern: {matching_pattern})")
-                        else:
-                            try:
-                                os.remove(file_path)
-                                cleanup_logger.debug(f"Removed (working dir): {relative_path} (pattern: {matching_pattern})")
-                            except Exception as e:
-                                cleanup_logger.warning(f"Failed to remove {relative_path}: {str(e)}")
-        else:
-            cleanup_logger.info("Skipping working directory cleanup (private branch - files preserved)")
-        
+        cleanup_logger.info(f"Will clean git index: {clean_git_index} (the working folder is never touched)")
+
         # Clean git index files (always done)
         if clean_git_index:
             cleanup_logger.debug("Scanning git index for sensitive files")

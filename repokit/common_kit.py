@@ -131,23 +131,59 @@ def _toml_list(values: List[str]) -> str:
 _TABLE_HEADER = re.compile(r"^[ \t]*\[[ \t]*tool[ \t]*\.[ \t]*\"?repokit-common\"?[ \t]*\][ \t]*\r?\n", re.MULTILINE)
 
 
+# Keys whose list only ever protects more as it grows: when the table already
+# has one, the entries it lacks are added to it rather than the key being
+# skipped (0.9.12). A layer's pyproject.toml ships its own private-patterns, and
+# skipping the key dropped CLAUDE.md and the private dirs from the guard.
+_UNION_KEYS = ("private-patterns",)
+_TOML_STRING = re.compile(r'"((?:[^"\\]|\\.)*)"|\'([^\']*)\'')
+
+
+def _union_into_list(table: str, key: str, values: List[str]) -> Optional[str]:
+    """`table` with the `values` its `key = [...]` list lacks appended inside
+    the brackets (a list written over several lines is kept as written).
+    None when the key is not a list or nothing is missing."""
+    found = re.search(rf"^([ \t]*{re.escape(key)}[ \t]*=[ \t]*\[)(.*?)(\])", table, re.MULTILINE | re.DOTALL)
+    if not found:
+        return None
+    inner = found.group(2)
+    present = {(m.group(1) if m.group(1) is not None else m.group(2)).replace('\\"', '"').replace("\\\\", "\\")
+               for m in _TOML_STRING.finditer(inner)}
+    missing = [v for v in values if v not in present]
+    if not missing:
+        return None
+    kept = inner.rstrip()
+    tail = inner[len(kept):]
+    sep = "" if not kept.strip() else (" " if kept.endswith(",") else ", ")
+    added = _toml_list(missing)[1:-1]
+    return table[: found.start(2)] + kept + sep + added + tail + table[found.end(2):]
+
+
 def _merge_into_table(text: str, settings: Dict[str, List[str]]) -> Optional[str]:
     """Add the keys the existing [tool.repokit-common] table lacks, right after
-    its header; a key already present is never overwritten. Returns the new
-    text, or None when nothing was missing."""
+    its header. A key already present is never overwritten, except that a
+    `_UNION_KEYS` list gains the entries it lacks. Returns the new text, or
+    None when nothing was missing."""
     header = _TABLE_HEADER.search(text)
     if not header:
         return None
     rest = text[header.end():]
     next_table = re.search(r"^[ \t]*\[", rest, re.MULTILINE)   # the table ends at the next header
     table = rest[: next_table.start()] if next_table else rest
+    after = rest[len(table):]
     missing = [key for key in settings
                if not re.search(rf"^[ \t]*{re.escape(key)}[ \t]*=", table, re.MULTILINE)]
-    if not missing:
+    grown = table
+    for key in _UNION_KEYS:
+        if key in settings and key not in missing:
+            unioned = _union_into_list(grown, key, settings[key])
+            if unioned is not None:
+                grown = unioned
+    if not missing and grown == table:
         return None
     nl = "\r\n" if "\r\n" in text else "\n"
     lines = "".join(f"{key} = {_toml_list(settings[key])}{nl}" for key in missing)
-    return text[: header.end()] + lines + rest
+    return text[: header.end()] + lines + grown + after
 
 
 def write_settings(repo_root: str, settings: Dict[str, List[str]]) -> Optional[str]:
@@ -158,7 +194,8 @@ def write_settings(repo_root: str, settings: Dict[str, List[str]]) -> Optional[s
     (created with the header repokit-common requires, or merged the same way).
     A key already present is never overwritten: a code-type layer may ship
     the file with its own version-source, and the private-branch settings go
-    in beside it rather than being dropped.
+    in beside it rather than being dropped. The one exception is
+    private-patterns, whose existing list gains the entries it lacks.
     """
     if not settings:
         return None

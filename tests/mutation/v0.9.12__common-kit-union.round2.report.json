@@ -1,0 +1,74 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_layers.py",
+      "-k",
+      "write_settings"
+    ],
+    "timestamp": "2026-10-26T22:18:17-04:00"
+  },
+  "results": [
+    {
+      "id": "U2",
+      "file": "repokit/common_kit.py",
+      "note": "Single-quoted entries are no longer recognised, so they get duplicated as double-quoted entries.",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "========\n__________ test_write_settings_union_stays_in_its_own_list_and_table __________\n\ntmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-14336/test_write_settings_union_stay0')\n\n    def test_write_settings_union_stays_in_its_own_list_and_table(tmp_path):\n        \"\"\"0.9.12: the union reads single-quoted entries as present, adds only to\n        the private-patterns list (not to a list after it), and the table ends at\n        the next header -- a key of the same name in a later table neither counts\n        as present nor receives anything. Found by the 0.9.12 mutation sweep.\"\"\"\n        py = tmp_path / \"pyproject.toml\"\n        py.write_text(\"[tool.repokit-common]\\nprivate-patterns = ['private/', \\\"local/\\\"]\\nlanguages = [\\\"python\\\"]\\n\\n\"\n                      \"[tool.other]\\nprivate-branches = [\\\"x\\\"]\\n\")\n        settings = {\"private-patterns\": [\"private/\", \"CLAUDE.md\"], \"private-branches\": [\"private\", \"scratch\"]}\n        assert common_kit.write_settings(str(tmp_path), settings) == \"pyproject.toml\"\n>       assert py.read_text() == (\"[tool.repokit-common]\\nprivate-branches = [\\\"private\\\", \\\"scratch\\\"]\\n\"\n                                  \"private-patterns = ['private/', \\\"local/\\\", \\\"CLAUDE.md\\\"]\\nlanguages = [\\\"python\\\"]\\n\\n\"\n                                  \"[tool.other]\\nprivate-branches = [\\\"x\\\"]\\n\")\nE       assert '[tool.repoki...hes = [\"x\"]\\n' == '[tool.repoki...hes = [\"x\"]\\n'\nE         \nE         Skipping 97 identical leading characters in diff, use -v to show\nE         - local/\", \"CLAUDE.md\"]\nE         + local/\", \"private/\", \"CLAUDE.md\"]\nE         ?         ++++++++++++\nE           languages = [\"python\"]\nE           \nE           [tool.other]\nE           private-branches = [\"x\"]\n\ntests\\test_layers.py:548: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_write_settings_union_stays_in_its_own_list_and_table\n1 failed, 2 passed, 30 deselected in 0.30s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_write_settings_union_stays_in_its_own_list_and_table"
+      ]
+    },
+    {
+      "id": "U8",
+      "file": "repokit/common_kit.py",
+      "note": "Table boundary removed: a key or list in a later table counts as present (or gets unioned) in [tool.repokit-common].",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "LURES ===================================\n__________ test_write_settings_union_stays_in_its_own_list_and_table __________\n\ntmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-14337/test_write_settings_union_stay0')\n\n    def test_write_settings_union_stays_in_its_own_list_and_table(tmp_path):\n        \"\"\"0.9.12: the union reads single-quoted entries as present, adds only to\n        the private-patterns list (not to a list after it), and the table ends at\n        the next header -- a key of the same name in a later table neither counts\n        as present nor receives anything. Found by the 0.9.12 mutation sweep.\"\"\"\n        py = tmp_path / \"pyproject.toml\"\n        py.write_text(\"[tool.repokit-common]\\nprivate-patterns = ['private/', \\\"local/\\\"]\\nlanguages = [\\\"python\\\"]\\n\\n\"\n                      \"[tool.other]\\nprivate-branches = [\\\"x\\\"]\\n\")\n        settings = {\"private-patterns\": [\"private/\", \"CLAUDE.md\"], \"private-branches\": [\"private\", \"scratch\"]}\n        assert common_kit.write_settings(str(tmp_path), settings) == \"pyproject.toml\"\n>       assert py.read_text() == (\"[tool.repokit-common]\\nprivate-branches = [\\\"private\\\", \\\"scratch\\\"]\\n\"\n                                  \"private-patterns = ['private/', \\\"local/\\\", \\\"CLAUDE.md\\\"]\\nlanguages = [\\\"python\\\"]\\n\\n\"\n                                  \"[tool.other]\\nprivate-branches = [\\\"x\\\"]\\n\")\nE       assert '[tool.repoki...hes = [\"x\"]\\n' == '[tool.repoki...hes = [\"x\"]\\n'\nE         \nE           [tool.repokit-common]\nE         - private-branches = [\"private\", \"scratch\"]\nE           private-patterns = ['private/', \"local/\", \"CLAUDE.md\"]\nE           languages = [\"python\"]\nE           \nE           [tool.other]\nE           private-branches = [\"x\"]\n\ntests\\test_layers.py:548: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_write_settings_union_stays_in_its_own_list_and_table\n1 failed, 2 passed, 30 deselected in 0.22s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_write_settings_union_stays_in_its_own_list_and_table"
+      ]
+    },
+    {
+      "id": "U10",
+      "file": "repokit/common_kit.py",
+      "note": "Greedy match: the list runs to the last ] in the table, so entries get appended into a later key's list.",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "______\n\ntmp_path = WindowsPath('C:/Users/Extreme/AppData/Local/Temp/pytest-of-Extreme/pytest-14338/test_write_settings_union_stay0')\n\n    def test_write_settings_union_stays_in_its_own_list_and_table(tmp_path):\n        \"\"\"0.9.12: the union reads single-quoted entries as present, adds only to\n        the private-patterns list (not to a list after it), and the table ends at\n        the next header -- a key of the same name in a later table neither counts\n        as present nor receives anything. Found by the 0.9.12 mutation sweep.\"\"\"\n        py = tmp_path / \"pyproject.toml\"\n        py.write_text(\"[tool.repokit-common]\\nprivate-patterns = ['private/', \\\"local/\\\"]\\nlanguages = [\\\"python\\\"]\\n\\n\"\n                      \"[tool.other]\\nprivate-branches = [\\\"x\\\"]\\n\")\n        settings = {\"private-patterns\": [\"private/\", \"CLAUDE.md\"], \"private-branches\": [\"private\", \"scratch\"]}\n        assert common_kit.write_settings(str(tmp_path), settings) == \"pyproject.toml\"\n>       assert py.read_text() == (\"[tool.repokit-common]\\nprivate-branches = [\\\"private\\\", \\\"scratch\\\"]\\n\"\n                                  \"private-patterns = ['private/', \\\"local/\\\", \\\"CLAUDE.md\\\"]\\nlanguages = [\\\"python\\\"]\\n\\n\"\n                                  \"[tool.other]\\nprivate-branches = [\\\"x\\\"]\\n\")\nE       assert '[tool.repoki...hes = [\"x\"]\\n' == '[tool.repoki...hes = [\"x\"]\\n'\nE         \nE         Skipping 94 identical leading characters in diff, use -v to show\nE         Skipping 33 identical trailing characters in diff, use -v to show\nE         - , \"local/\", \"CLAUDE.md\"]\nE         + , \"local/\"]\nE         - languages = [\"python\"]\nE         + languages = [\"python\", \"CLAUDE.md\"]...\nE         \nE         ...Full output truncated (3 lines hidden), use '-vv' to show\n\ntests\\test_layers.py:548: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_layers.py::test_write_settings_union_stays_in_its_own_list_and_table\n1 failed, 2 passed, 30 deselected in 0.24s\n",
+      "killed_by": [
+        "tests/test_layers.py::test_write_settings_union_stays_in_its_own_list_and_table"
+      ]
+    }
+  ],
+  "summary": {
+    "killed": 3
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_layers.py::test_write_settings_union_stays_in_its_own_list_and_table": [
+        "U10",
+        "U2",
+        "U8"
+      ]
+    },
+    "identical": [],
+    "contained": [],
+    "killed_without_names": []
+  }
+}

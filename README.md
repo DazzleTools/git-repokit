@@ -116,8 +116,6 @@ git push
 
 `safe-merge` leaves out the private content (`private/`, `CLAUDE.md`, `revisions/`, ...), and the hooks refuse it on a public branch if it ever gets staged. `--github` pushes only the public branches. Other layouts: `simple` (private, dev, main), `gitflow`, `github-flow`, and your own with `--branches` and `--worktrees`; see [Branch strategies](#branch-strategies) below.
 
-> **Known issue in 0.9.11:** this create prints `fatal: ambiguous argument 'private'` once per public branch, and `dev/` and `github/` start with only the README and `.github/`. The loop above still brings the work across. The fix is tracked in [#16](https://github.com/DazzleTools/git-repokit/issues/16).
-
 ### Other common creates
 
 ```bash

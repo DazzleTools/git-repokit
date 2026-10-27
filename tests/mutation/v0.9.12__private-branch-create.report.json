@@ -1,0 +1,150 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "-x",
+      "tests/test_private_branch_create.py"
+    ],
+    "timestamp": "2026-10-26T04:01:04-04:00"
+  },
+  "results": [
+    {
+      "id": "M1",
+      "file": "repokit/repo_manager.py",
+      "note": "Drops the guard that skips repo_root itself, so _worktree_of can return repo_root as the default branch's worktree and the GitHub step would run git in the private checkout.",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M2",
+      "file": "repokit/repo_manager.py",
+      "note": "Exact branch match becomes a substring match, so 'main' also matches 'main-old' (or 'dev' matches 'develop') and the wrong worktree is picked.",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M3",
+      "file": "repokit/repo_manager.py",
+      "note": "Without --verify, show-ref matches by pattern tail, which brings back the old loose match the docstring says was fixed.",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M4",
+      "file": "repokit/repo_manager.py",
+      "note": "Removes the early return when there is no worktree. The step then falls through to the assumed github_root, which is the 'do nothing when there is none' contract broken.",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M5",
+      "file": "repokit/repo_manager.py",
+      "note": "Hardcodes 'main' and ignores the configured default_branch, so a repo whose default is 'master' or 'trunk' finds no worktree, or the wrong one.",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M6",
+      "file": "repokit/repo_manager.py",
+      "note": "Flips the default, so GitHub integration is off unless it is explicitly enabled.",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M7",
+      "file": "repokit/repo_manager.py",
+      "note": "Raises before the private branch is checked out again, so a failed create leaves the repo on a public branch.",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M8",
+      "file": "repokit/repo_manager.py",
+      "note": "A verification failure is only logged and no longer fails the create, which brings back the old warning-only behaviour.",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M9",
+      "file": "repokit/repo_manager.py",
+      "note": "A build exception is swallowed with only a log line, and the create exits 0.",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "*.*~', '*~', 'logs/*', 'logs/**/*', 'revisions/*', 'revisions/**/*']\nINFO     repokit.cleanup:repo_manager.py:2474 Will clean git index: True (the working folder is never touched)\nINFO     repokit.cleanup:repo_manager.py:2544 Cleaned 0 sensitive files total\nINFO     repokit.cleanup:repo_manager.py:2545   Working directory: 0 files\nINFO     repokit.cleanup:repo_manager.py:2546   Git index: 0 files\nINFO     repokit:repo_manager.py:1778 Committed removal of 0 private files from live\nINFO     repokit:repo_manager.py:1785 Successfully created clean public branch 'live'\nINFO     repokit:repo_manager.py:1839 Branch 'live' verification passed - no private content found\nINFO     repokit:repo_manager.py:1488 Successfully created and verified clean public branch 'live'\nINFO     repokit:repo_manager.py:2299 Generating AI integration files for: claude\nINFO     repokit:repo_manager.py:2383 AI integration files generated successfully\nINFO     repokit:repo_manager.py:590 Setting up worktrees\nINFO     repokit:repo_manager.py:614 Created worktree for branch 'main' at C:\\Users\\Extreme\\AppData\\Local\\Temp\\pytest-of-Extreme\\pytest-14184\\test_a_public_branch_that_cann0\\w\\p\\github\nINFO     repokit:repo_manager.py:652 Created worktree for branch 'dev' at C:\\Users\\Extreme\\AppData\\Local\\Temp\\pytest-of-Extreme\\pytest-14184\\test_a_public_branch_that_cann0\\w\\p\\dev\nINFO     repokit:repo_manager.py:1280 Setting up local exclude patterns\nINFO     repokit:repo_manager.py:1326 Added branch-conditional exclude patterns\nINFO     repokit:repo_manager.py:1099 Setting up GitHub integration\nINFO     repokit:repo_manager.py:1152 No GitHub files to commit\nINFO     repokit:repo_manager.py:220 Repository setup complete: p\n=========================== short test summary info ===========================\nFAILED tests/test_private_branch_create.py::test_a_public_branch_that_cannot_be_built_fails_the_create\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 13 passed in 32.19s\n",
+      "killed_by": [
+        "tests/test_private_branch_create.py::test_a_public_branch_that_cannot_be_built_fails_the_create"
+      ]
+    },
+    {
+      "id": "M10",
+      "file": "repokit/repo_manager.py",
+      "note": "Off-by-one: a single failed public branch no longer fails the create.",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "*.*~', '*~', 'logs/*', 'logs/**/*', 'revisions/*', 'revisions/**/*']\nINFO     repokit.cleanup:repo_manager.py:2475 Will clean git index: True (the working folder is never touched)\nINFO     repokit.cleanup:repo_manager.py:2545 Cleaned 0 sensitive files total\nINFO     repokit.cleanup:repo_manager.py:2546   Working directory: 0 files\nINFO     repokit.cleanup:repo_manager.py:2547   Git index: 0 files\nINFO     repokit:repo_manager.py:1779 Committed removal of 0 private files from live\nINFO     repokit:repo_manager.py:1786 Successfully created clean public branch 'live'\nINFO     repokit:repo_manager.py:1840 Branch 'live' verification passed - no private content found\nINFO     repokit:repo_manager.py:1488 Successfully created and verified clean public branch 'live'\nINFO     repokit:repo_manager.py:2300 Generating AI integration files for: claude\nINFO     repokit:repo_manager.py:2384 AI integration files generated successfully\nINFO     repokit:repo_manager.py:590 Setting up worktrees\nINFO     repokit:repo_manager.py:614 Created worktree for branch 'main' at C:\\Users\\Extreme\\AppData\\Local\\Temp\\pytest-of-Extreme\\pytest-14186\\test_a_public_branch_that_cann0\\w\\p\\github\nINFO     repokit:repo_manager.py:652 Created worktree for branch 'dev' at C:\\Users\\Extreme\\AppData\\Local\\Temp\\pytest-of-Extreme\\pytest-14186\\test_a_public_branch_that_cann0\\w\\p\\dev\nINFO     repokit:repo_manager.py:1280 Setting up local exclude patterns\nINFO     repokit:repo_manager.py:1326 Added branch-conditional exclude patterns\nINFO     repokit:repo_manager.py:1099 Setting up GitHub integration\nINFO     repokit:repo_manager.py:1152 No GitHub files to commit\nINFO     repokit:repo_manager.py:220 Repository setup complete: p\n=========================== short test summary info ===========================\nFAILED tests/test_private_branch_create.py::test_a_public_branch_that_cannot_be_built_fails_the_create\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 13 passed in 32.95s\n",
+      "killed_by": [
+        "tests/test_private_branch_create.py::test_a_public_branch_that_cannot_be_built_fails_the_create"
+      ]
+    },
+    {
+      "id": "M11",
+      "file": "repokit/repo_manager.py",
+      "note": "Drops --cached on the 'file still exists' path, so git rm deletes the person's file from the working folder (the private checkout).",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M12",
+      "file": "repokit/repo_manager.py",
+      "note": "Dry run still really removes files from the index.",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M13",
+      "file": "repokit/repo_manager.py",
+      "note": "Drops the basename step, so patterns like '.env' or '*.log' no longer match nested tracked files such as 'sub/.env', and those stay in the public index.",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    }
+  ],
+  "summary": {
+    "survived": 11,
+    "killed": 2
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_private_branch_create.py::test_a_public_branch_that_cannot_be_built_fails_the_create": [
+        "M10",
+        "M9"
+      ]
+    },
+    "identical": [],
+    "contained": [],
+    "killed_without_names": []
+  }
+}

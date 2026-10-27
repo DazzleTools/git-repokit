@@ -114,6 +114,17 @@ class TestPrivateBranchModelWithCommon(RepoKitTestCase):
         allowed = commit_file(local, "CLAUDE.md")
         self.assertEqual(allowed.returncode, 0, allowed.stdout + allowed.stderr)
 
+    def test_claude_md_refused_on_main_of_a_python_project(self):
+        """0.9.12: a Python project's pyproject.toml ships its own private-patterns;
+        the private-branch entries must be added to that list, or CLAUDE.md
+        reaches main (committed from the github worktree)."""
+        self.assert_repokit_success(["create", "demo", "--branch-strategy", "simple", "--with-common",
+                                     "--language", "python", "--no-push"])
+        github = os.path.join(self.test_dir, "demo", "github")
+        self.assertIn('"CLAUDE.md"', Path(github, "pyproject.toml").read_text(encoding="utf-8"))
+        refused = commit_file(github, "CLAUDE.md")
+        self.assertNotEqual(refused.returncode, 0, refused.stdout + refused.stderr)
+
     def test_a_custom_private_branch_is_written_to_the_settings(self):
         self.assert_repokit_success(["create", "demo", "--branch-strategy", "simple",
                                      "--private-branch", "scratch", "--with-common", "--no-push"])

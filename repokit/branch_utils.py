@@ -154,10 +154,12 @@ class BranchContext:
         return self.branch_type == 'public'
     
     def get_staged_files(self) -> List[str]:
-        """Get list of files staged for commit."""
+        """Files the commit adds or changes (0.9.12: deletions are left out --
+        removing a private file from a public branch is what the guard wants,
+        not something to refuse)."""
         try:
             result = subprocess.run(
-                ['git', 'diff', '--cached', '--name-only'],
+                ['git', 'diff', '--cached', '--name-only', '--diff-filter=ACMR'],
                 cwd=self.repo_path,
                 capture_output=True,
                 text=True,
