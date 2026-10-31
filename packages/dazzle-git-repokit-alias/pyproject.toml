@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 # lockstep with git-repokit's (tests/test_packaging.py checks it), so the
 # alias always pulls the release it was published beside or a later one.
 name = "dazzle-git-repokit"
-version = "0.10.0"
+version = "0.10.1"
 description = "Alias for git-repokit -- create standardized Git repositories"
 readme = { text = "This is an alias package. `pip install git-repokit` or `pip install dazzle-git-repokit` -- both install the same tool, whose command is `repokit`. See https://github.com/DazzleTools/git-repokit for documentation.", content-type = "text/plain" }
 license = "MIT"
@@ -28,7 +28,7 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Topic :: Software Development :: Version Control :: Git",
 ]
-dependencies = ["git-repokit>=0.10.0"]
+dependencies = ["git-repokit>=0.10.1"]
 
 # The same console script as git-repokit, pointing at its entry point (importable
 # because git-repokit is a dependency). Without it, `pipx install

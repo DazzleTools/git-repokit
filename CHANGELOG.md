@@ -5,6 +5,11 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.1] - 2026-10-31
+
+### Fixed
+- **The test suite runs on Python 3.10 again** - two new test files read TOML with `tomllib` (3.11+); they now fall back to `tomli`, as the rest of the suite does. The package itself was unaffected
+
 ## [0.10.0] - 2026-10-31
 
 The 0.10.x line is about **projects beyond the usual languages**: git-repokit makes a working repository for whatever a project is, starting with game mods. Every project now says what its languages are, so the hooks run the right checks without guessing, and private records live in the vault, never at the project root.

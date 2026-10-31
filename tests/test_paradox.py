@@ -41,7 +41,10 @@ def _mod_files(d):
 def _settings(d):
     """The created project's [tool.repokit-common] table, parsed: the file's
     comments repeat its keys' text, so a substring check proves nothing."""
-    import tomllib
+    try:
+        import tomllib
+    except ModuleNotFoundError:     # Python 3.10: tomli, a dependency there
+        import tomli as tomllib
     with open(d / ".repokit-common.toml", "rb") as f:
         return tomllib.load(f)["tool"]["repokit-common"]
 

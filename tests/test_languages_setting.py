@@ -12,8 +12,12 @@ Design: 2026-10-30__08-28-15__dev-workflow-process__paradox-mods-and-the-version
 Addendum 2.
 """
 
-import tomllib
 import unittest
+
+try:
+    import tomllib
+except ModuleNotFoundError:     # Python 3.10: tomli, a dependency there (pyproject.toml)
+    import tomli as tomllib
 from pathlib import Path
 
 from repokit import common_kit

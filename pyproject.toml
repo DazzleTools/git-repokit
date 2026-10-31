@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 # PyPI's trusted publisher is registered for this name (DazzleTools/git-repokit,
 # publish.yml, environment pypi); the command stays `repokit`
 name = "git-repokit"
-version = "0.10.0"
+version = "0.10.1"
 description = "Create standardized Git repositories: language presets, licenses, GitHub setup, and a private notes vault"
 readme = "README.md"
 license = "MIT"
