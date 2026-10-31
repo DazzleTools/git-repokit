@@ -29,8 +29,20 @@ A **preset** is a tested, named list of layers. Each language has a default pres
 | **`js-ts/node-package`** (JS/TS's default) | An npm package in TypeScript: an exports map, `src/index.ts`, `node:test` tests, publish-on-release |
 | `js-ts/script` | One `.js` file run with node, reading `VERSION`, no build step |
 | `js-ts/claude-plugin` | A Claude Code plugin in `plugin/` with a SessionStart hook, `node:test` tests and the marketplace README; add `ts` for TypeScript |
+| **`paradox/ck3`** (Paradox's default) | A Crusader Kings III mod in `mod/`: `descriptor.mod` for 1.20, English localization saved with its UTF-8 BOM, a thumbnail; `VERSION` kept in step with the descriptor; `ck3-tiger` on push when it is installed |
+| `paradox/jomini` | A mod for any Jomini game (Crusader Kings III, Imperator, ...): a generic `descriptor.mod` and `mod/localization/` |
+| `paradox/clausewitz` | A mod for any Clausewitz game (Stellaris, Hearts of Iron IV, Europa Universalis IV): a generic `descriptor.mod` and `mod/localisation/` |
 
-`repokit list` also shows **planned** presets (`python/comfyui`, `python/django`, `python/qt`, `c-cpp/cmake-lib`, `c-cpp/qt`, `js-ts/web-vite-react`, `js-ts/obsidian-plugin`, `js-ts/browser-extension`, `js-ts/comfyui-frontend`). Naming one stops before anything is created and says it is not built yet.
+`repokit list` also shows **planned** presets: `python/comfyui`, `python/django`, `python/qt`, `c-cpp/cmake-lib`, `c-cpp/qt`, `js-ts/web-vite-react`, `js-ts/obsidian-plugin`, `js-ts/browser-extension`, `js-ts/comfyui-frontend`, and the Paradox games `vic3`, `imperator`, `eu5`, `stellaris`, `hoi4` and `eu4`. Naming one stops before anything is created and says it is not built yet. The overview gives each language's planned presets one line; `repokit list <language>` lists each with its description.
+
+### Paradox game mods
+
+A mod's repository keeps the mod itself in **`mod/`**: the folder the game loads, and the folder a Workshop upload ships whole. Everything else (`VERSION`, the settings, `scripts/`, `private/`) stays above it, so it never reaches the game or the Workshop. `docs/modding.md` in the created project says how to point the game at the working copy: a small `.mod` pointer file in your Documents folder, which you write by hand. git-repokit never writes outside the project, and never touches the launcher's files.
+
+- **The facets.** The engine is the script's `dialect` (`jomini`, `clausewitz`), the descriptor kind is how the mod is packaged (`build`: `descriptor-mod`), and the game is what it is (`purpose`: `ck3`). The game's files are applied last and win. A game implies its engine, so `--with paradox/clausewitz,paradox/ck3` is refused.
+- **The bytes.** Mod files keep their bytes. Localization `.yml` files carry a UTF-8 BOM, every file is LF, and `.gitattributes` keeps git from converting anything under `mod/`.
+- **The hooks** (git-repokit-common 0.4.3 or later). On push, the game's Tiger linter runs when it is on PATH; it is advisory and never blocks. On commit, a localization file without its BOM is refused. A version bump moves `descriptor.mod`'s `version="..."` line with `VERSION`.
+- **No VS Code debug configuration.** The game loads the mod, so there is nothing for VS Code to run.
 
 `generic`, the default language, adds no code-type files.
 

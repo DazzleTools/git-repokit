@@ -124,6 +124,30 @@ def private_branch_settings(private_branch: Optional[str], private_paths: List[s
     return settings
 
 
+def languages_setting(languages: List[str], layer_folders: List[str]) -> List[str]:
+    """The `languages` value a create writes for git-repokit-common's hooks.
+
+    repokit's language names mapped to repokit-common's, in the composed
+    order (the first is primary): js-ts is "typescript" when the ts layer is
+    part of the composition, else "javascript"; python, c-cpp and paradox
+    are the same names; generic and the `any` pseudo-language add nothing.
+    Writing it, rather than leaving the hooks to detect it from the root,
+    keeps a project whose markers sit in a subfolder (a plugin in plugin/)
+    from reading as Python (design 2026-10-30__08-28-15, Addendum 2).
+    """
+    out: List[str] = []
+    for lang in languages:
+        if lang == "js-ts":
+            name = "typescript" if any(f.endswith("js-ts/ts") for f in layer_folders) else "javascript"
+        elif lang in ("python", "c-cpp", "paradox"):
+            name = lang
+        else:
+            continue
+        if name not in out:
+            out.append(name)
+    return out
+
+
 def _toml_list(values: List[str]) -> str:
     return "[" + ", ".join('"' + v.replace("\\", "\\\\").replace('"', '\\"') + '"' for v in values) + "]"
 

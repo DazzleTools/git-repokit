@@ -55,7 +55,9 @@ class TestJsTsLayer(RepoKitTestCase):
         self.assertIn('version-source = "VERSION"', settings)
         self.assertIn('path = "package.json"', settings)       # node's .rkappend landed
         self.assertIn("private-patterns", settings)
-        self.assertNotIn("languages =", settings)              # detected by the hooks from the root
+        # 0.10.0: the create writes the languages it composed (the ts layer:
+        # typescript); before, this was left to the hooks' detection.
+        self.assertIn('\nlanguages = ["typescript"]\n', settings)
         ignore = (d / ".gitignore").read_text(encoding="utf-8")
         self.assertIn("node_modules/", ignore)
         self.assertIn("dist/", ignore)

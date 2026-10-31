@@ -1,0 +1,37 @@
+{
+ "test_command": [
+  "python",
+  "-m",
+  "pytest",
+  "-q",
+  "-p",
+  "no:cacheprovider",
+  "tests/test_paradox.py",
+  "tests/test_layers_cli.py",
+  "-k",
+  "paradox or Paradox or list_fits"
+ ],
+ "mutations": [
+  {
+   "id": "D3",
+   "file": "repokit/templates/layers/archetypes/paradox/ck3/.repokit-common.toml",
+   "original": "paradox-game = \"ck3\"\n",
+   "mutated": "# paradox-game removed\n",
+   "note": "the CK3 preset names no game"
+  },
+  {
+   "id": "D4",
+   "file": "repokit/templates/layers/archetypes/paradox/ck3/.repokit-common.toml",
+   "original": "path = \"mod/descriptor.mod\"",
+   "mutated": "path = \"descriptor.mod\"",
+   "note": "the pattern target aimed at the wrong file"
+  },
+  {
+   "id": "D7",
+   "file": "repokit/templates/layers/languages/paradox/.repokit-common.toml",
+   "original": "languages = [\"paradox\"]\n",
+   "mutated": "# languages removed\n",
+   "note": "the generic presets declare no language"
+  }
+ ]
+}

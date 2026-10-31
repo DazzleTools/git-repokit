@@ -1,0 +1,29 @@
+# git-repokit-common settings for __RK_PROJECT__, a Paradox game mod.
+#
+# The mod itself is mod/: the folder the game loads and the one a Workshop
+# upload ships. Everything else (this file, VERSION, scripts/, tests/,
+# private/) stays above it and never reaches the game or the Workshop.
+#
+# The version lives in VERSION; the vendored tool at scripts/repokit-common/
+# keeps mod/descriptor.mod's version line in step with it (a pattern target:
+# only the version text changes, the file's bytes otherwise untouched).
+#
+# The hooks: languages = ["paradox"] runs the paradox profile -- on push the
+# game's Tiger linter when it is installed (advisory, never blocking), on
+# commit a check that localization .yml files keep their UTF-8 BOM -- and
+# no Python checks. Set paradox-game to your game to choose the linter.
+
+[tool.repokit-common]
+version-source = "VERSION"
+changelog = "CHANGELOG.md"
+repo-url = "https://github.com/__RK_ORG__/__RK_PROJECT__"
+tag-prefix = "v"
+tag-format = "human"
+private-patterns = ["private/", "local/", ".env"]
+languages = ["paradox"]
+# paradox-game = "ck3"     # ck3, vic3 or imperator have a Tiger linter
+
+[[tool.repokit-common.extra-targets]]
+path = "mod/descriptor.mod"
+pattern = '^version="([^"]*)"\r?$'
+format = "base"

@@ -17,10 +17,10 @@
 A full create (the [Quick Start](#-quick-start) below) produces:
 
 - **The structure:** README, CONTRIBUTING, CHANGELOG, LICENSE, `.gitignore`, `.gitattributes`, `docs/`, `tests/`, `scripts/`, and, if you ask for them, ROADMAP, a funding file, Dependabot, a stale-issue policy and PR and release templates.
-- **The code for its language:** a Python package with `pyproject.toml` and a CLI, a CMake or Visual Studio C/C++ project, a TypeScript npm package, a Claude Code plugin, and more. Each comes with tests, a CI workflow and a VS Code debug configuration that work from the first commit. See [Languages and layers](docs/Languages-and-Layers.md).
+- **The code for its language:** a Python package with `pyproject.toml` and a CLI, a CMake or Visual Studio C/C++ project, a TypeScript npm package, a Claude Code plugin, a Paradox game mod (Crusader Kings III and others), and more. Each comes with tests, a CI workflow and a VS Code debug configuration where it has something to run, from the first commit. The project's settings name its languages, so the hooks run the right checks. See [Languages and layers](docs/Languages-and-Layers.md).
 - **A README that names the project:** the real GitHub owner, badges for the release, the Python or Node minimum and the license, install and test commands for the preset, and a License section at the end.
 - **The tooling:** [git-repokit-common](https://github.com/DazzleTools/git-repokit-common) vendored at `scripts/repokit-common/`, with git hooks that keep version numbers in step, keep private files out of public commits, and run the tests before a push.
-- **A private vault:** `private/` is its own git repository, ignored by the project, for notes, design documents and postmortems. It starts with a map, an index for an oracle session and a to-do board. See [The vault](docs/The-Vault.md).
+- **A private vault:** `private/` is its own git repository, ignored by the project, for notes, design documents, postmortems, conversations (`convos/`) and old revisions (`revisions/`); run logs go to `private/logs/`, kept on disk and never versioned. It starts with a map, an index for an oracle session and a to-do board. See [The vault](docs/The-Vault.md).
 - **The repository on GitHub** (with `--github`): created with your `gh` login and pushed. It gets the standard labels, Roadmap and Quick Notes as issues #1 and #2 (pinned), discussions and topics. See [GitHub setup](docs/GitHub-Setup.md).
 
 ## 📦 Installation
@@ -131,6 +131,9 @@ repokit create my-app --with c-cpp/msbuild --license gpl-3.0-or-later
 
 # A TypeScript npm package
 repokit create my-lib --language js-ts --license mpl-2.0
+
+# A Crusader Kings III mod: the mod in mod/, the repository's own files above it
+repokit create my-mod --language paradox --license mit
 
 # A one-file Python script, no packaging, given away to the public domain
 repokit create my-script --with python/script --license unlicense

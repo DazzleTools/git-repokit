@@ -247,7 +247,8 @@ class RepoManager:
         # Create standard subdirectories
         standard_dirs = self.config.get(
             "directories",
-            ["convos", "docs", "logs", "private", "revisions", "scripts", "tests"],
+            # convos/, revisions/, logs/: in private/ since 0.10.0 (vault.py)
+            ["docs", "private", "scripts", "tests"],
         )
 
         for directory in standard_dirs:
@@ -981,6 +982,15 @@ class RepoManager:
             print(f"Note: .vscode/ holds {resolution.languages[0]}'s debug configurations; "
                   f"{', '.join(others)}'s were not merged in (add them to .vscode/launch.json by hand)")
         self.logger.info(f"Code-type layers {', '.join(resolution.layers)}: {len(written)} files")
+
+        # Say what the project is, for git-repokit-common's hooks: the languages
+        # it was composed from, written unless a layer's settings already name
+        # them (paradox, c-cpp). Detection stays the hooks' fallback for
+        # adopted projects; a created one should not depend on it.
+        from . import common_kit
+        langs = common_kit.languages_setting(resolution.languages, resolution.layers)
+        if langs:
+            common_kit.write_settings(self.repo_root, {"languages": langs})
         for note in resolution.notes:
             # Once, to the person: a composition no preset vouches for (with
             # the tokens it was assembled from), or a language left bare.

@@ -180,15 +180,17 @@ def strategy_push_branches(name: str) -> List[str]:
 DEFAULT_BRANCH_STRATEGIES = {name: strategy_branch_list(name) for name in BRANCH_STRATEGIES}
 
 # Default directory profiles - centralized from directory_profiles.py
+# convos/, revisions/ and logs/ are made inside private/ (vault.PRIVATE_STRUCTURE)
+# since 0.10.0, never at the project root; DEFAULT_PRIVATE_DIRS still names
+# them, so a root folder an older project has stays out of public history.
 DEFAULT_DIRECTORY_PROFILES = {
     "minimal": ["src", "tests", "docs"],
     "standard": [
-        "src", "tests", "docs", "scripts", "config", 
-        "logs", "private", "convos", "revisions"
+        "src", "tests", "docs", "scripts", "config", "private"
     ],
     "complete": [
-        "src", "tests", "docs", "scripts", "config", "logs", 
-        "private", "convos", "revisions", "data", "examples", 
+        "src", "tests", "docs", "scripts", "config",
+        "private", "data", "examples",
         "tools", "resources", "assets"
     ]
 }

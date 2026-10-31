@@ -1,0 +1,55 @@
+NOT-A-REPO	C:\code\claude-projects\_staged-check\scripts\repokit-common
+NOT-A-REPO	C:\code\dazzlecmd\github - Copy\projects\wtf\scripts
+NOT-A-REPO	C:\code\dazzlecmd\github.2026.6.21\projects\wtf\scripts
+C:\code\AMDead-bak	declared=None	hooks=['python']	detected=['python']	version=0.1.0 (src/amdead/_version.py)	json-extra=0	others=-	
+C:\code\amdead-disclosure-package	declared=None	hooks=['python']	detected=['python']	version=0.4.14 (src/amdtoy/_version.py)	json-extra=0	others=-	
+C:\code\amdead.2026.05.25	declared=None	hooks=['python']	detected=['python']	version=0.5.3 (src/amdead/_version.py)	json-extra=0	others=-	
+C:\code\amdead.bak	declared=None	hooks=['python']	detected=['python']	version=0.4.0 (src/amdead/_version.py)	json-extra=0	others=-	
+C:\code\amdead	declared=None	hooks=['python']	detected=['python']	version=0.9.13 (src/amdead/_version.py)	json-extra=0	others=-	
+C:\code\chrome-extension\aichatnav-pub	declared=None	hooks=['javascript']	detected=['javascript']	version=0.3.4-alpha (aichatnav/_version.py)	json-extra=0	others=-	
+C:\code\chrome-extension\aichatnav\local	declared=None	hooks=['javascript']	detected=['javascript']	version=0.3.3-alpha (aichatnav/_version.py)	json-extra=0	others=-	
+C:\code\ck3-save-migrator	declared=None	hooks=['python']	detected=['python']	version=0.3.15 (ck3_save_migrator/_version.py)	json-extra=0	others=-	
+C:\code\claude-projects\bak\dazzle-claude-code-config-personal	declared=None	hooks=['python']	detected=[]	version=0.5.1 (VERSION)	json-extra=0	others=-	TREATED-AS-PYTHON-BY-DEFAULT
+C:\code\claude-projects\bak\dazzle-claude-code-config-public	declared=None	hooks=['python']	detected=[]	version=0.4.9 (VERSION)	json-extra=0	others=-	TREATED-AS-PYTHON-BY-DEFAULT
+C:\code\claude-projects\bak\dazzle-claude-config-tool	declared=None	hooks=['python']	detected=['python']	version=0.6.11 (dazzle_claude_config/_version.py)	json-extra=0	others=-	
+C:\code\claude-projects\claude-bookmarks	declared=None	hooks=['python']	detected=[]	version=0.7.28 (version.py)	json-extra=1	others=-	TREATED-AS-PYTHON-BY-DEFAULT
+C:\code\claude-projects\Claude-Code-Infinite-Perfect-Context	declared=None	hooks=['python']	detected=['python']	version=0.1.5 (src/ccipc_lib/_version.py)	json-extra=0	others=-	
+C:\code\claude-projects\Claude-Session-Backup	declared=None	hooks=['python']	detected=['python']	version=0.10.1 (claude_session_backup/_version.py)	json-extra=0	others=-	
+C:\code\claude-projects\Claude-Session-Backup\private\revisions\2026-08-02__pre-history-rewrite__full-repo-copy	declared=None	hooks=['python']	detected=['python']	version=0.7.0 (claude_session_backup/_version.py)	json-extra=0	others=-	
+C:\code\claude-projects\claude-session-logger\github	declared=None	hooks=['python']	detected=[]	version=0.3.19 (version.py)	json-extra=2	others=-	TREATED-AS-PYTHON-BY-DEFAULT
+C:\code\claude-projects\claude-session-logger\local\private	declared=None	hooks=['python']	detected=[]	version=None (none)	json-extra=0	others=-	TREATED-AS-PYTHON-BY-DEFAULT
+C:\code\claude-projects\dazzle-claude-code-config-personal	declared=None	hooks=['python']	detected=[]	version=0.5.1 (VERSION)	json-extra=0	others=-	TREATED-AS-PYTHON-BY-DEFAULT
+C:\code\claude-projects\dazzle-claude-code-config-public	declared=None	hooks=['python']	detected=[]	version=0.4.9 (VERSION)	json-extra=0	others=-	TREATED-AS-PYTHON-BY-DEFAULT
+C:\code\claude-projects\dazzle-claude-code-patcher	declared=None	hooks=['python']	detected=['python']	version=0.2.6 (dcc_patcher/_version.py)	json-extra=0	others=-	
+C:\code\claude-projects\dazzle-claude-config-tool	declared=None	hooks=['python']	detected=['python']	version=0.6.11 (dazzle_claude_config/_version.py)	json-extra=0	others=-	
+C:\code\comfydbg	declared=None	hooks=['python']	detected=['python']	version=0.1.1 (comfydbg/_version.py)	json-extra=0	others=-	
+C:\code\ComfyUI-Dazzle-VAE-DeGrid\local	declared=None	hooks=['python']	detected=['python']	version=0.1.0-alpha (ComfyUI_Dazzle_VAE_DeGrid/_version.py)	json-extra=0	others=-	
+C:\code\ComfyUI-DazzleKSampler	declared=None	hooks=['python']	detected=['python']	version=None (ComfyUI_DazzleKSampler/_version.py)	json-extra=0	others=-	
+C:\code\ComfyUI_experiment\custom_nodes.bak-2026-06-08\dazzle-ksampler	declared=None	hooks=['python']	detected=['python']	version=None (ComfyUI_DazzleKSampler/_version.py)	json-extra=0	others=-	
+C:\code\contradiction-extraction-poc\local	declared=None	hooks=['python']	detected=['python']	version=0.2.1-alpha (contradiction_extraction_poc/_version.py)	json-extra=0	others=-	
+C:\code\dazzle-checksum\dazzlesum	declared=None	hooks=['python']	detected=['python']	version=1.5.1 (src/dazzlesum/_version.py)	json-extra=0	others=-	
+C:\code\dazzle-lib	declared=None	hooks=['python']	detected=['python']	version=0.8.2 (dazzle_lib/_version.py)	json-extra=0	others=-	
+C:\code\dazzle-linklib	declared=None	hooks=['python']	detected=['python']	version=0.5.1 (dazzle_linklib/_version.py)	json-extra=0	others=-	
+C:\code\Dazzle-Locate32	declared=None	hooks=['python']	detected=[]	version=None (none)	json-extra=0	others=-	TREATED-AS-PYTHON-BY-DEFAULT
+C:\code\dazzle-loglib	declared=None	hooks=['python']	detected=['python']	version=0.3.4 (dazzle_loglib/_version.py)	json-extra=0	others=-	
+C:\code\dazzle-preservelib	declared=None	hooks=['python']	detected=['python']	version=0.9.0 (dazzle_preservelib/_version.py)	json-extra=0	others=-	
+C:\code\dazzlecmd-lib	declared=None	hooks=['python']	detected=['python']	version=0.10.34-alpha (dazzlecmd_lib/_version.py)	json-extra=0	others=-	
+C:\code\dazzlecmd\github	declared=None	hooks=['python']	detected=['python']	version=0.12.23-alpha (src/dazzlecmd/_version.py)	json-extra=0	others=-	
+C:\code\dazzlelink	declared=None	hooks=['python']	detected=['python']	version=0.11.1 (src/dazzlelink/_version.py)	json-extra=0	others=-	
+C:\code\DazzleNodes\local\nodes\smart-resolution-calc	declared=None	hooks=['python', 'javascript']	detected=['python', 'javascript']	version=0.12.11 (version.py)	json-extra=0	others=-	
+C:\code\EliteDangerous\APITool\local	declared=None	hooks=['python']	detected=['python']	version=0.10.12 (APITool/version.py)	json-extra=0	others=-	
+C:\code\git-repokit-common	declared=None	hooks=['python']	detected=[]	version=0.4.2 (VERSION)	json-extra=0	others=-	TREATED-AS-PYTHON-BY-DEFAULT
+C:\code\git-repokit	declared=None	hooks=['python']	detected=['python']	version=None (none)	json-extra=0	others=-	
+C:\code\github-traffic-tracker\local	declared=None	hooks=['python']	detected=['python']	version=0.3.12 (version.py)	json-extra=0	others=-	
+C:\code\infinite-glyphs	declared=None	hooks=['python']	detected=['python']	version=0.1.0 (infinite_glyphs/_version.py)	json-extra=0	others=-	
+C:\code\smart-resolution-calc-repo\github	declared=None	hooks=['python', 'javascript']	detected=['python', 'javascript']	version=0.12.11 (version.py)	json-extra=0	others=-	
+C:\code\spacehaven-cheat-engine	declared=None	hooks=['python']	detected=['python']	version=0.1.0 (spacehaven_cheat_engine/_version.py)	json-extra=0	others=-	
+C:\code\stellaris-ironman-cheat	declared=None	hooks=['python']	detected=['python']	version=0.1.1 (stellaris_ironman.py)	json-extra=0	others=-	
+C:\code\unctools\local	declared=None	hooks=['python']	detected=['python']	version=0.3.0 (unctools/_version.py)	json-extra=0	others=setup.py=0.1.1(DRIFTED)	
+C:\code\wtf-privacy	declared=None	hooks=['python']	detected=['python']	version=0.1.2-alpha (src/wtf_privacy/_version.py)	json-extra=0	others=-	
+C:\code\wtf-rdp	declared=None	hooks=['python']	detected=['python']	version=0.4.1 (wtf_rdp/_version.py)	json-extra=0	others=-	
+C:\code\wtf-restarted	declared=None	hooks=['python']	detected=['python']	version=0.2.3 (wtf_restarted/_version.py)	json-extra=0	others=-	
+C:\code\wtf-windows	declared=None	hooks=['python']	detected=['python']	version=0.1.7-alpha (src/wtf_windows/_version.py)	json-extra=0	others=-	
+C:\code\wtf-windows\tools\core\restarted	declared=None	hooks=['python']	detected=['python']	version=0.2.3 (wtf_restarted/_version.py)	json-extra=0	others=-	
+
+copies found=68  repos (deduped by git common dir)=50  rows=50

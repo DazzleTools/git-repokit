@@ -1,0 +1,77 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_paradox.py",
+      "tests/test_layers_cli.py",
+      "-k",
+      "paradox or Paradox or list_fits"
+    ],
+    "timestamp": "2026-10-31T01:28:12-04:00"
+  },
+  "results": [
+    {
+      "id": "D3",
+      "file": "repokit/templates/layers/archetypes/paradox/ck3/.repokit-common.toml",
+      "note": "the CK3 preset names no game",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "......F.                                                                 [100%]\n================================== FAILURES ===================================\n_ TestParadoxFamily.test_the_settings_declare_paradox_ck3_and_keep_the_descriptor_in_step _\n\nself = <tests.test_paradox.TestParadoxFamily testMethod=test_the_settings_declare_paradox_ck3_and_keep_the_descriptor_in_step>\n\n    def test_the_settings_declare_paradox_ck3_and_keep_the_descriptor_in_step(self):\n        \"\"\".repokit-common.toml: languages = [\"paradox\"], paradox-game = \"ck3\"\n        (ck3-tiger on push), VERSION as the source and the descriptor's version\n        line as a pattern target. Through the vendored copy: the languages and\n        game read back, --check passes, and a bump moves exactly the\n        descriptor's version line.\"\"\"\n        self.assert_repokit_success([\"create\", \"cheat-menu\", \"--language\", \"paradox\", \"--no-push\"])\n        d = Path(self.test_dir, \"cheat-menu\")\n        s = _settings(d)\n>       self.assertEqual((s[\"languages\"], s[\"paradox-game\"], s[\"version-source\"]), ([\"paradox\"], \"ck3\", \"VERSION\"))\nE       KeyError: 'paradox-game'\n\ntests\\test_paradox.py:106: KeyError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_paradox.py::TestParadoxFamily::test_the_settings_declare_paradox_ck3_and_keep_the_descriptor_in_step\n1 failed, 7 passed, 14 deselected in 46.57s\n",
+      "killed_by": [
+        "tests/test_paradox.py::TestParadoxFamily::test_the_settings_declare_paradox_ck3_and_keep_the_descriptor_in_step"
+      ]
+    },
+    {
+      "id": "D4",
+      "file": "repokit/templates/layers/archetypes/paradox/ck3/.repokit-common.toml",
+      "note": "the pattern target aimed at the wrong file",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "st_paradox.TestParadoxFamily testMethod=test_the_settings_declare_paradox_ck3_and_keep_the_descriptor_in_step>\n\n    def test_the_settings_declare_paradox_ck3_and_keep_the_descriptor_in_step(self):\n        \"\"\".repokit-common.toml: languages = [\"paradox\"], paradox-game = \"ck3\"\n        (ck3-tiger on push), VERSION as the source and the descriptor's version\n        line as a pattern target. Through the vendored copy: the languages and\n        game read back, --check passes, and a bump moves exactly the\n        descriptor's version line.\"\"\"\n        self.assert_repokit_success([\"create\", \"cheat-menu\", \"--language\", \"paradox\", \"--no-push\"])\n        d = Path(self.test_dir, \"cheat-menu\")\n        s = _settings(d)\n        self.assertEqual((s[\"languages\"], s[\"paradox-game\"], s[\"version-source\"]), ([\"paradox\"], \"ck3\", \"VERSION\"))\n>       self.assertEqual(s[\"extra-targets\"], [{\"path\": \"mod/descriptor.mod\",\n                                               \"pattern\": '^version=\"([^\"]*)\"\\\\r?$', \"format\": \"base\"}])\nE       AssertionError: Lists differ: [{'path': 'descriptor.mod', 'pattern': '^version=\"([[27 chars]se'}] != [{'path': 'mod/descriptor.mod', 'pattern': '^version[31 chars]se'}]\nE       \nE       First differing element 0:\nE       {'path': 'descriptor.mod', 'pattern': '^version=\"([[26 chars]ase'}\nE       {'path': 'mod/descriptor.mod', 'pattern': '^version[30 chars]ase'}\nE       \nE         [{'format': 'base',\nE       -   'path': 'descriptor.mod',\nE       +   'path': 'mod/descriptor.mod',\nE       ?            ++++\nE       \nE           'pattern': '^version=\"([^\"]*)\"\\\\r?$'}]\n\ntests\\test_paradox.py:107: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_paradox.py::TestParadoxFamily::test_the_settings_declare_paradox_ck3_and_keep_the_descriptor_in_step\n1 failed, 7 passed, 14 deselected in 37.59s\n",
+      "killed_by": [
+        "tests/test_paradox.py::TestParadoxFamily::test_the_settings_declare_paradox_ck3_and_keep_the_descriptor_in_step"
+      ]
+    },
+    {
+      "id": "D7",
+      "file": "repokit/templates/layers/languages/paradox/.repokit-common.toml",
+      "note": "the generic presets declare no language",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "....F...                                                                 [100%]\n================================== FAILURES ===================================\n______________ TestParadoxFamily.test_the_generic_engine_presets ______________\n\nself = <tests.test_paradox.TestParadoxFamily testMethod=test_the_generic_engine_presets>\n\n    def test_the_generic_engine_presets(self):\n        \"\"\"paradox/jomini and paradox/clausewitz: a generic descriptor\n        (supported_version \"*\", with a comment saying to set it), the\n        localization folder spelled as the engine spells it, and no game: the\n        settings name none (paradox-game commented).\"\"\"\n        for preset, folder in ((\"paradox/jomini\", \"localization\"), (\"paradox/clausewitz\", \"localisation\")):\n            name = preset.split(\"/\")[1] + \"-mod\"\n            self.assert_repokit_success([\"create\", name, \"--with\", preset, \"--no-push\"])\n            d = Path(self.test_dir, name)\n            snake = name.replace(\"-\", \"_\")\n            self.assertEqual(_mod_files(d), [\"descriptor.mod\", f\"{folder}/english/{snake}_l_english.yml\",\n                                             \"thumbnail.png\"], preset)\n            desc = (d / \"mod\" / \"descriptor.mod\").read_text(encoding=\"utf-8\")\n            self.assertIn('supported_version=\"*\"', desc)\n            self.assertIn(\"# Set supported_version\", desc)\n            self.assertTrue((d / \"mod\" / folder / \"english\" / f\"{snake}_l_english.yml\").read_bytes().startswith(BOM))\n            s = _settings(d)\n>           self.assertEqual(s[\"languages\"], [\"paradox\"], preset)\nE           KeyError: 'languages'\n\ntests\\test_paradox.py:141: KeyError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_paradox.py::TestParadoxFamily::test_the_generic_engine_presets\n1 failed, 7 passed, 14 deselected in 33.30s\n",
+      "killed_by": [
+        "tests/test_paradox.py::TestParadoxFamily::test_the_generic_engine_presets"
+      ]
+    }
+  ],
+  "summary": {
+    "killed": 3
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_paradox.py::TestParadoxFamily::test_the_generic_engine_presets": [
+        "D7"
+      ],
+      "tests/test_paradox.py::TestParadoxFamily::test_the_settings_declare_paradox_ck3_and_keep_the_descriptor_in_step": [
+        "D3",
+        "D4"
+      ]
+    },
+    "identical": [],
+    "contained": [],
+    "killed_without_names": []
+  }
+}

@@ -1,0 +1,17 @@
+A. mods=66
+   top-level entries outside the game's folders: {'thumbnailwide.png': 5, '.vscode': 4, '.git': 4, 'notes.txt': 3, '.gitattributes': 2, 'readme.md': 2, 'credits.txt': 2, 'thumbnail_paradox.png': 2, 'description.txt': 2, 'workshop description.txt': 1, 'steam desc new.txt': 1, 'steam desc.txt': 1, 'thumbnail.gif': 1, 'thumbnail.ico': 1, '199 immersive loading screens.txt': 1}
+   mods with repository-like entries: 10
+     2220098919: ['.gitattributes', 'readme.md']
+     2243652060: ['readme.md']
+     2291024373: ['.vscode']
+     2436624088: ['.git']
+     2453915294: ['.gitignore']
+     2749062980: ['.vscode']
+     2768734977: ['.git', '.gitattributes']
+     2773960640: ['.git']
+     2821835496: ['.vscode']
+     2886198939: ['.git', '.vscode']
+B. descriptor.mod matches: {0: 3, 1: 62, 'no descriptor': 1}   (0, 1, 2 = two or more)
+   rewrites byte-exact (BOM state, CRLF count, every other byte): 62; not: []
+   supported_version changed by the rewrite: 0
+   reconcile: 66 = 66 mods

@@ -1,4 +1,6 @@
 repokit/templates/** text eol=lf
+# Images in templates are bytes (the paradox mod's thumbnail.png, 0.10.0)
+repokit/templates/**/*.png binary
 # The license texts are checked byte for byte against the sha256 in
 # repokit/licenses/LICENSES.md, so no checkout may convert them (a Windows
 # runner with core.autocrlf=true did, 2026-10-25)

@@ -5,6 +5,24 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-10-31
+
+The 0.10.x line is about **projects beyond the usual languages**: git-repokit makes a working repository for whatever a project is, starting with game mods. Every project now says what its languages are, so the hooks run the right checks without guessing, and private records live in the vault, never at the project root.
+
+### Added
+- **Paradox game mods** - `repokit create my-mod --language paradox` makes a Crusader Kings III mod
+  - the mod is `mod/`, the folder the game loads and a Workshop upload ships; the repository's files stay above it
+  - `descriptor.mod` follows `VERSION`; localization keeps its UTF-8 BOM; `.gitattributes` keeps every mod file's bytes
+  - `paradox/jomini` and `paradox/clausewitz` for any game of either engine; Victoria 3, Imperator, EU5, Stellaris, HoI4 and EU4 are planned
+  - `docs/modding.md` in the project says how to load the working copy in the game
+
+### Changed
+- **Every create writes its languages** - `.repokit-common.toml` (or `pyproject.toml`) names them, e.g. `["typescript"]`
+  - a plugin whose files sit in `plugin/` no longer reads as Python to the hooks
+- **Conversations, revisions and logs live in the vault** - `private/convos/`, `private/revisions/`, `private/logs/`, not the project root
+  - the vault versions the first two and ignores `logs/`; root folders in older projects are still kept out of public commits
+- **`repokit list` fits one screen** - each language's planned presets share a line; `repokit list <language>` lists each
+
 ## [0.9.12] - 2026-10-27
 
 ### Fixed

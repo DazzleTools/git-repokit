@@ -59,12 +59,11 @@ class ConfigManager:
             # replaces them with the chosen strategy's values
             "branches": list(BRANCH_STRATEGIES[DEFAULT_BRANCH_STRATEGY]["branches"]),
             "worktrees": list(BRANCH_STRATEGIES[DEFAULT_BRANCH_STRATEGY]["worktrees"]),
+            # convos/, revisions/ and logs/ live in private/ since 0.10.0
+            # (vault.PRIVATE_STRUCTURE), not at the project root
             "directories": [
-                "convos",
                 "docs",
-                "logs",
                 "private",
-                "revisions",
                 "scripts",
                 "tests",
             ],

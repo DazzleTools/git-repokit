@@ -1,0 +1,36 @@
+{
+ "test_command": [
+  "python",
+  "-m",
+  "pytest",
+  "-q",
+  "-p",
+  "no:cacheprovider",
+  "tests/test_vault_bootstrap.py",
+  "-k",
+  "vault_not_the_root"
+ ],
+ "mutations": [
+  {
+   "id": "V1",
+   "file": "repokit/config.py",
+   "original": "            \"directories\": [\n                \"docs\",",
+   "mutated": "            \"directories\": [\n                \"convos\", \"logs\", \"revisions\",\n                \"docs\",",
+   "note": "the root folders come back (the 0.9.12 default)"
+  },
+  {
+   "id": "V2",
+   "file": "repokit/vault.py",
+   "original": "    \"convos\",\n    \"docs\",\n    \"logs\",",
+   "mutated": "    \"docs\",",
+   "note": "the vault gets no convos/ or logs/"
+  },
+  {
+   "id": "V3",
+   "file": "repokit/vault.py",
+   "original": "    (\"Run logs -- program output, kept on disk and never versioned\", [\"logs/\"]),\n",
+   "mutated": "    # run logs line removed\n",
+   "note": "the vault versions run logs"
+  }
+ ]
+}

@@ -1,0 +1,60 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_directory_profiles.py::TestConfigManagerDirectoryProfiles::test_backward_compatibility"
+    ],
+    "timestamp": "2026-10-31T14:57:24-04:00"
+  },
+  "results": [
+    {
+      "id": "P1",
+      "file": "repokit/defaults.py",
+      "note": "the standard profile's old root folders",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "F                                                                        [100%]\n================================== FAILURES ===================================\n_______ TestConfigManagerDirectoryProfiles.test_backward_compatibility ________\n\nself = <tests.test_directory_profiles.TestConfigManagerDirectoryProfiles testMethod=test_backward_compatibility>\n\n    def test_backward_compatibility(self):\n        \"\"\"No profile: the default directories. Run from an empty folder: the\n        config manager reads a .repokit.json in the current directory, and in\n        git-repokit's own checkout that record (2025) still lists convos/, logs/\n        and revisions/ -- which kept this test green whatever the defaults said.\n        Since 0.10.0 those three live in private/, never at the project root.\"\"\"\n        cwd = os.getcwd()\n        os.chdir(tempfile.mkdtemp())\n        try:\n            manager = ConfigManager()\n            manager.cli_config = {\"name\": \"testproject\"}\n            manager.config = manager._merge_configs()\n            manager.resolve_directory_profiles()\n        finally:\n            os.chdir(cwd)\n        dirs = manager.config.get(\"directories\", [])\n        for d in (\"docs\", \"private\", \"scripts\", \"tests\"):\n            self.assertIn(d, dirs)\n        for d in (\"convos\", \"logs\", \"revisions\"):\n            self.assertNotIn(d, dirs)\n        for profile in (\"standard\", \"complete\"):\n            listed = DirectoryProfileManager().profiles[profile]\n>           self.assertFalse({\"convos\", \"logs\", \"revisions\"} & set(listed), profile)\nE           AssertionError: {'revisions', 'convos', 'logs'} is not false : standard\n\ntests\\test_directory_profiles.py:317: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_directory_profiles.py::TestConfigManagerDirectoryProfiles::test_backward_compatibility\n1 failed in 0.12s\n",
+      "killed_by": [
+        "tests/test_directory_profiles.py::TestConfigManagerDirectoryProfiles::test_backward_compatibility"
+      ]
+    },
+    {
+      "id": "P2",
+      "file": "repokit/config.py",
+      "note": "the old default directories",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "F                                                                        [100%]\n================================== FAILURES ===================================\n_______ TestConfigManagerDirectoryProfiles.test_backward_compatibility ________\n\nself = <tests.test_directory_profiles.TestConfigManagerDirectoryProfiles testMethod=test_backward_compatibility>\n\n    def test_backward_compatibility(self):\n        \"\"\"No profile: the default directories. Run from an empty folder: the\n        config manager reads a .repokit.json in the current directory, and in\n        git-repokit's own checkout that record (2025) still lists convos/, logs/\n        and revisions/ -- which kept this test green whatever the defaults said.\n        Since 0.10.0 those three live in private/, never at the project root.\"\"\"\n        cwd = os.getcwd()\n        os.chdir(tempfile.mkdtemp())\n        try:\n            manager = ConfigManager()\n            manager.cli_config = {\"name\": \"testproject\"}\n            manager.config = manager._merge_configs()\n            manager.resolve_directory_profiles()\n        finally:\n            os.chdir(cwd)\n        dirs = manager.config.get(\"directories\", [])\n        for d in (\"docs\", \"private\", \"scripts\", \"tests\"):\n            self.assertIn(d, dirs)\n        for d in (\"convos\", \"logs\", \"revisions\"):\n>           self.assertNotIn(d, dirs)\nE           AssertionError: 'convos' unexpectedly found in ['convos', 'logs', 'revisions', 'docs', 'private', 'scripts', 'tests']\n\ntests\\test_directory_profiles.py:314: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_directory_profiles.py::TestConfigManagerDirectoryProfiles::test_backward_compatibility\n1 failed in 0.12s\n",
+      "killed_by": [
+        "tests/test_directory_profiles.py::TestConfigManagerDirectoryProfiles::test_backward_compatibility"
+      ]
+    }
+  ],
+  "summary": {
+    "killed": 2
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_directory_profiles.py::TestConfigManagerDirectoryProfiles::test_backward_compatibility": [
+        "P1",
+        "P2"
+      ]
+    },
+    "identical": [],
+    "contained": [],
+    "killed_without_names": []
+  }
+}

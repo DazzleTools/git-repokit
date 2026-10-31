@@ -376,14 +376,22 @@ def catalogue_lines(manifest: Dict[str, Any], language: Optional[str] = None) ->
         head = f"{lang}:" + (f"  (planned: {entry.get('description', '')})" if entry.get("stub") else "")
         lines.append(head)
         default = entry.get("default")
+        planned = []
         for key in sorted(k for k in manifest["archetypes"] if k.startswith(lang + "/")):
             preset = manifest["archetypes"][key]
             if preset.get("stub"):
-                lines.append(f"  {key:28} (planned: {preset.get('description', '')})")
+                if language:
+                    lines.append(f"  {key:28} (planned: {preset.get('description', '')})")
+                else:
+                    planned.append(key.split("/", 1)[1])
             else:
                 parts = [f.split("/", 2)[-1] for f in preset.get("layers", [])]
                 mark = "  <- default" if key == default else ""
                 lines.append(f"  {key:28} = {', '.join(parts)}{mark}")
+        if planned:
+            # The overview keeps one screen (AC-10): a language's planned presets
+            # share a line; `repokit list <lang>` shows each with its description.
+            lines.append(f"  {'planned:':28} {', '.join(planned)}")
         for facet, spec in facets:
             if facet == "language":
                 continue

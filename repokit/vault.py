@@ -24,9 +24,16 @@ PRIVATE_STRUCTURE = [
     "claude",
     "claude/commits",
     "claude/issues",
+    "convos",
     "docs",
+    "logs",
     "notes",
+    "revisions",
 ]
+# convos/, revisions/ and logs/ were project-root folders until 0.10.0, held
+# out of public history only by ignore rules and the pre-commit guard; inside
+# the vault they cannot reach a public remote at all (djdarcy, 2026-10-31).
+# logs/ is run output, so the vault ignores it (PRIVATE_GITIGNORE_SECTIONS).
 
 # What the vault ignores (private_init.PRIVATE_GITIGNORE_SECTIONS)
 PRIVATE_GITIGNORE_SECTIONS = [
@@ -35,6 +42,7 @@ PRIVATE_GITIGNORE_SECTIONS = [
     ("OS", [".DS_Store", "Thumbs.db", "desktop.ini"]),
     ("Temp files", ["*.tmp", "*.bak"]),
     ("Agent working state -- written by tools, never versioned", [".gauntlet/"]),
+    ("Run logs -- program output, kept on disk and never versioned", ["logs/"]),
 ]
 
 # What the parent project ignores besides private/ itself

@@ -41,9 +41,35 @@ def _built_layers_by_facet(m, lang):
     return out
 
 
+def _implied(m, lang, key, seen=None):
+    """Every layer `key` implies, transitively (bare names are in its language)."""
+    seen = set() if seen is None else seen
+    for name in m["layers"].get(key, {}).get("implies", []):
+        q = name if "/" in name else f"{lang}/{name}"
+        if q not in seen:
+            seen.add(q)
+            _implied(m, lang, q, seen)
+    return seen
+
+
+def _contradicts_an_implies(m, lang, chosen):
+    """True when a chosen layer implies a different choice in an exclusive facet
+    than the one chosen there -- paradox/ck3 implies jomini, so clausewitz + ck3
+    is no composition at all (the resolver refuses it; test_paradox pins that)."""
+    picked = {m["layers"][k]["facet"]: k for k in chosen
+              if m["facets"].get(m["layers"][k].get("facet", ""), {}).get("exclusive")}
+    for k in chosen:
+        for q in _implied(m, lang, k):
+            facet = m["layers"].get(q, {}).get("facet")
+            if facet in picked and picked[facet] != q:
+                return True
+    return False
+
+
 def combinations(m, lang):
     """Every valid token list for one language: one-or-none per exclusive facet,
-    any subset of each additive facet."""
+    any subset of each additive facet, without the ones a layer's `implies`
+    contradicts (a purpose that implies a different engine than the one chosen)."""
     by_facet = _built_layers_by_facet(m, lang)
     axes = []
     for facet, spec in sorted(m["facets"].items(), key=lambda kv: kv[1]["rank"]):
@@ -60,6 +86,8 @@ def combinations(m, lang):
             if c is None:
                 continue
             tokens += list(c) if isinstance(c, tuple) else [c]
+        if _contradicts_an_implies(m, lang, tokens):
+            continue
         yield tokens
 
 

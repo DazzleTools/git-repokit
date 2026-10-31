@@ -1,0 +1,49 @@
+{
+ "test_command": [
+  "python",
+  "-m",
+  "pytest",
+  "-q",
+  "-p",
+  "no:cacheprovider",
+  "tests/test_languages_setting.py",
+  "tests/test_layers_js_ts.py::TestJsTsLayer::test_the_default_is_an_npm_package_in_typescript"
+ ],
+ "mutations": [
+  {
+   "id": "L1",
+   "file": "repokit/repo_manager.py",
+   "original": "        if langs:\n            common_kit.write_settings(self.repo_root, {\"languages\": langs})",
+   "mutated": "        if False:\n            common_kit.write_settings(self.repo_root, {\"languages\": langs})",
+   "note": "the create writes no languages (the 0.9.12 behaviour)"
+  },
+  {
+   "id": "L2",
+   "file": "repokit/common_kit.py",
+   "original": "any(f.endswith(\"js-ts/ts\") for f in layer_folders)",
+   "mutated": "any(f.endswith(\"js-ts/node\") for f in layer_folders)",
+   "note": "typescript keyed on the wrong layer"
+  },
+  {
+   "id": "L3",
+   "file": "repokit/common_kit.py",
+   "original": "        if name not in out:\n            out.append(name)",
+   "mutated": "        if True:\n            out.append(name)",
+   "note": "a repeated name written twice"
+  },
+  {
+   "id": "L4",
+   "file": "repokit/common_kit.py",
+   "original": "elif lang in (\"python\", \"c-cpp\", \"paradox\"):",
+   "mutated": "elif lang in (\"python\",):",
+   "note": "c-cpp and paradox dropped"
+  },
+  {
+   "id": "L5",
+   "file": "repokit/common_kit.py",
+   "original": "        else:\n            continue\n        if name not in out:",
+   "mutated": "        else:\n            name = lang\n        if name not in out:",
+   "note": "generic and any written as languages"
+  }
+ ]
+}

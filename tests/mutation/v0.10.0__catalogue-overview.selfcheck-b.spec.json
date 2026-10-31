@@ -1,0 +1,23 @@
+{
+ "test_command": [
+  "python",
+  "-m",
+  "pytest",
+  "-q",
+  "-p",
+  "no:cacheprovider",
+  "tests/test_layers_cli.py",
+  "tests/test_paradox.py",
+  "-k",
+  "list"
+ ],
+ "mutations": [
+  {
+   "id": "S2",
+   "file": "repokit/layers.py",
+   "original": "                    planned.append(key.split(\"/\", 1)[1])",
+   "mutated": "                    planned.append(key)",
+   "note": "the planned line repeats the language prefix"
+  }
+ ]
+}

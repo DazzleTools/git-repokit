@@ -1,0 +1,27 @@
+{
+ "test_command": [
+  "python",
+  "-m",
+  "pytest",
+  "-q",
+  "-p",
+  "no:cacheprovider",
+  "tests/test_directory_profiles.py::TestConfigManagerDirectoryProfiles::test_backward_compatibility"
+ ],
+ "mutations": [
+  {
+   "id": "P1",
+   "file": "repokit/defaults.py",
+   "original": "        \"src\", \"tests\", \"docs\", \"scripts\", \"config\", \"private\"\n    ],",
+   "mutated": "        \"src\", \"tests\", \"docs\", \"scripts\", \"config\",\n        \"logs\", \"private\", \"convos\", \"revisions\"\n    ],",
+   "note": "the standard profile's old root folders"
+  },
+  {
+   "id": "P2",
+   "file": "repokit/config.py",
+   "original": "            \"directories\": [\n                \"docs\",",
+   "mutated": "            \"directories\": [\n                \"convos\", \"logs\", \"revisions\",\n                \"docs\",",
+   "note": "the old default directories"
+  }
+ ]
+}

@@ -63,6 +63,17 @@ default = "c-cpp/cmake-app"
 layers = ["languages/js-ts"]
 default = "js-ts/node-package"
 
+# Paradox game mods (Crusader Kings III, Victoria 3, Stellaris, ...). The mod
+# itself is mod/, the folder the game loads and a Workshop upload ships; the
+# repository's own files stay above it. The facets are the existing ones
+# (design 2026-10-30__08-28-15, Addendum 2): the engine is the script's
+# dialect (jomini, clausewitz), the descriptor kind is how the mod is packaged
+# (build), the game is what it is (purpose) -- ranked so the game's files are
+# applied last and win.
+[languages.paradox]
+layers = ["languages/paradox"]
+default = "paradox/ck3"
+
 # A pseudo-language: the folder prefix for layer files several languages share
 # (the Claude plugin's manifests and marketplace README). Never a project
 # language: --language refuses it, `repokit list` and the bare-name lookup do
@@ -211,6 +222,69 @@ facet = "framework"
 stub = true
 description = "Qt 6: find_package(Qt6), qt_add_executable, windeployqt"
 
+# paradox: engine layers carry engine-wide files only (the localization folder,
+# spelled as the engine spells it); the game layer owns the game's descriptor
+# and settings and overrides the generic ones.
+
+[layers."paradox/jomini"]
+facet = "dialect"
+description = "the Jomini engine (Crusader Kings III, Imperator, Victoria 3, Europa Universalis V): mod/localization/english/ with a UTF-8 BOM"
+
+[layers."paradox/clausewitz"]
+facet = "dialect"
+description = "the Clausewitz engine (Stellaris, Hearts of Iron IV, Europa Universalis IV): mod/localisation/english/ with a UTF-8 BOM"
+
+[layers."paradox/descriptor-mod"]
+facet = "build"
+description = "a descriptor.mod in mod/ (version, name, tags, supported_version) and a thumbnail.png"
+
+[layers."paradox/metadata-json"]
+facet = "build"
+stub = true
+description = "Victoria 3's .metadata/metadata.json in place of descriptor.mod (planned with paradox/vic3)"
+
+[layers."paradox/ck3"]
+facet = "purpose"
+implies = ["jomini", "descriptor-mod"]
+overrides = ["mod/descriptor.mod", ".repokit-common.toml"]
+description = "a Crusader Kings III mod: supported_version 1.20.*, paradox-game = \"ck3\" (ck3-tiger on push)"
+
+[layers."paradox/vic3"]
+facet = "purpose"
+stub = true
+implies = ["jomini", "metadata-json"]
+description = "a Victoria 3 mod (planned)"
+
+[layers."paradox/imperator"]
+facet = "purpose"
+stub = true
+implies = ["jomini", "descriptor-mod"]
+description = "an Imperator: Rome mod (planned)"
+
+[layers."paradox/eu5"]
+facet = "purpose"
+stub = true
+implies = ["jomini"]
+description = "a Europa Universalis V mod (planned; its descriptor is not confirmed)"
+
+[layers."paradox/stellaris"]
+facet = "purpose"
+stub = true
+implies = ["clausewitz", "descriptor-mod"]
+description = "a Stellaris mod (planned)"
+
+[layers."paradox/hoi4"]
+facet = "purpose"
+stub = true
+implies = ["clausewitz", "descriptor-mod"]
+description = "a Hearts of Iron IV mod (planned; its descriptor must have no BOM)"
+
+[layers."paradox/eu4"]
+facet = "purpose"
+stub = true
+implies = ["clausewitz", "descriptor-mod"]
+description = "a Europa Universalis IV mod (planned)"
+
 # ---------------------------------------------------------------- presets
 # `layers` lists layer folders in apply order; `languages` is implied by the key.
 
@@ -300,3 +374,42 @@ description = "Library with install/export targets and a package config (starts 
 [archetypes."c-cpp/qt"]
 stub = true
 description = "Qt 6 app: find_package(Qt6), qt_add_executable, windeployqt (starts from cmake-app)"
+
+[archetypes."paradox/ck3"]
+languages = ["paradox"]
+layers = ["archetypes/paradox/jomini", "archetypes/paradox/descriptor-mod", "archetypes/paradox/ck3"]
+description = "a Crusader Kings III mod in mod/: descriptor.mod for 1.20, English localization with its BOM, a thumbnail; VERSION kept in step with the descriptor; ck3-tiger on push"
+
+[archetypes."paradox/jomini"]
+languages = ["paradox"]
+layers = ["archetypes/paradox/jomini", "archetypes/paradox/descriptor-mod"]
+description = "a mod for any Jomini game (Crusader Kings III, Imperator, ...): a generic descriptor.mod (supported_version \"*\") and mod/localization/; set paradox-game for its linter"
+
+[archetypes."paradox/clausewitz"]
+languages = ["paradox"]
+layers = ["archetypes/paradox/clausewitz", "archetypes/paradox/descriptor-mod"]
+description = "a mod for any Clausewitz game (Stellaris, Hearts of Iron IV, Europa Universalis IV): a generic descriptor.mod and mod/localisation/"
+
+[archetypes."paradox/vic3"]
+stub = true
+description = "a Victoria 3 mod (.metadata/metadata.json)"
+
+[archetypes."paradox/imperator"]
+stub = true
+description = "an Imperator: Rome mod"
+
+[archetypes."paradox/eu5"]
+stub = true
+description = "a Europa Universalis V mod"
+
+[archetypes."paradox/stellaris"]
+stub = true
+description = "a Stellaris mod"
+
+[archetypes."paradox/hoi4"]
+stub = true
+description = "a Hearts of Iron IV mod (a descriptor without BOM)"
+
+[archetypes."paradox/eu4"]
+stub = true
+description = "a Europa Universalis IV mod"

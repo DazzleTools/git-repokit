@@ -1,0 +1,37 @@
+{
+ "test_command": [
+  "python",
+  "-m",
+  "pytest",
+  "-q",
+  "-p",
+  "no:cacheprovider",
+  "tests/test_layers_cli.py",
+  "tests/test_paradox.py",
+  "-k",
+  "list"
+ ],
+ "mutations": [
+  {
+   "id": "S1",
+   "file": "repokit/layers.py",
+   "original": "        if planned:\n            # The overview keeps one screen",
+   "mutated": "        if False:\n            # The overview keeps one screen",
+   "note": "the shared planned line is never written"
+  },
+  {
+   "id": "S2",
+   "file": "repokit/layers.py",
+   "original": "                    planned.append(key.split(\"/\", 1)[1])",
+   "mutated": "                    planned.append(key)",
+   "note": "the planned line repeats the language prefix"
+  },
+  {
+   "id": "S3",
+   "file": "repokit/layers.py",
+   "original": "            lines.append(f\"  {'planned:':28} {', '.join(planned)}\")",
+   "mutated": "            lines.append(f\"  {'planned:':28} {', '.join(planned[:1])}\")",
+   "note": "only the first planned preset is named"
+  }
+ ]
+}

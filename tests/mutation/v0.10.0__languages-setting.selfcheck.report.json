@@ -1,0 +1,131 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_languages_setting.py",
+      "tests/test_layers_js_ts.py::TestJsTsLayer::test_the_default_is_an_npm_package_in_typescript"
+    ],
+    "timestamp": "2026-10-31T01:41:02-04:00"
+  },
+  "results": [
+    {
+      "id": "L1",
+      "file": "repokit/repo_manager.py",
+      "note": "the create writes no languages (the 0.9.12 behaviour)",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "epokit-common settings for my-lib.\\n#\\n# A JavaScript/TypeScript project keeps its version in package.json; the\\n# vendored tooling at scripts/repokit-common/ treats the plain VERSION file as\\n# the source and package.json (and any other manifest a layer adds) as a\\n# target it keeps in step, so one bump moves every copy. `repokit create`\\n# adds the product\\'s `languages` below (typescript with the ts layer, else\\n# javascript); the hooks\\' detection from the root (package.json, tsconfig.json)\\n# is only their fallback, and it cannot see a plugin\\'s markers in plugin/.\\n\\n[tool.repokit-common]\\nversion-source = \"VERSION\"\\nchangelog = \"CHANGELOG.md\"\\nrepo-url = \"https://github.com/YOUR_GITHUB_USERNAME/my-lib\"\\ntag-prefix = \"v\"\\nprivate-patterns = [\"private/\", \"local/\", \".env\"]\\n# What a push runs: npm test, once the dependencies are installed (a fresh\\n# create has none, and a TypeScript test needs tsc). Without this the hook\\'s\\n# default test step looks for Python tests and runs nothing here.\\ntest-command = \"if [ -d node_modules ] || ! grep -q devDependencies package.json; then npm test; else echo dependencies not installed: run npm install and the push will run npm test; fi\"\\n\\n# package.json carries the same version; the version tool keeps it in step.\\n[[tool.repokit-common.extra-targets]]\\npath = \"package.json\"\\ntype = \"json\"\\nfield = \"version\"\\n'\n\ntests\\test_layers_js_ts.py:60: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_languages_setting.py::TestCreatedLanguages::test_a_plugin_whose_markers_sit_in_plugin_declares_javascript\nFAILED tests/test_languages_setting.py::TestCreatedLanguages::test_a_two_language_project_declares_both_primary_first\nFAILED tests/test_layers_js_ts.py::TestJsTsLayer::test_the_default_is_an_npm_package_in_typescript\n3 failed, 4 passed in 29.18s\n",
+      "killed_by": [
+        "tests/test_languages_setting.py::TestCreatedLanguages::test_a_plugin_whose_markers_sit_in_plugin_declares_javascript",
+        "tests/test_languages_setting.py::TestCreatedLanguages::test_a_two_language_project_declares_both_primary_first",
+        "tests/test_layers_js_ts.py::TestJsTsLayer::test_the_default_is_an_npm_package_in_typescript"
+      ]
+    },
+    {
+      "id": "L2",
+      "file": "repokit/common_kit.py",
+      "note": "typescript keyed on the wrong layer",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "f([\"js-ts\"], [\"languages/js-ts\", \"archetypes/js-ts/node\", \"archetypes/js-ts/ts\"]),\n                         [\"typescript\"])\n>       self.assertEqual(f([\"js-ts\"], [\"languages/js-ts\", \"archetypes/js-ts/node\", \"archetypes/js-ts/claude-plugin\"]),\n                         [\"javascript\"])\nE       AssertionError: Lists differ: ['typescript'] != ['javascript']\nE       \nE       First differing element 0:\nE       'typescript'\nE       'javascript'\nE       \nE       - ['typescript']\nE       + ['javascript']\n\ntests\\test_languages_setting.py:36: AssertionError\n_ TestCreatedLanguages.test_a_plugin_whose_markers_sit_in_plugin_declares_javascript _\n\nself = <tests.test_languages_setting.TestCreatedLanguages testMethod=test_a_plugin_whose_markers_sit_in_plugin_declares_javascript>\n\n    def test_a_plugin_whose_markers_sit_in_plugin_declares_javascript(self):\n        \"\"\"js-ts/claude-plugin keeps its manifest and tests in plugin/; the create\n        writes languages = [\"javascript\"] rather than leave the hooks to find it.\"\"\"\n        self.assert_repokit_success([\"create\", \"my-plugin\", \"--with\", \"js-ts/claude-plugin\", \"--no-push\"])\n        s = _settings(Path(self.test_dir, \"my-plugin\", \".repokit-common.toml\"))\n>       self.assertEqual(s[\"languages\"], [\"javascript\"])\nE       AssertionError: Lists differ: ['typescript'] != ['javascript']\nE       \nE       First differing element 0:\nE       'typescript'\nE       'javascript'\nE       \nE       - ['typescript']\nE       + ['javascript']\n\ntests\\test_languages_setting.py:61: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_languages_setting.py::TestLanguagesSetting::test_js_ts_is_typescript_only_with_the_ts_layer\nFAILED tests/test_languages_setting.py::TestCreatedLanguages::test_a_plugin_whose_markers_sit_in_plugin_declares_javascript\n2 failed, 5 passed in 27.57s\n",
+      "killed_by": [
+        "tests/test_languages_setting.py::TestCreatedLanguages::test_a_plugin_whose_markers_sit_in_plugin_declares_javascript",
+        "tests/test_languages_setting.py::TestLanguagesSetting::test_js_ts_is_typescript_only_with_the_ts_layer"
+      ]
+    },
+    {
+      "id": "L3",
+      "file": "repokit/common_kit.py",
+      "note": "a repeated name written twice",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "..F....                                                                  [100%]\n================================== FAILURES ===================================\n_ TestLanguagesSetting.test_the_order_is_kept_and_the_neutral_names_add_nothing _\n\nself = <tests.test_languages_setting.TestLanguagesSetting testMethod=test_the_order_is_kept_and_the_neutral_names_add_nothing>\n\n    def test_the_order_is_kept_and_the_neutral_names_add_nothing(self):\n        \"\"\"The first language is the primary; generic and the `any` pseudo-language\n        are not product languages; a name repeated by the mapping appears once.\"\"\"\n        f = common_kit.languages_setting\n        self.assertEqual(f([\"python\", \"js-ts\"], [\"languages/python\", \"languages/js-ts\"]), [\"python\", \"javascript\"])\n        self.assertEqual(f([\"js-ts\", \"python\"], [\"languages/js-ts\", \"languages/python\"]), [\"javascript\", \"python\"])\n        self.assertEqual(f([\"generic\"], []), [])\n>       self.assertEqual(f([\"any\", \"python\", \"python\"], [\"archetypes/any/claude-plugin\"]), [\"python\"])\nE       AssertionError: Lists differ: ['python', 'python'] != ['python']\nE       \nE       First list contains 1 additional elements.\nE       First extra element 1:\nE       'python'\nE       \nE       - ['python', 'python']\nE       + ['python']\n\ntests\\test_languages_setting.py:46: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_languages_setting.py::TestLanguagesSetting::test_the_order_is_kept_and_the_neutral_names_add_nothing\n1 failed, 6 passed in 30.10s\n",
+      "killed_by": [
+        "tests/test_languages_setting.py::TestLanguagesSetting::test_the_order_is_kept_and_the_neutral_names_add_nothing"
+      ]
+    },
+    {
+      "id": "L4",
+      "file": "repokit/common_kit.py",
+      "note": "c-cpp and paradox dropped",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".F.....                                                                  [100%]\n================================== FAILURES ===================================\n_______ TestLanguagesSetting.test_repokit_names_map_to_repokit_commons ________\n\nself = <tests.test_languages_setting.TestLanguagesSetting testMethod=test_repokit_names_map_to_repokit_commons>\n\n    def test_repokit_names_map_to_repokit_commons(self):\n        f = common_kit.languages_setting\n        self.assertEqual(f([\"python\"], [\"languages/python\", \"archetypes/python/pypi\"]), [\"python\"])\n>       self.assertEqual(f([\"c-cpp\"], [\"languages/c-cpp\"]), [\"c-cpp\"])\nE       AssertionError: Lists differ: [] != ['c-cpp']\nE       \nE       Second list contains 1 additional elements.\nE       First extra element 0:\nE       'c-cpp'\nE       \nE       - []\nE       + ['c-cpp']\n\ntests\\test_languages_setting.py:29: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_languages_setting.py::TestLanguagesSetting::test_repokit_names_map_to_repokit_commons\n1 failed, 6 passed in 32.51s\n",
+      "killed_by": [
+        "tests/test_languages_setting.py::TestLanguagesSetting::test_repokit_names_map_to_repokit_commons"
+      ]
+    },
+    {
+      "id": "L5",
+      "file": "repokit/common_kit.py",
+      "note": "generic and any written as languages",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "..F....                                                                  [100%]\n================================== FAILURES ===================================\n_ TestLanguagesSetting.test_the_order_is_kept_and_the_neutral_names_add_nothing _\n\nself = <tests.test_languages_setting.TestLanguagesSetting testMethod=test_the_order_is_kept_and_the_neutral_names_add_nothing>\n\n    def test_the_order_is_kept_and_the_neutral_names_add_nothing(self):\n        \"\"\"The first language is the primary; generic and the `any` pseudo-language\n        are not product languages; a name repeated by the mapping appears once.\"\"\"\n        f = common_kit.languages_setting\n        self.assertEqual(f([\"python\", \"js-ts\"], [\"languages/python\", \"languages/js-ts\"]), [\"python\", \"javascript\"])\n        self.assertEqual(f([\"js-ts\", \"python\"], [\"languages/js-ts\", \"languages/python\"]), [\"javascript\", \"python\"])\n>       self.assertEqual(f([\"generic\"], []), [])\nE       AssertionError: Lists differ: ['generic'] != []\nE       \nE       First list contains 1 additional elements.\nE       First extra element 0:\nE       'generic'\nE       \nE       - ['generic']\nE       + []\n\ntests\\test_languages_setting.py:45: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_languages_setting.py::TestLanguagesSetting::test_the_order_is_kept_and_the_neutral_names_add_nothing\n1 failed, 6 passed in 37.42s\n",
+      "killed_by": [
+        "tests/test_languages_setting.py::TestLanguagesSetting::test_the_order_is_kept_and_the_neutral_names_add_nothing"
+      ]
+    }
+  ],
+  "summary": {
+    "killed": 5
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_languages_setting.py::TestCreatedLanguages::test_a_plugin_whose_markers_sit_in_plugin_declares_javascript": [
+        "L1",
+        "L2"
+      ],
+      "tests/test_languages_setting.py::TestCreatedLanguages::test_a_two_language_project_declares_both_primary_first": [
+        "L1"
+      ],
+      "tests/test_languages_setting.py::TestLanguagesSetting::test_js_ts_is_typescript_only_with_the_ts_layer": [
+        "L2"
+      ],
+      "tests/test_languages_setting.py::TestLanguagesSetting::test_repokit_names_map_to_repokit_commons": [
+        "L4"
+      ],
+      "tests/test_languages_setting.py::TestLanguagesSetting::test_the_order_is_kept_and_the_neutral_names_add_nothing": [
+        "L3",
+        "L5"
+      ],
+      "tests/test_layers_js_ts.py::TestJsTsLayer::test_the_default_is_an_npm_package_in_typescript": [
+        "L1"
+      ]
+    },
+    "identical": [
+      [
+        "tests/test_languages_setting.py::TestCreatedLanguages::test_a_two_language_project_declares_both_primary_first",
+        "tests/test_layers_js_ts.py::TestJsTsLayer::test_the_default_is_an_npm_package_in_typescript"
+      ]
+    ],
+    "contained": [
+      [
+        "tests/test_languages_setting.py::TestCreatedLanguages::test_a_two_language_project_declares_both_primary_first",
+        "tests/test_languages_setting.py::TestCreatedLanguages::test_a_plugin_whose_markers_sit_in_plugin_declares_javascript"
+      ],
+      [
+        "tests/test_languages_setting.py::TestLanguagesSetting::test_js_ts_is_typescript_only_with_the_ts_layer",
+        "tests/test_languages_setting.py::TestCreatedLanguages::test_a_plugin_whose_markers_sit_in_plugin_declares_javascript"
+      ],
+      [
+        "tests/test_layers_js_ts.py::TestJsTsLayer::test_the_default_is_an_npm_package_in_typescript",
+        "tests/test_languages_setting.py::TestCreatedLanguages::test_a_plugin_whose_markers_sit_in_plugin_declares_javascript"
+      ]
+    ],
+    "killed_without_names": []
+  }
+}

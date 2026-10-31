@@ -1,0 +1,12 @@
+
+# Paradox mod files: the game reads their bytes as they are -- a localization
+# file without its UTF-8 BOM is skipped, and line endings stay as written --
+# so git must never convert them on checkout or commit.
+mod/**/*.txt -text
+mod/**/*.yml -text
+mod/**/*.mod -text
+mod/**/*.gui -text
+mod/**/*.gfx -text
+mod/**/*.asset -text
+mod/**/*.shader -text
+mod/**/*.csv -text

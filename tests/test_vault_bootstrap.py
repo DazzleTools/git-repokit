@@ -70,3 +70,23 @@ class TestCreatedVault(RepoKitTestCase):
             self.assertIn(rel, tracked)                           # in the vault's first commit
         self.assertTrue((private / "claude" / "_oracle" / "bootstrap-prompt.md").is_file())
         self.assertNotIn("claude/_oracle/bootstrap-prompt.md", tracked)  # the tool commits no prompt
+
+    def test_conversations_revisions_and_logs_live_in_the_vault_not_the_root(self):
+        """0.10.0 (djdarcy, 2026-10-31): convos/, revisions/ and logs/ are made
+        in private/, the local-only repository, not at the project root where
+        only ignore rules kept them out of public history. The vault tracks
+        convos/ and revisions/ (records) and ignores logs/ (run output)."""
+        self.assert_repokit_success(["create", "demo", "--language", "python", "--no-push"])
+        root = Path(self.test_dir, "demo")
+        for name in ("convos", "revisions", "logs"):
+            self.assertFalse((root / name).exists(), f"{name}/ at the project root")
+            self.assertTrue((root / "private" / name).is_dir(), f"private/{name}/")
+        tracked = subprocess.run(["git", "-C", str(root / "private"), "ls-files"],
+                                 capture_output=True, text=True).stdout.split()
+        self.assertIn("convos/.gitkeep", tracked)
+        self.assertIn("revisions/.gitkeep", tracked)
+        self.assertFalse(any(t.startswith("logs/") for t in tracked), tracked)
+        (root / "private" / "logs" / "run.log").write_text("x\n", encoding="utf-8")
+        status = subprocess.run(["git", "-C", str(root / "private"), "status", "--porcelain"],
+                                capture_output=True, text=True).stdout
+        self.assertNotIn("logs", status)                          # a run log is ignored by the vault

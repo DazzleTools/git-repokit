@@ -29,6 +29,9 @@ EXPECTED = {
     "c-cpp/cmake-app": "cppvsdbg", "c-cpp/msbuild": "cppvsdbg", "c-cpp/minimal": "cppvsdbg",
     "js-ts/node-package": "node", "js-ts/script": "node", "js-ts/claude-plugin": "node",
 }
+# built presets with nothing VS Code runs or debugs: a Paradox mod is loaded by
+# the game itself (0.10.0), so it gets no launch.json rather than a pretend one
+NO_LAUNCH = {"paradox/ck3", "paradox/jomini", "paradox/clausewitz"}
 
 
 def _assembled(tmp_path, preset):
@@ -42,7 +45,12 @@ def _assembled(tmp_path, preset):
 def test_every_built_preset_is_in_the_expectations():
     m = layers.load_manifest(ROOT)
     built = {k for k, v in m["archetypes"].items() if not v.get("stub")}
-    assert built == set(EXPECTED), sorted(built ^ set(EXPECTED))
+    assert built == set(EXPECTED) | NO_LAUNCH, sorted(built ^ (set(EXPECTED) | NO_LAUNCH))
+
+
+@pytest.mark.parametrize("preset", sorted(NO_LAUNCH))
+def test_a_preset_with_nothing_to_run_writes_no_launch_json(tmp_path, preset):
+    assert not (_assembled(tmp_path, preset) / ".vscode" / "launch.json").exists()
 
 
 @pytest.mark.parametrize("preset,debugger", sorted(EXPECTED.items()))

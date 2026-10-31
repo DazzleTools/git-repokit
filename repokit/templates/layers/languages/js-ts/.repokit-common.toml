@@ -3,9 +3,10 @@
 # A JavaScript/TypeScript project keeps its version in package.json; the
 # vendored tooling at scripts/repokit-common/ treats the plain VERSION file as
 # the source and package.json (and any other manifest a layer adds) as a
-# target it keeps in step, so one bump moves every copy. The product
-# languages are not listed here on purpose: the hooks detect them from the
-# root (package.json -> javascript, tsconfig.json -> typescript).
+# target it keeps in step, so one bump moves every copy. `repokit create`
+# adds the product's `languages` below (typescript with the ts layer, else
+# javascript); the hooks' detection from the root (package.json, tsconfig.json)
+# is only their fallback, and it cannot see a plugin's markers in plugin/.
 
 [tool.repokit-common]
 version-source = "VERSION"

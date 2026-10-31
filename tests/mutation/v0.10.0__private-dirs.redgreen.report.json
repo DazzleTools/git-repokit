@@ -1,0 +1,74 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_vault_bootstrap.py",
+      "-k",
+      "vault_not_the_root"
+    ],
+    "timestamp": "2026-10-31T02:14:46-04:00"
+  },
+  "results": [
+    {
+      "id": "V1",
+      "file": "repokit/config.py",
+      "note": "the root folders come back (the 0.9.12 default)",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "F                                                                        [100%]\n================================== FAILURES ===================================\n_ TestCreatedVault.test_conversations_revisions_and_logs_live_in_the_vault_not_the_root _\n\nself = <tests.test_vault_bootstrap.TestCreatedVault testMethod=test_conversations_revisions_and_logs_live_in_the_vault_not_the_root>\n\n    def test_conversations_revisions_and_logs_live_in_the_vault_not_the_root(self):\n        \"\"\"0.10.0 (djdarcy, 2026-10-31): convos/, revisions/ and logs/ are made\n        in private/, the local-only repository, not at the project root where\n        only ignore rules kept them out of public history. The vault tracks\n        convos/ and revisions/ (records) and ignores logs/ (run output).\"\"\"\n        self.assert_repokit_success([\"create\", \"demo\", \"--language\", \"python\", \"--no-push\"])\n        root = Path(self.test_dir, \"demo\")\n        for name in (\"convos\", \"revisions\", \"logs\"):\n>           self.assertFalse((root / name).exists(), f\"{name}/ at the project root\")\nE           AssertionError: True is not false : convos/ at the project root\n\ntests\\test_vault_bootstrap.py:82: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_vault_bootstrap.py::TestCreatedVault::test_conversations_revisions_and_logs_live_in_the_vault_not_the_root\n1 failed, 5 deselected in 6.48s\n",
+      "killed_by": [
+        "tests/test_vault_bootstrap.py::TestCreatedVault::test_conversations_revisions_and_logs_live_in_the_vault_not_the_root"
+      ]
+    },
+    {
+      "id": "V2",
+      "file": "repokit/vault.py",
+      "note": "the vault gets no convos/ or logs/",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "F                                                                        [100%]\n================================== FAILURES ===================================\n_ TestCreatedVault.test_conversations_revisions_and_logs_live_in_the_vault_not_the_root _\n\nself = <tests.test_vault_bootstrap.TestCreatedVault testMethod=test_conversations_revisions_and_logs_live_in_the_vault_not_the_root>\n\n    def test_conversations_revisions_and_logs_live_in_the_vault_not_the_root(self):\n        \"\"\"0.10.0 (djdarcy, 2026-10-31): convos/, revisions/ and logs/ are made\n        in private/, the local-only repository, not at the project root where\n        only ignore rules kept them out of public history. The vault tracks\n        convos/ and revisions/ (records) and ignores logs/ (run output).\"\"\"\n        self.assert_repokit_success([\"create\", \"demo\", \"--language\", \"python\", \"--no-push\"])\n        root = Path(self.test_dir, \"demo\")\n        for name in (\"convos\", \"revisions\", \"logs\"):\n            self.assertFalse((root / name).exists(), f\"{name}/ at the project root\")\n>           self.assertTrue((root / \"private\" / name).is_dir(), f\"private/{name}/\")\nE           AssertionError: False is not true : private/convos/\n\ntests\\test_vault_bootstrap.py:83: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_vault_bootstrap.py::TestCreatedVault::test_conversations_revisions_and_logs_live_in_the_vault_not_the_root\n1 failed, 5 deselected in 5.90s\n",
+      "killed_by": [
+        "tests/test_vault_bootstrap.py::TestCreatedVault::test_conversations_revisions_and_logs_live_in_the_vault_not_the_root"
+      ]
+    },
+    {
+      "id": "V3",
+      "file": "repokit/vault.py",
+      "note": "the vault versions run logs",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "tedVault testMethod=test_conversations_revisions_and_logs_live_in_the_vault_not_the_root>\n\n    def test_conversations_revisions_and_logs_live_in_the_vault_not_the_root(self):\n        \"\"\"0.10.0 (djdarcy, 2026-10-31): convos/, revisions/ and logs/ are made\n        in private/, the local-only repository, not at the project root where\n        only ignore rules kept them out of public history. The vault tracks\n        convos/ and revisions/ (records) and ignores logs/ (run output).\"\"\"\n        self.assert_repokit_success([\"create\", \"demo\", \"--language\", \"python\", \"--no-push\"])\n        root = Path(self.test_dir, \"demo\")\n        for name in (\"convos\", \"revisions\", \"logs\"):\n            self.assertFalse((root / name).exists(), f\"{name}/ at the project root\")\n            self.assertTrue((root / \"private\" / name).is_dir(), f\"private/{name}/\")\n        tracked = subprocess.run([\"git\", \"-C\", str(root / \"private\"), \"ls-files\"],\n                                 capture_output=True, text=True).stdout.split()\n        self.assertIn(\"convos/.gitkeep\", tracked)\n        self.assertIn(\"revisions/.gitkeep\", tracked)\n>       self.assertFalse(any(t.startswith(\"logs/\") for t in tracked), tracked)\nE       AssertionError: True is not false : ['.gitignore', 'CLAUDE.md', 'claude/_maps/MOC-demo.md', 'claude/_oracle/backlinks.md', 'claude/_oracle/concepts.md', 'claude/_oracle/manifest.md', 'claude/_todo/ACTIVE-WORK.md', 'claude/_todo/OPEN-LOOPS.md', 'claude/commits/.gitkeep', 'claude/issues/.gitkeep', 'convos/.gitkeep', 'docs/.gitkeep', 'logs/.gitkeep', 'notes/.gitkeep', 'revisions/.gitkeep']\n\ntests\\test_vault_bootstrap.py:88: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_vault_bootstrap.py::TestCreatedVault::test_conversations_revisions_and_logs_live_in_the_vault_not_the_root\n1 failed, 5 deselected in 5.92s\n",
+      "killed_by": [
+        "tests/test_vault_bootstrap.py::TestCreatedVault::test_conversations_revisions_and_logs_live_in_the_vault_not_the_root"
+      ]
+    }
+  ],
+  "summary": {
+    "killed": 3
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_vault_bootstrap.py::TestCreatedVault::test_conversations_revisions_and_logs_live_in_the_vault_not_the_root": [
+        "V1",
+        "V2",
+        "V3"
+      ]
+    },
+    "identical": [],
+    "contained": [],
+    "killed_without_names": []
+  }
+}

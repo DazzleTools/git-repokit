@@ -293,20 +293,30 @@ class TestConfigManagerDirectoryProfiles(unittest.TestCase):
         self.assertIn("local", private_dirs)
 
     def test_backward_compatibility(self):
-        """Test backward compatibility when no profile is specified."""
-        # No profile specified, should use defaults
-        self.config_manager.cli_config = {"name": "testproject"}
-        self.config_manager.config = self.config_manager._merge_configs()
-        self.config_manager.resolve_directory_profiles()
-        
-        dirs = self.config_manager.config.get("directories", [])
-        # Should have default directories
-        self.assertIn("convos", dirs)
-        self.assertIn("docs", dirs)
-        self.assertIn("logs", dirs)
-        self.assertIn("private", dirs)
-        self.assertIn("scripts", dirs)
-        self.assertIn("tests", dirs)
+        """No profile: the default directories. Run from an empty folder: the
+        config manager reads a .repokit.json in the current directory, and in
+        git-repokit's own checkout that record (2025) still lists convos/, logs/
+        and revisions/ -- which kept this test green whatever the defaults said.
+        Since 0.10.0 those three live in private/, never at the project root."""
+        cwd = os.getcwd()
+        os.chdir(tempfile.mkdtemp())
+        try:
+            manager = ConfigManager()
+            manager.cli_config = {"name": "testproject"}
+            manager.config = manager._merge_configs()
+            manager.resolve_directory_profiles()
+        finally:
+            os.chdir(cwd)
+        dirs = manager.config.get("directories", [])
+        for d in ("docs", "private", "scripts", "tests"):
+            self.assertIn(d, dirs)
+        for d in ("convos", "logs", "revisions"):
+            self.assertNotIn(d, dirs)
+        for profile in ("standard", "complete"):
+            listed = DirectoryProfileManager().profiles[profile]
+            self.assertFalse({"convos", "logs", "revisions"} & set(listed), profile)
+        # still protected: an older project's root folders stay out of public history
+        self.assertTrue({"convos", "logs", "revisions"} <= set(manager.config["private_dirs"]))
 
 
 if __name__ == "__main__":

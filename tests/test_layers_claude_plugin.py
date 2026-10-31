@@ -185,11 +185,11 @@ class TestCreatedPlugins(RepoKitTestCase):
         self.assertNotIn("tests/test_*.py", out)            # the pytest default no longer stands in
         self.assertIn("Pre-push validation complete", out)
 
-    @pytest.mark.xfail(strict=True, reason="git-repokit-common 0.4.1 prints its Python syntax check for every "
-                                            "project; a repokit-common change, booked for djdarcy (0.9.x goal, "
-                                            "read-only there). When it lands this test passes and the marker goes.")
     @pytest.mark.skipif(BASH is None, reason="bash runs the push hook")
     def test_a_js_ts_projects_push_prints_no_python_line(self):
+        """A TypeScript project's push runs no Python check. Strict-xfail until
+        git-repokit-common 0.4.3, whose syntax check follows the project's
+        languages; it passes since, and the marker is gone (0.10.0)."""
         self.assert_repokit_success(["create", "js-def", "--language", "js-ts", "--no-push"])
         out = _run_pre_push(Path(self.test_dir, "js-def"))
         self.assertIn("Product languages: typescript", out)

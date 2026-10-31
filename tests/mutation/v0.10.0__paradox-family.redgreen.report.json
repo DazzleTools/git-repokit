@@ -1,0 +1,135 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_paradox.py",
+      "tests/test_layers_cli.py",
+      "-k",
+      "paradox or Paradox or list_fits"
+    ],
+    "timestamp": "2026-10-31T01:24:15-04:00"
+  },
+  "results": [
+    {
+      "id": "D1",
+      "file": "repokit/templates/layers/archetypes/paradox/jomini/mod/localization/english/__RK_SNAKE___l_english.yml",
+      "note": "the localization BOM dropped",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "(_mod_files(d), [\"descriptor.mod\", f\"{folder}/english/{snake}_l_english.yml\",\n                                             \"thumbnail.png\"], preset)\n            desc = (d / \"mod\" / \"descriptor.mod\").read_text(encoding=\"utf-8\")\n            self.assertIn('supported_version=\"*\"', desc)\n            self.assertIn(\"# Set supported_version\", desc)\n>           self.assertTrue((d / \"mod\" / folder / \"english\" / f\"{snake}_l_english.yml\").read_bytes().startswith(BOM))\nE           AssertionError: False is not true\n\ntests\\test_paradox.py:133: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n_________ TestParadoxFamily.test_the_mod_files_keep_their_bom_and_lf __________\n\nself = <tests.test_paradox.TestParadoxFamily testMethod=test_the_mod_files_keep_their_bom_and_lf>\n\n    def test_the_mod_files_keep_their_bom_and_lf(self):\n        \"\"\"The game reads mod files as they are: the localization .yml starts\n        with a UTF-8 BOM (a file without one is skipped silently), every mod\n        text file is LF, and .gitattributes keeps git from converting them.\"\"\"\n        self.assert_repokit_success([\"create\", \"cheat-menu\", \"--language\", \"paradox\", \"--no-push\"])\n        d = Path(self.test_dir, \"cheat-menu\")\n        loc = (d / \"mod\" / \"localization\" / \"english\" / \"cheat_menu_l_english.yml\").read_bytes()\n>       self.assertTrue(loc.startswith(BOM), \"localization needs its BOM\")\nE       AssertionError: False is not true : localization needs its BOM\n\ntests\\test_paradox.py:75: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_paradox.py::TestParadoxFamily::test_the_generic_engine_presets\nFAILED tests/test_paradox.py::TestParadoxFamily::test_the_mod_files_keep_their_bom_and_lf\n2 failed, 6 passed, 14 deselected in 33.69s\n",
+      "killed_by": [
+        "tests/test_paradox.py::TestParadoxFamily::test_the_generic_engine_presets",
+        "tests/test_paradox.py::TestParadoxFamily::test_the_mod_files_keep_their_bom_and_lf"
+      ]
+    },
+    {
+      "id": "D2",
+      "file": "repokit/templates/layers/languages/paradox/.gitattributes.rkappend",
+      "note": "localization files left to git's conversion",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "\"--language\", \"paradox\", \"--no-push\"])\n        d = Path(self.test_dir, \"cheat-menu\")\n        loc = (d / \"mod\" / \"localization\" / \"english\" / \"cheat_menu_l_english.yml\").read_bytes()\n        self.assertTrue(loc.startswith(BOM), \"localization needs its BOM\")\n        self.assertIn(b'cheat_menu_name:0 \"cheat-menu\"', loc)\n        for p in (d / \"mod\").rglob(\"*\"):\n            if p.suffix in MOD_TEXT_SUFFIXES:\n                self.assertNotIn(b\"\\r\", p.read_bytes(), p.name)\n        self.assertFalse((d / \"mod\" / \"descriptor.mod\").read_bytes().startswith(BOM))\n        attrs = (d / \".gitattributes\").read_text(encoding=\"utf-8\")\n>       self.assertIn(\"mod/**/*.yml -text\", attrs)\nE       AssertionError: 'mod/**/*.yml -text' not found in \"# Line endings: git normalises text files to LF in the repository and gives\\n# each platform its own on checkout. Files that must keep their bytes are\\n# listed as binary.\\n* text=auto\\n*.png binary\\n*.jpg binary\\n*.jpeg binary\\n*.gif binary\\n*.ico binary\\n*.pdf binary\\n*.zip binary\\n*.woff binary\\n*.woff2 binary\\n\\n# The vendored git-repokit-common tooling is not this project's language:\\n# GitHub's language statistics and diffs treat it as vendored.\\nscripts/repokit-common/** linguist-vendored\\n\\n# Paradox mod files: the game reads their bytes as they are -- a localization\\n# file without its UTF-8 BOM is skipped, and line endings stay as written --\\n# so git must never convert them on checkout or commit.\\nmod/**/*.txt -text\\nmod/**/*.yml text\\nmod/**/*.mod -text\\nmod/**/*.gui -text\\nmod/**/*.gfx -text\\nmod/**/*.asset -text\\nmod/**/*.shader -text\\nmod/**/*.csv -text\\n\"\n\ntests\\test_paradox.py:82: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_paradox.py::TestParadoxFamily::test_the_mod_files_keep_their_bom_and_lf\n1 failed, 7 passed, 14 deselected in 38.55s\n",
+      "killed_by": [
+        "tests/test_paradox.py::TestParadoxFamily::test_the_mod_files_keep_their_bom_and_lf"
+      ]
+    },
+    {
+      "id": "D3",
+      "file": "repokit/templates/layers/archetypes/paradox/ck3/.repokit-common.toml",
+      "note": "the CK3 preset names no game",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "n line.\"\"\"\n        self.assert_repokit_success([\"create\", \"cheat-menu\", \"--language\", \"paradox\", \"--no-push\"])\n        d = Path(self.test_dir, \"cheat-menu\")\n        settings = (d / \".repokit-common.toml\").read_text(encoding=\"utf-8\")\n        self.assertIn('languages = [\"paradox\"]', settings)\n>       self.assertIn('paradox-game = \"ck3\"', settings)\nE       AssertionError: 'paradox-game = \"ck3\"' not found in '# git-repokit-common settings for cheat-menu, a Crusader Kings III mod.\\n#\\n# The mod itself is mod/: the folder the game loads and the one a Workshop\\n# upload ships. Everything else (this file, VERSION, scripts/, tests/,\\n# private/) stays above it and never reaches the game or the Workshop.\\n#\\n# The version lives in VERSION; the vendored tool at scripts/repokit-common/\\n# keeps mod/descriptor.mod\\'s version line in step with it (a pattern target:\\n# only the version text changes, the file\\'s bytes otherwise untouched).\\n#\\n# The hooks: languages = [\"paradox\"] runs the paradox profile -- on push\\n# ck3-tiger when it is installed (advisory, never blocking), on commit a check\\n# that localization .yml files keep their UTF-8 BOM -- and no Python checks.\\n\\n[tool.repokit-common]\\nversion-source = \"VERSION\"\\nchangelog = \"CHANGELOG.md\"\\nrepo-url = \"https://github.com/YOUR_GITHUB_USERNAME/cheat-menu\"\\ntag-prefix = \"v\"\\ntag-format = \"human\"\\nprivate-patterns = [\"private/\", \"local/\", \".env\"]\\nlanguages = [\"paradox\"]\\n# paradox-game removed\\n\\n[[tool.repokit-common.extra-targets]]\\npath = \"mod/descriptor.mod\"\\npattern = \\'^version=\"([^\"]*)\"\\\\r?$\\'\\nformat = \"base\"\\n'\n\ntests\\test_paradox.py:99: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_paradox.py::TestParadoxFamily::test_the_settings_declare_paradox_ck3_and_keep_the_descriptor_in_step\n1 failed, 7 passed, 14 deselected in 38.19s\n",
+      "killed_by": [
+        "tests/test_paradox.py::TestParadoxFamily::test_the_settings_declare_paradox_ck3_and_keep_the_descriptor_in_step"
+      ]
+    },
+    {
+      "id": "D4",
+      "file": "repokit/templates/layers/archetypes/paradox/ck3/.repokit-common.toml",
+      "note": "the pattern target aimed at the wrong file",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "(self.test_dir, \"cheat-menu\")\n        settings = (d / \".repokit-common.toml\").read_text(encoding=\"utf-8\")\n        self.assertIn('languages = [\"paradox\"]', settings)\n        self.assertIn('paradox-game = \"ck3\"', settings)\n        self.assertIn('version-source = \"VERSION\"', settings)\n>       self.assertIn('path = \"mod/descriptor.mod\"', settings)\nE       AssertionError: 'path = \"mod/descriptor.mod\"' not found in '# git-repokit-common settings for cheat-menu, a Crusader Kings III mod.\\n#\\n# The mod itself is mod/: the folder the game loads and the one a Workshop\\n# upload ships. Everything else (this file, VERSION, scripts/, tests/,\\n# private/) stays above it and never reaches the game or the Workshop.\\n#\\n# The version lives in VERSION; the vendored tool at scripts/repokit-common/\\n# keeps mod/descriptor.mod\\'s version line in step with it (a pattern target:\\n# only the version text changes, the file\\'s bytes otherwise untouched).\\n#\\n# The hooks: languages = [\"paradox\"] runs the paradox profile -- on push\\n# ck3-tiger when it is installed (advisory, never blocking), on commit a check\\n# that localization .yml files keep their UTF-8 BOM -- and no Python checks.\\n\\n[tool.repokit-common]\\nversion-source = \"VERSION\"\\nchangelog = \"CHANGELOG.md\"\\nrepo-url = \"https://github.com/YOUR_GITHUB_USERNAME/cheat-menu\"\\ntag-prefix = \"v\"\\ntag-format = \"human\"\\nprivate-patterns = [\"private/\", \"local/\", \".env\"]\\nlanguages = [\"paradox\"]\\nparadox-game = \"ck3\"\\n\\n[[tool.repokit-common.extra-targets]]\\npath = \"descriptor.mod\"\\npattern = \\'^version=\"([^\"]*)\"\\\\r?$\\'\\nformat = \"base\"\\n'\n\ntests\\test_paradox.py:101: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_paradox.py::TestParadoxFamily::test_the_settings_declare_paradox_ck3_and_keep_the_descriptor_in_step\n1 failed, 7 passed, 14 deselected in 37.98s\n",
+      "killed_by": [
+        "tests/test_paradox.py::TestParadoxFamily::test_the_settings_declare_paradox_ck3_and_keep_the_descriptor_in_step"
+      ]
+    },
+    {
+      "id": "D6",
+      "file": "repokit/templates/layers/archetypes/paradox/ck3/mod/descriptor.mod",
+      "note": "the game's descriptor no longer wins",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "...F....                                                                 [100%]\n================================== FAILURES ===================================\n___________ TestParadoxFamily.test_the_default_is_a_ck3_mod_in_mod ____________\n\nself = <tests.test_paradox.TestParadoxFamily testMethod=test_the_default_is_a_ck3_mod_in_mod>\n\n    def test_the_default_is_a_ck3_mod_in_mod(self):\n        \"\"\"--language paradox: a Crusader Kings III mod. mod/ holds only the mod\n        (descriptor, thumbnail, English localization) -- an upload ships that\n        folder whole -- and the repository's own files stay above it.\"\"\"\n        self.assert_repokit_success([\"create\", \"cheat-menu\", \"--language\", \"paradox\", \"--no-push\"])\n        d = Path(self.test_dir, \"cheat-menu\")\n        self.assertEqual(_mod_files(d), [\"descriptor.mod\", \"localization/english/cheat_menu_l_english.yml\",\n                                         \"thumbnail.png\"])\n        for rel in (\"VERSION\", \".repokit-common.toml\", \"docs/modding.md\", \".gitattributes\"):\n            self.assertTrue((d / rel).is_file(), rel)\n>       self.assertEqual((d / \"mod\" / \"descriptor.mod\").read_bytes(),\n                         b'version=\"0.1.0\"\\ntags={\\n\\t\"Utilities\"\\n}\\nname=\"cheat-menu\"\\nsupported_version=\"1.20.*\"\\n')\nE       AssertionError: b'ver[25 chars]Utilities\"\\n}\\nname=\"cheat-menu\"\\nsupported_version=\"*\"\\n' != b'ver[25 chars]Utilities\"\\n}\\nname=\"cheat-menu\"\\nsupported_version=\"1.20.*\"\\n'\n\ntests\\test_paradox.py:58: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_paradox.py::TestParadoxFamily::test_the_default_is_a_ck3_mod_in_mod\n1 failed, 7 passed, 14 deselected in 47.58s\n",
+      "killed_by": [
+        "tests/test_paradox.py::TestParadoxFamily::test_the_default_is_a_ck3_mod_in_mod"
+      ]
+    },
+    {
+      "id": "D7",
+      "file": "repokit/templates/layers/languages/paradox/.repokit-common.toml",
+      "note": "the generic presets declare no language",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "C1",
+      "file": "repokit/layers.py",
+      "note": "the overview lists every planned preset",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "           (planned: an Imperator: Rome mod)\nE         paradox/jomini               = jomini, descriptor-mod\nE         paradox/stellaris            (planned: a Stellaris mod)\nE         paradox/vic3                 (planned: a Victoria 3 mod (.metadata/metadata.json))\nE         dialect    one of: clausewitz, jomini\nE         build      one of: descriptor-mod, metadata-json (planned)\nE         purpose    one of: ck3, eu4 (planned), eu5 (planned), hoi4 (planned), imperator (planned), stellaris (planned), vic3 (planned)\nE       python:\nE         python/claude-plugin         = claude-plugin, claude-plugin\nE         python/comfyui               (planned: a ComfyUI custom-node package (the template holds its pyproject shape; the node skeleton is not written yet))\nE         python/django                (planned: a Django project)\nE         python/pypi                  = pypi  <- default\nE         python/qt                    (planned: a Python Qt app (PySide6 or PyQt))\nE         python/script                = script\nE         python/setuppy               = setuppy\nE         build      one of: pypi, script, setuppy\nE         framework  any of: django (planned), qt (planned)\nE         purpose    one of: claude-plugin, comfyui (planned)\nE       licenses (--license; or file=PATH, or none):\nE         0bsd, agpl-3.0, all-rights-reserved, apache-2.0, bsd-2-clause, bsd-3-clause, bsl-1.0, cc-by-4.0\nE         cc-by-sa-4.0, cc0-1.0, epl-2.0, gpl-2.0, gpl-3.0, isc, lgpl-2.1, lgpl-3.0\nE         mit, mpl-2.0, proprietary-evaluation, unlicense, agpl-3.0-or-later, gpl-3.0-or-later, lgpl-3.0-or-later\n\ntests\\test_layers_cli.py:269: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_layers_cli.py::TestWithList::test_list_fits_a_screen_and_names_presets_and_facets\n1 failed, 7 passed, 14 deselected in 37.90s\n",
+      "killed_by": [
+        "tests/test_layers_cli.py::TestWithList::test_list_fits_a_screen_and_names_presets_and_facets"
+      ]
+    }
+  ],
+  "summary": {
+    "killed": 6,
+    "survived": 1
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_layers_cli.py::TestWithList::test_list_fits_a_screen_and_names_presets_and_facets": [
+        "C1"
+      ],
+      "tests/test_paradox.py::TestParadoxFamily::test_the_default_is_a_ck3_mod_in_mod": [
+        "D6"
+      ],
+      "tests/test_paradox.py::TestParadoxFamily::test_the_generic_engine_presets": [
+        "D1"
+      ],
+      "tests/test_paradox.py::TestParadoxFamily::test_the_mod_files_keep_their_bom_and_lf": [
+        "D1",
+        "D2"
+      ],
+      "tests/test_paradox.py::TestParadoxFamily::test_the_settings_declare_paradox_ck3_and_keep_the_descriptor_in_step": [
+        "D3",
+        "D4"
+      ]
+    },
+    "identical": [],
+    "contained": [
+      [
+        "tests/test_paradox.py::TestParadoxFamily::test_the_generic_engine_presets",
+        "tests/test_paradox.py::TestParadoxFamily::test_the_mod_files_keep_their_bom_and_lf"
+      ]
+    ],
+    "killed_without_names": []
+  }
+}

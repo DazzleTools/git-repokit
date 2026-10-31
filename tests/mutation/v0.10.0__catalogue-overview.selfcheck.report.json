@@ -1,0 +1,72 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_layers_cli.py",
+      "tests/test_paradox.py",
+      "-k",
+      "list"
+    ],
+    "timestamp": "2026-10-31T01:31:52-04:00"
+  },
+  "results": [
+    {
+      "id": "S1",
+      "file": "repokit/layers.py",
+      "note": "the shared planned line is never written",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "script\nE         runtime    one of: browser (planned), node\nE         dialect    one of: ts\nE         build      one of: script, vite (planned)\nE         framework  any of: react (planned), svelte (planned)\nE         purpose    one of: browser-extension (planned), claude-plugin, comfyui-frontend (planned), node-package, obsidian-plugin (planned)\nE       paradox:\nE         paradox/ck3                  = jomini, descriptor-mod, ck3  <- default\nE         paradox/clausewitz           = clausewitz, descriptor-mod\nE         paradox/jomini               = jomini, descriptor-mod\nE         dialect    one of: clausewitz, jomini\nE         build      one of: descriptor-mod, metadata-json (planned)\nE         purpose    one of: ck3, eu4 (planned), eu5 (planned), hoi4 (planned), imperator (planned), stellaris (planned), vic3 (planned)\nE       python:\nE         python/claude-plugin         = claude-plugin, claude-plugin\nE         python/pypi                  = pypi  <- default\nE         python/script                = script\nE         python/setuppy               = setuppy\nE         build      one of: pypi, script, setuppy\nE         framework  any of: django (planned), qt (planned)\nE         purpose    one of: claude-plugin, comfyui (planned)\nE       licenses (--license; or file=PATH, or none):\nE         0bsd, agpl-3.0, all-rights-reserved, apache-2.0, bsd-2-clause, bsd-3-clause, bsl-1.0, cc-by-4.0\nE         cc-by-sa-4.0, cc0-1.0, epl-2.0, gpl-2.0, gpl-3.0, isc, lgpl-2.1, lgpl-3.0\nE         mit, mpl-2.0, proprietary-evaluation, unlicense, agpl-3.0-or-later, gpl-3.0-or-later, lgpl-3.0-or-later\n\ntests\\test_layers_cli.py:275: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_layers_cli.py::TestWithList::test_list_fits_a_screen_and_names_presets_and_facets\n1 failed, 8 passed, 13 deselected in 38.67s\n",
+      "killed_by": [
+        "tests/test_layers_cli.py::TestWithList::test_list_fits_a_screen_and_names_presets_and_facets"
+      ]
+    },
+    {
+      "id": "S2",
+      "file": "repokit/layers.py",
+      "note": "the planned line repeats the language prefix",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "S3",
+      "file": "repokit/layers.py",
+      "note": "only the first planned preset is named",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "s\nE         build      one of: script, vite (planned)\nE         framework  any of: react (planned), svelte (planned)\nE         purpose    one of: browser-extension (planned), claude-plugin, comfyui-frontend (planned), node-package, obsidian-plugin (planned)\nE       paradox:\nE         paradox/ck3                  = jomini, descriptor-mod, ck3  <- default\nE         paradox/clausewitz           = clausewitz, descriptor-mod\nE         paradox/jomini               = jomini, descriptor-mod\nE         planned:                     eu4\nE         dialect    one of: clausewitz, jomini\nE         build      one of: descriptor-mod, metadata-json (planned)\nE         purpose    one of: ck3, eu4 (planned), eu5 (planned), hoi4 (planned), imperator (planned), stellaris (planned), vic3 (planned)\nE       python:\nE         python/claude-plugin         = claude-plugin, claude-plugin\nE         python/pypi                  = pypi  <- default\nE         python/script                = script\nE         python/setuppy               = setuppy\nE         planned:                     comfyui\nE         build      one of: pypi, script, setuppy\nE         framework  any of: django (planned), qt (planned)\nE         purpose    one of: claude-plugin, comfyui (planned)\nE       licenses (--license; or file=PATH, or none):\nE         0bsd, agpl-3.0, all-rights-reserved, apache-2.0, bsd-2-clause, bsd-3-clause, bsl-1.0, cc-by-4.0\nE         cc-by-sa-4.0, cc0-1.0, epl-2.0, gpl-2.0, gpl-3.0, isc, lgpl-2.1, lgpl-3.0\nE         mit, mpl-2.0, proprietary-evaluation, unlicense, agpl-3.0-or-later, gpl-3.0-or-later, lgpl-3.0-or-later\n\ntests\\test_layers_cli.py:275: AssertionError\n---------------------------- Captured stdout call -----------------------------\nWarning: No GitHub token available for cleanup\n=========================== short test summary info ===========================\nFAILED tests/test_layers_cli.py::TestWithList::test_list_fits_a_screen_and_names_presets_and_facets\n1 failed, 8 passed, 13 deselected in 38.52s\n",
+      "killed_by": [
+        "tests/test_layers_cli.py::TestWithList::test_list_fits_a_screen_and_names_presets_and_facets"
+      ]
+    }
+  ],
+  "summary": {
+    "killed": 2,
+    "survived": 1
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_layers_cli.py::TestWithList::test_list_fits_a_screen_and_names_presets_and_facets": [
+        "S1",
+        "S3"
+      ]
+    },
+    "identical": [],
+    "contained": [],
+    "killed_without_names": []
+  }
+}

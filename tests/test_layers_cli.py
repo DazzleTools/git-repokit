@@ -143,7 +143,7 @@ class TestLanguageLayers(RepoKitTestCase):
     def test_unknown_names_and_stubs_fail_before_anything_is_created(self):
         """U2.4: the failure names what is known and leaves no folder behind."""
         cases = [
-            (["--language", "cobol"], "unknown language 'cobol'; known: generic, c-cpp, js-ts, python"),
+            (["--language", "cobol"], "unknown language 'cobol'; known: generic, c-cpp, js-ts, paradox, python"),
             (["--with", "js-ts/web-vite-react"], "archetype js-ts/web-vite-react is not built yet"),
             (["--with", "python/django"], "archetype python/django is not built yet"),
             (["--with", "python/nope"], "unknown archetype 'python/nope'; known:"),
@@ -271,7 +271,11 @@ class TestWithList(RepoKitTestCase):
         self.assertTrue(any("python/pypi" in ln and "<- default" in ln for ln in lines), out)
         self.assertTrue(any(ln.strip().startswith("build") and "one of" in ln for ln in lines), out)
         self.assertTrue(any("(planned" in ln for ln in lines), out)
+        # the overview gives each language's planned presets one shared line
+        self.assertTrue(any(ln.split() == ["planned:", "comfyui,", "django,", "qt"] for ln in lines), out)
         out_py, _ = self.assert_repokit_success(["list", "python"])
+        self.assertIn("python/qt", out_py)                     # ... and the language's own list names each
+        self.assertIn("(planned: a Python Qt app", out_py)
         self.assertLessEqual(len(out_py.splitlines()), 15, out_py)
         self.assertNotIn("c-cpp:", out_py)
         rc, out, err = self.run_repokit(["list", "cobol"])
