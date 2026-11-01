@@ -1,0 +1,34 @@
+{
+ "test_command": [
+  "python",
+  "-m",
+  "pytest",
+  "-q",
+  "-p",
+  "no:cacheprovider",
+  "tests/test_common_guard.py::test_private_patterns_are_written_sorted_and_once"
+ ],
+ "mutations": [
+  {
+   "id": "M6",
+   "file": "repokit/common_kit.py",
+   "original": "        settings[\"private-patterns\"] = sorted(dict.fromkeys(private_paths))",
+   "mutated": "        settings[\"private-patterns\"] = list(dict.fromkeys(private_paths))",
+   "note": "dropped normalization: patterns keep input order instead of sorted"
+  },
+  {
+   "id": "M7",
+   "file": "repokit/common_kit.py",
+   "original": "        settings[\"private-patterns\"] = sorted(dict.fromkeys(private_paths))",
+   "mutated": "        settings[\"private-patterns\"] = sorted(private_paths)",
+   "note": "dropped dedupe: duplicate private paths survive"
+  },
+  {
+   "id": "M8",
+   "file": "repokit/common_kit.py",
+   "original": "    if private_paths:",
+   "mutated": "    if private_paths is not None:",
+   "note": "None-vs-truthiness: an empty list now writes an empty private-patterns key"
+  }
+ ]
+}

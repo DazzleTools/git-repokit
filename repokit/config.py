@@ -16,6 +16,7 @@ from typing import Dict, Any, Optional, List, Union
 from .directory_profiles import DirectoryProfileManager
 from .defaults import (
     DEFAULT_PRIVATE_DIRS,
+    DEFAULT_PRIVATE_DIR_SETS,
     DEFAULT_SENSITIVE_FILES,
     DEFAULT_SENSITIVE_PATTERNS,
     BRANCH_SPECIFIC_EXCLUDES,
@@ -679,7 +680,15 @@ class ConfigManager:
             
             if self.verbose >= 1:
                 self.logger.info(f"Resolved directory profile '{profile}' to {len(directories)} directories")
-        
+
+        elif private_set != "standard":
+            # --private-set without a profile or groups was read nowhere until
+            # 0.10.2: its folders join the protection list (added to, never
+            # replacing, any --private-dirs).
+            current = list(self.config.get("private_dirs") or DEFAULT_PRIVATE_DIRS)
+            extra = DEFAULT_PRIVATE_DIR_SETS.get(private_set, [])
+            self.config["private_dirs"] = current + [d for d in extra if d not in current]
+
         # Ensure private_dirs is always set
         if "private_dirs" not in self.config:
             self.config["private_dirs"] = DEFAULT_PRIVATE_DIRS.copy()

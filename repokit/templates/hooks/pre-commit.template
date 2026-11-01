@@ -21,9 +21,17 @@ case "$current_branch" in
         ;;
 esac
 
+# Paths listed in .repokit-allowlist at the repository root (one per line;
+# blank lines and # comments allowed) are deliberately public and exempt, as
+# in git-repokit-common's hook.
+allowlist="$(git rev-parse --show-toplevel 2>/dev/null)/.repokit-allowlist"
+
 # Check for private content using BranchContext patterns
 has_private_content=0
 for file in $(git diff --cached --name-only --diff-filter=ACMR); do
+    if [ -f "$allowlist" ] && grep -v '^[[:space:]]*#' "$allowlist" | grep -qxF -- "$file"; then
+        continue
+    fi
     # Check against all private content patterns from BranchContext
     if echo "$file" | grep -q -E "$private_content_regex"; then
         if [ $has_private_content -eq 0 ]; then
@@ -42,9 +50,15 @@ if [ $has_private_content -eq 1 ]; then
     echo ""
     echo "These files should only exist in private branches."
     echo "To fix this:"
-    echo "  1. Switch to private branch: git checkout private"
+    echo "  1. Commit them on a private branch instead (in a worktree layout, from local/)"
     echo "  2. Or unstage these files: git reset HEAD <file>"
     echo "  3. Or remove from working directory: rm <file>"
+    echo ""
+    echo "To commit them anyway:"
+    echo "  - If a file should be public: add its path, one per line, to"
+    echo "    .repokit-allowlist at the repository root, then commit again."
+    echo "  - For this one commit only: git commit --no-verify"
+    echo "    (this skips every git hook, not just this check)"
     echo ""
     exit 1
 fi

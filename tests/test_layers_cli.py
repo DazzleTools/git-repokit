@@ -266,8 +266,13 @@ class TestWithList(RepoKitTestCase):
         """AC-10: one block per language; presets then facets; stubs marked planned."""
         out, err = self.assert_repokit_success(["list"])
         lines = out.splitlines()
-        self.assertLessEqual(len(lines), 40, out)
+        # 40 until 0.10.2, which put a blank line between the blocks (djdarcy,
+        # 2026-11-01: "a carriage return above each new language type")
+        self.assertLessEqual(len(lines), 45, out)
         self.assertIn("python:", lines)
+        for head in ("js-ts:", "paradox:", "python:", "licenses (--license; or file=PATH, or none):"):
+            self.assertEqual(lines[lines.index(head) - 1], "", f"no blank line above {head!r}")
+        self.assertNotEqual(lines[0], "", "the overview starts with its first block")
         self.assertTrue(any("python/pypi" in ln and "<- default" in ln for ln in lines), out)
         self.assertTrue(any(ln.strip().startswith("build") and "one of" in ln for ln in lines), out)
         self.assertTrue(any("(planned" in ln for ln in lines), out)

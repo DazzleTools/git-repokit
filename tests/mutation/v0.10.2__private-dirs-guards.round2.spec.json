@@ -1,0 +1,71 @@
+{
+ "test_command": [
+  "python",
+  "-m",
+  "pytest",
+  "-q",
+  "-p",
+  "no:cacheprovider",
+  "-m",
+  "unit",
+  "tests/test_common_guard.py"
+ ],
+ "mutations": [
+  {
+   "id": "M3",
+   "file": "repokit/common_kit.py",
+   "original": "        if isinstance(table, dict):",
+   "mutated": "        if table is not None:",
+   "note": "type check replaced by a None check"
+  },
+  {
+   "id": "M5",
+   "file": "repokit/repo_manager.py",
+   "original": "        present = {line.strip() for line in existing_content.splitlines()}",
+   "mutated": "        present = {line for line in existing_content.splitlines()}",
+   "note": "dropped .strip() on existing lines"
+  },
+  {
+   "id": "M6",
+   "file": "repokit/repo_manager.py",
+   "original": "            name = private_dir.strip(\"/\")",
+   "mutated": "            name = private_dir",
+   "note": "dropped normalisation of the folder name"
+  },
+  {
+   "id": "M8",
+   "file": "repokit/repo_manager.py",
+   "original": "            if pattern not in present and f\"{name}/\" not in present:",
+   "mutated": "            if pattern not in present:",
+   "note": "an unanchored 'docs/' no longer suppresses '/docs/'"
+  },
+  {
+   "id": "M10",
+   "file": "repokit/config.py",
+   "original": "        elif private_set != \"standard\":",
+   "mutated": "        elif private_set:",
+   "note": "the default set enters the branch"
+  },
+  {
+   "id": "M11",
+   "file": "repokit/config.py",
+   "original": "            current = list(self.config.get(\"private_dirs\") or DEFAULT_PRIVATE_DIRS)",
+   "mutated": "            current = list(DEFAULT_PRIVATE_DIRS)",
+   "note": "ignores --private-dirs: the set replaces instead of adding"
+  },
+  {
+   "id": "M12",
+   "file": "repokit/config.py",
+   "original": "            self.config[\"private_dirs\"] = current + [d for d in extra if d not in current]",
+   "mutated": "            self.config[\"private_dirs\"] = [d for d in extra if d not in current] + current",
+   "note": "swapped concatenation order"
+  },
+  {
+   "id": "M13",
+   "file": "repokit/config.py",
+   "original": "            self.config[\"private_dirs\"] = current + [d for d in extra if d not in current]",
+   "mutated": "            self.config[\"private_dirs\"] = current + extra",
+   "note": "dropped de-duplication"
+  }
+ ]
+}

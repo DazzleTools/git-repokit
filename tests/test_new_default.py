@@ -138,11 +138,14 @@ class TestPrivateBranchModelWithCommon(RepoKitTestCase):
 
 class TestDefaultsAndFallback(RepoKitTestCase):
 
-    def test_standard_alone_still_makes_no_vault_and_no_subtree(self):
+    @needs_common
+    def test_standard_alone_makes_no_vault_and_vendors_common(self):
+        """0.10.2: git-repokit-common is the default for every strategy (it was
+        opt-in for the private-branch ones); the vault stays nested-mode only."""
         self.assert_repokit_success(["create", "demo", "--branch-strategy", "standard", "--no-push"])
         local = os.path.join(self.test_dir, "demo", "local")
         self.assertFalse(os.path.exists(os.path.join(local, "private", ".git")))
-        self.assertFalse(os.path.exists(os.path.join(local, "scripts", "repokit-common")))
+        self.assertTrue(os.path.exists(os.path.join(local, "scripts", "repokit-common")))
 
     def test_no_common_keeps_git_repokits_own_guard(self):
         self.assert_repokit_success(["create", "demo", "--no-common", "--no-push"])

@@ -120,7 +120,7 @@ Leave both unset to use the identity git already has (`git config user.name` and
 |---|---|---|---|
 | `branch_strategy` | `--branch-strategy` | `main-only` | `main-only`, or a private-branch strategy: `standard`, `simple`, `gitflow`, `github-flow`, `minimal`. See [Branch strategies](Branch-Strategies.md) |
 | `private_mode` | `--private-mode` | `nested` for main-only, `branch` otherwise | `nested`: `private/` is its own git repository. `branch`: private work lives on the private branch only |
-| `with_common` | `--with-common`, `--no-common` | on for main-only | Vendor git-repokit-common at `scripts/repokit-common/` and install its hooks |
+| `with_common` | `--with-common`, `--no-common` | on, for every strategy | Vendor git-repokit-common at `scripts/repokit-common/` and install its hooks. `--no-common` warns: the project keeps only git-repokit's basic pre-commit guard |
 | `vault_init` | none | `prompt-file` | `prompt-file` writes the oracle's first prompt into the vault; `none` writes nothing. See [The vault](The-Vault.md) |
 | `branches`, `worktrees`, `private_branch`, `default_branch` | `--branches`, `--worktrees`, `--private-branch`, `--default-branch` | the strategy's | Override a strategy's branches |
 | `branch_config.branch_directories` | `--branch-dir-main`, `--branch-dir-dev` | `main` in `github/`, `dev` in `dev/` | Folder names for the worktrees of the private-branch strategies |
@@ -134,8 +134,28 @@ Leave both unset to use the identity git already has (`git config user.name` and
 | `directory_groups` | `--dir-groups` | `development`, `documentation`, `operations`, `privacy` |
 | `directories` | `--directories` | Extra folders to create |
 | `private_dirs` | `--private-dirs` | Folders kept out of public branches |
-| `private_set` | `--private-set` | `standard` or `enhanced` |
+| `private_set` | `--private-set` | `standard`, or `enhanced`, which adds `credentials`, `secrets` and `local` to the private folders |
 | `sensitive_files`, `sensitive_patterns` | `--sensitive-files`, `--sensitive-patterns` | Files and glob patterns kept out of public branches |
+
+The private folders, from `--private-dirs`, `--private-set` and the groups that name them, are protected in every project, single-branch ones included, so a project that later gains a private branch is already guarded:
+
+- `.gitignore` gets a `/<folder>/` line, so `git add .` leaves them out;
+- git-repokit-common's pre-commit refuses them on a public branch. The project's `[tool.repokit-common]` settings (`pyproject.toml`, or `.repokit-common.toml`) list them as `private-patterns`, and name the branches where they may be committed as `private-branches`: `private`, `local`, and the `feature/`, `feat/`, `prototype/`, `experiment/` and `spike/` prefixes, except `feature/` and `feat/` for `github-flow` and `gitflow`, whose feature branches are pushed for pull requests. **Change your mind later in that table**; a key you set is never overwritten by repokit;
+- `repokit safe-merge` leaves them out of a merge into a public branch, reading the same `private-patterns`.
+
+With `--no-common` the second and third come from git-repokit's own pre-commit hook instead, which knows the same folders and branches; `safe-merge` then knows only its built-in folders, and the hook is the guard.
+
+### Committing private content on purpose
+
+Private folders are ignored on every branch, so their content lives on disk and in no history (or in the vault, when `private/` is its own repository). That has two consequences:
+
+- `git clean -fdx` (or `-X`) deletes them, `git stash -u` skips them, and a fresh clone has none. Keep anything you want versioned in the vault.
+- To commit one on the private branch anyway, add it with `git add -f`; the hook allows it there.
+
+On a public branch the hook still refuses a forced file, because `-f` is often a reflex, not a decision to publish. The deliberate ways past it:
+
+- list the path in `.repokit-allowlist` at the project root, for a file that should be public (one path per line, kept with the project);
+- `git commit --no-verify`, for one commit.
 
 ## Environment variables
 

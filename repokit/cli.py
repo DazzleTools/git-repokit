@@ -330,12 +330,12 @@ Recipe: Microservice
     common_group.add_argument(
         "--with-common", dest="with_common", action="store_true", default=None,
         help="Vendor git-repokit-common (hooks, version sync, tools) at scripts/repokit-common/ "
-             "and install its hooks (default for main-only)"
+             "and install its hooks (the default, for every branch strategy)"
     )
     common_group.add_argument(
         "--no-common", dest="with_common", action="store_false",
-        help="Do not vendor git-repokit-common; git-repokit's own pre-commit guard is installed instead "
-             "(default for the private-branch strategies)"
+        help="Do not vendor git-repokit-common (warns); git-repokit's own basic pre-commit guard "
+             "is installed instead"
     )
 
     branch_group.add_argument(
@@ -1870,6 +1870,7 @@ def main() -> int:
         if not args.language:
             # the license catalogue, which create's --license help points to (0.9.11)
             from . import licenses as _licenses
+            print()
             print("licenses (--license; or file=PATH, or none):")
             ids = list(_licenses.known())
             for i in range(0, len(ids), 8):
@@ -1877,8 +1878,10 @@ def main() -> int:
         return 0
 
     elif args.command == "list-templates":
+        # list-templates has no --templates-dir of its own; reading
+        # args.templates_dir crashed every run (since 2025, fixed in 0.10.2)
         template_engine = TemplateEngine(
-            templates_dir=args.templates_dir, verbose=args.verbose
+            templates_dir=getattr(args, "templates_dir", None), verbose=args.verbose
         )
         templates = template_engine.list_templates()
         print("Available templates:")

@@ -83,6 +83,13 @@ def alias_pyproject():
     return tomllib.loads(path.read_text(encoding="utf-8"))
 
 
+def test_repokit_version_matches_the_distribution():
+    """`repokit --version` printed 0.9.12 at 0.10.0 and 0.10.1: __version__.py
+    is set by hand and the version sync is off for it."""
+    from repokit.__version__ import __version__
+    assert __version__ == pyproject()["project"]["version"]
+
+
 def test_the_alias_moves_in_lockstep_with_git_repokit():
     main, alias = pyproject()["project"], alias_pyproject()["project"]
     assert alias["name"] == "dazzle-git-repokit"

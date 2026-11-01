@@ -94,7 +94,17 @@ class BranchContext:
             'test-runs/',
             'test_runs/',
         }))
-    
+
+        # The project's own private paths: the private-patterns its
+        # git-repokit-common settings name (written from --private-dirs at
+        # create, 0.10.2). safe-merge leaves them out of a merge into a public
+        # branch too, so a clone without hooks is not left with the hook as
+        # the only guard -- and the hook and safe-merge read one list.
+        from .common_kit import read_settings
+        project_patterns = read_settings(self.repo_path).get("private-patterns", [])
+        if isinstance(project_patterns, list):
+            self.EXCLUDE_FROM_PUBLIC.update(p for p in project_patterns if isinstance(p, str) and p)
+
     @property
     def current_branch(self) -> str:
         """Get current branch name."""

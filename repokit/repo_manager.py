@@ -21,6 +21,16 @@ from .defaults import (
     DEFAULT_PRIVATE_PATTERNS, DEFAULT_EXCLUDE_FROM_PUBLIC
 )
 
+# What a project gives up without git-repokit-common (djdarcy, 2026-10-31:
+# "It's a core part of our system. We can LET users not include it but at this
+# point it should be a warning").
+WITHOUT_COMMON = (
+    "This project gets git-repokit's basic pre-commit guard only: no "
+    "git-repokit-common hooks (version sync, language checks, tests before a "
+    "push) and no tools in scripts/repokit-common/. Add it later with "
+    "`repokit setup-guardrails --vendor`."
+)
+
 
 class RepoManager:
     """Manages repository setup and configuration."""
@@ -56,9 +66,10 @@ class RepoManager:
         )
 
         # Vendor git-repokit-common (hooks and tools) into the project: on by
-        # default for main-only, opt-in for the private-branch strategies.
+        # default for every strategy since 0.10.2 (it was opt-in for the
+        # private-branch strategies). --no-common is allowed, with a warning.
         with_common = config.get("with_common")
-        self.with_common = (not self.private_branch) if with_common is None else bool(with_common)
+        self.with_common = True if with_common is None else bool(with_common)
         self.common_vendored = False
 
         if self.private_branch is None and not config.get("worktrees"):
@@ -148,6 +159,8 @@ class RepoManager:
             # later inherit it. Its hooks are installed at the end.
             if self.with_common and not self.config.get("is_adoption", False):
                 self._vendor_repokit_common()
+            elif not self.with_common and not self.config.get("is_adoption", False):
+                self.logger.warning(f"--no-common: git-repokit-common not added. {WITHOUT_COMMON}")
 
             # Set up private content protection BEFORE any commits
             # This is critical to prevent private content from reaching public branches
@@ -162,7 +175,19 @@ class RepoManager:
             # Generate template files
             self._generate_template_files()
 
-            # The language templates rewrite .gitignore; put the vault's lines back
+            # git-repokit-common's private-content settings, after the layers
+            # (one may ship .repokit-common.toml or a pyproject table of its
+            # own; keys already there are kept). Here and not in _apply_layers,
+            # which returns early for a project with no layers: a bare
+            # single-branch project got no settings at all (0.10.2 checklist
+            # spot check, HV.1).
+            if self.common_vendored:
+                from . import common_kit
+                common_kit.write_settings(self.repo_root, self._common_private_settings())
+
+            # The language templates rewrite .gitignore; put the private
+            # folders' lines back (0.10.2), and the vault's
+            self._write_private_ignores()
             if self.private_mode == "nested":
                 from .vault import ensure_parent_ignores
                 ensure_parent_ignores(self.repo_root)
@@ -997,16 +1022,20 @@ class RepoManager:
             tokens = f" ({', '.join(resolution.tokens)})" if resolution.tokens and note == layers.NOT_A_PRESET else ""
             print(f"Note: {note}{tokens}")
 
-        # A layer may ship .repokit-common.toml (or a pyproject table) of its
-        # own; in the private-branch model the settings written at vendoring
-        # time must still be there, so merge them back (never overwriting).
-        if self.private_branch and getattr(self, "common_vendored", False):
-            from . import common_kit
-            private_paths = ["CLAUDE.md"]
-            private_paths += [f"{d.rstrip('/')}/" for d in self.config.get("private_dirs", [])]
-            private_paths += list(self.config.get("sensitive_files", []))
-            common_kit.write_settings(
-                self.repo_root, common_kit.private_branch_settings(self.private_branch, private_paths))
+    def _common_private_settings(self) -> Dict[str, List[str]]:
+        """git-repokit-common's private-content settings for this project.
+
+        Every project gets them, single-branch ones included (0.10.2): the
+        folders --private-dirs names (and the groups and private sets that feed
+        it), CLAUDE.md and the sensitive files, and the branches where they may
+        be committed, from the branch strategy.
+        """
+        from . import common_kit
+        private_paths = ["CLAUDE.md"]
+        private_paths += [f"{d.rstrip('/')}/" for d in self.config.get("private_dirs", [])]
+        private_paths += list(self.config.get("sensitive_files", []))
+        return common_kit.private_branch_settings(
+            self.private_branch, private_paths, self.config.get("branch_strategy"))
 
     def _vendor_repokit_common(self) -> None:
         """Add git-repokit-common at scripts/repokit-common/ and commit its settings.
@@ -1019,12 +1048,12 @@ class RepoManager:
 
         src = common_kit.source(self.config)
         if src is None:
-            self.logger.info("git-repokit-common: vendoring switched off")
+            self.logger.warning(f"git-repokit-common: vendoring switched off. {WITHOUT_COMMON}")
             return
         url, ref = src
         problem = common_kit.vendor(self.repo_root, url, ref)
         if problem:
-            self.logger.warning(f"git-repokit-common not added: {problem}")
+            self.logger.warning(f"git-repokit-common not added: {problem}. {WITHOUT_COMMON}")
             self.logger.warning(
                 f"Run: git subtree add --prefix={common_kit.PREFIX} {url} {ref} --squash"
             )
@@ -1032,16 +1061,14 @@ class RepoManager:
         self.common_vendored = True
         self.logger.info(f"Vendored git-repokit-common at {common_kit.PREFIX}/")
 
-        # The private-branch model: repokit-common's pre-commit must protect the
-        # paths git-repokit's guard did, and know a custom private branch.
+        # The private-branch model: the settings are committed now, so the
+        # public branches cut from this commit carry them. A single-branch
+        # project gets the same settings after the layers are written
+        # (_generate_template_files), in the one file its language uses --
+        # written here, before pyproject.toml exists, they would land in a
+        # second file, .repokit-common.toml.
         if self.private_branch:
-            private_paths = ["CLAUDE.md"]
-            private_paths += [f"{d.rstrip('/')}/" for d in self.config.get("private_dirs", [])]
-            private_paths += list(self.config.get("sensitive_files", []))
-            written = common_kit.write_settings(
-                self.repo_root,
-                common_kit.private_branch_settings(self.private_branch, private_paths),
-            )
+            written = common_kit.write_settings(self.repo_root, self._common_private_settings())
             if written:
                 self.run_git(["add", written], cwd=self.repo_root)
                 self.run_git(["commit", "-m", "Configure git-repokit-common for the private-branch model"],
@@ -1168,7 +1195,22 @@ class RepoManager:
     def _setup_protection(self) -> None:
         """Set up protection for private content."""
         self.logger.info("Setting up private content protection")
+        self._write_private_ignores()
 
+        # With git-repokit-common vendored, its hooks are the project's hooks
+        # (installed at the end of setup_repository); git-repokit writes none.
+        if self.common_vendored:
+            return
+        self._write_fallback_hook()
+
+    def _write_private_ignores(self) -> None:
+        """The .gitignore lines for the private folders (--private-dirs, the
+        groups and private sets that feed it), appended where missing.
+
+        Run before the templates and again after them (0.10.2): the language
+        templates rewrite .gitignore, which used to drop every line a person's
+        --private-dirs asked for, so `git add .` staged those folders.
+        """
         # Check if .gitignore exists and read its content
         gitignore_path = os.path.join(self.repo_root, ".gitignore")
         existing_content = ""
@@ -1181,11 +1223,15 @@ class RepoManager:
             "private_dirs", DEFAULT_PRIVATE_DIRS
         )
         
-        # Only add entries that don't already exist
+        # Only add entries that don't already exist, matched as whole lines:
+        # as a substring, "/docs/" was "present" inside the template's own
+        # "private/docs/", so --private-dirs docs never got its line.
+        present = {line.strip() for line in existing_content.splitlines()}
         entries_to_add = []
         for private_dir in private_dirs:
-            pattern = f"/{private_dir}/"
-            if pattern not in existing_content:
+            name = private_dir.strip("/")
+            pattern = f"/{name}/"
+            if pattern not in present and f"{name}/" not in present:
                 entries_to_add.append(pattern)
         
         # Only append if we have new entries to add
@@ -1200,13 +1246,9 @@ class RepoManager:
                     f.write("**/__private__*\n")
                 f.write("\n")
 
-        # With git-repokit-common vendored, its hooks are the project's hooks
-        # (installed at the end of setup_repository); git-repokit writes none.
-        if self.common_vendored:
-            return
-
-        # Fallback guard when git-repokit-common is not vendored (--no-common,
-        # or vendoring failed): git-repokit's own pre-commit hook.
+    def _write_fallback_hook(self) -> None:
+        """git-repokit's own pre-commit hook, the guard when git-repokit-common
+        is not vendored (--no-common, or vendoring failed)."""
         hooks_dir = os.path.join(self.repo_root, ".git", "hooks")
         os.makedirs(hooks_dir, exist_ok=True)
 
@@ -1216,20 +1258,29 @@ class RepoManager:
         # Create context with configuration
         branch_context = BranchContext(self.repo_root, self._get_branch_config())
         
-        # Generate branch patterns for template
-        private_branch_patterns = "|".join(branch_context.PRIVATE_BRANCHES)
-        public_branch_patterns = "|".join(branch_context.PUBLIC_BRANCHES)
-        
-        # Add feature branch patterns (they're considered private in BranchContext)
-        private_branch_patterns += "|feature/*|feat/*|prototype/*|experiment/*|spike/*"
-        
+        # The branches where private content may be committed: the same rule
+        # git-repokit-common's settings get (common_kit.private_branches), so
+        # feature/* is public for github-flow and gitflow under either hook,
+        # plus any private branch the configuration names.
+        from . import common_kit
+        private_branches = common_kit.private_branches(
+            self.config.get("branch_strategy"), self.private_branch)
+        private_branches += sorted(b for b in branch_context.PRIVATE_BRANCHES if b not in private_branches)
+        private_branch_patterns = "|".join(private_branches)
+        public_branch_patterns = "|".join(sorted(branch_context.PUBLIC_BRANCHES))
+
         # Generate private content patterns for template
         # Start with BranchContext patterns and add config-based patterns
         all_patterns = set()
-        
+
         # Add BranchContext patterns
         all_patterns.update(branch_context.PRIVATE_PATTERNS)
         all_patterns.update(branch_context.EXCLUDE_FROM_PUBLIC)
+
+        # The folders this project keeps private (--private-dirs, and the
+        # groups and private sets that feed it): until 0.10.2 this hook never
+        # read them, so only the built-in folders were refused.
+        all_patterns.update(f"{d.strip('/')}/" for d in self.config.get("private_dirs", []))
         
         # Add config-based sensitive patterns
         config_sensitive_patterns = self.config.get('sensitive_patterns', [])

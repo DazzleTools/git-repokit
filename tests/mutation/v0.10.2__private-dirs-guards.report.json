@@ -1,0 +1,182 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_common_guard.py",
+      "-k",
+      "read_settings or matched_whole or enhanced"
+    ],
+    "timestamp": "2026-11-01T05:50:50-05:00"
+  },
+  "results": [
+    {
+      "id": "M1",
+      "file": "repokit/common_kit.py",
+      "note": "guard flip: existing settings files skipped, missing ones opened",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ").write_text(TABLE.format(\"a/\"), encoding=\"utf-8\")\n        (tmp_path / \".repokit-common.toml\").write_text(TABLE.format(\"b/\"), encoding=\"utf-8\")\n>       assert common_kit.read_settings(str(tmp_path))[\"private-patterns\"] == [\"a/\"]\nE       KeyError: 'private-patterns'\n\ntests\\test_common_guard.py:253: KeyError\n______ test_read_settings_falls_back_past_a_pyproject_without_the_table _______\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<user>/pytest-14812/test_read_settings_falls_back_0')\n\n    @pytest.mark.unit\n    def test_read_settings_falls_back_past_a_pyproject_without_the_table(tmp_path):\n        (tmp_path / \"pyproject.toml\").write_text('[project]\\nname = \"p\"\\n', encoding=\"utf-8\")\n        (tmp_path / \".repokit-common.toml\").write_text(TABLE.format(\"b/\"), encoding=\"utf-8\")\n>       assert common_kit.read_settings(str(tmp_path))[\"private-patterns\"] == [\"b/\"]\nE       KeyError: 'private-patterns'\n\ntests\\test_common_guard.py:260: KeyError\n_______________ test_read_settings_skips_a_file_it_cannot_parse _______________\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<user>/pytest-14812/test_read_settings_skips_a_fil0')\n\n    @pytest.mark.unit\n    def test_read_settings_skips_a_file_it_cannot_parse(tmp_path):\n        (tmp_path / \"pyproject.toml\").write_text(\"this is [not toml\", encoding=\"utf-8\")\n        (tmp_path / \".repokit-common.toml\").write_text(TABLE.format(\"b/\"), encoding=\"utf-8\")\n>       assert common_kit.read_settings(str(tmp_path))[\"private-patterns\"] == [\"b/\"]\nE       KeyError: 'private-patterns'\n\ntests\\test_common_guard.py:267: KeyError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_read_settings_prefers_pyproject - Key...\nFAILED tests/test_common_guard.py::test_read_settings_falls_back_past_a_pyproject_without_the_table\nFAILED tests/test_common_guard.py::test_read_settings_skips_a_file_it_cannot_parse\n3 failed, 3 passed, 22 deselected in 4.15s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_read_settings_falls_back_past_a_pyproject_without_the_table",
+        "tests/test_common_guard.py::test_read_settings_prefers_pyproject",
+        "tests/test_common_guard.py::test_read_settings_skips_a_file_it_cannot_parse"
+      ]
+    },
+    {
+      "id": "M2",
+      "file": "repokit/common_kit.py",
+      "note": "swapped lookup order",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "F.....                                                                   [100%]\n================================== FAILURES ===================================\n____________________ test_read_settings_prefers_pyproject _____________________\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<user>/pytest-14813/test_read_settings_prefers_pyp0')\n\n    @pytest.mark.unit\n    def test_read_settings_prefers_pyproject(tmp_path):\n        \"\"\"The order repokit-common reads them in: pyproject.toml, then\n        .repokit-common.toml (safe-merge and the hook must agree).\"\"\"\n        (tmp_path / \"pyproject.toml\").write_text(TABLE.format(\"a/\"), encoding=\"utf-8\")\n        (tmp_path / \".repokit-common.toml\").write_text(TABLE.format(\"b/\"), encoding=\"utf-8\")\n>       assert common_kit.read_settings(str(tmp_path))[\"private-patterns\"] == [\"a/\"]\nE       AssertionError: assert ['b/'] == ['a/']\nE         \nE         At index 0 diff: 'b/' != 'a/'\nE         Use -v to get more diff\n\ntests\\test_common_guard.py:253: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_read_settings_prefers_pyproject - Ass...\n1 failed, 5 passed, 22 deselected in 4.55s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_read_settings_prefers_pyproject"
+      ]
+    },
+    {
+      "id": "M3",
+      "file": "repokit/common_kit.py",
+      "note": "type check replaced by a None check",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M4",
+      "file": "repokit/common_kit.py",
+      "note": "narrowed except: a TOML parse error raises",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "ES ===================================\n_______________ test_read_settings_skips_a_file_it_cannot_parse _______________\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<user>/pytest-14815/test_read_settings_skips_a_fil0')\n\n    @pytest.mark.unit\n    def test_read_settings_skips_a_file_it_cannot_parse(tmp_path):\n        (tmp_path / \"pyproject.toml\").write_text(\"this is [not toml\", encoding=\"utf-8\")\n        (tmp_path / \".repokit-common.toml\").write_text(TABLE.format(\"b/\"), encoding=\"utf-8\")\n>       assert common_kit.read_settings(str(tmp_path))[\"private-patterns\"] == [\"b/\"]\n\ntests\\test_common_guard.py:267: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\nrepokit\\common_kit.py:144: in read_settings\n    data = tomllib.load(f)\nC:\\Python312\\Lib\\tomllib\\_parser.py:66: in load\n    return loads(s, parse_float=parse_float)\nC:\\Python312\\Lib\\tomllib\\_parser.py:102: in loads\n    pos = key_value_rule(src, pos, out, header, parse_float)\nC:\\Python312\\Lib\\tomllib\\_parser.py:326: in key_value_rule\n    pos, key, value = parse_key_value_pair(src, pos, parse_float)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\nsrc = 'this is [not toml', pos = 5, parse_float = <class 'float'>\n\n    def parse_key_value_pair(\n        src: str, pos: Pos, parse_float: ParseFloat\n    ) -> tuple[Pos, Key, Any]:\n        pos, key = parse_key(src, pos)\n        try:\n            char: str | None = src[pos]\n        except IndexError:\n            char = None\n        if char != \"=\":\n>           raise suffixed_err(src, pos, \"Expected '=' after a key in a key/value pair\")\nE           tomllib.TOMLDecodeError: Expected '=' after a key in a key/value pair (at line 1, column 6)\n\nC:\\Python312\\Lib\\tomllib\\_parser.py:366: TOMLDecodeError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_read_settings_skips_a_file_it_cannot_parse\n1 failed, 5 passed, 22 deselected in 4.19s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_read_settings_skips_a_file_it_cannot_parse"
+      ]
+    },
+    {
+      "id": "M5",
+      "file": "repokit/repo_manager.py",
+      "note": "dropped .strip() on existing lines",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M6",
+      "file": "repokit/repo_manager.py",
+      "note": "dropped normalisation of the folder name",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M7",
+      "file": "repokit/repo_manager.py",
+      "note": "and->or: present in one form is appended again",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "....F.                                                                   [100%]\n================================== FAILURES ===================================\n___________ test_gitignore_line_is_matched_whole_not_as_a_substring ___________\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<user>/pytest-14818/test_gitignore_line_is_matched0')\n\n    @pytest.mark.unit\n    def test_gitignore_line_is_matched_whole_not_as_a_substring(tmp_path):\n        \"\"\"'/docs/' used to count as present inside a line like 'private/docs/'\n        (the public branches' .gitignore carries it; a layer's could too).\"\"\"\n        from types import SimpleNamespace\n        from repokit.repo_manager import RepoManager\n        (tmp_path / \".gitignore\").write_text(\"private/docs/\\n/logs/\\n\", encoding=\"utf-8\")\n        fake = SimpleNamespace(repo_root=str(tmp_path), config={\"private_dirs\": [\"docs\", \"logs\"]})\n        RepoManager._write_private_ignores(fake)\n        lines = gitignore_lines(tmp_path)\n        assert \"/docs/\" in lines\n>       assert sum(1 for line in (tmp_path / \".gitignore\").read_text(encoding=\"utf-8\").splitlines()\n                   if line.strip() == \"/logs/\") == 1, \"a line already there is not written twice\"\nE       AssertionError: a line already there is not written twice\nE       assert 2 == 1\nE        +  where 2 = sum(<generator object test_gitignore_line_is_matched_whole_not_as_a_substring.<locals>.<genexpr> at 0x0000022E52BE92F0>)\n\ntests\\test_common_guard.py:286: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_gitignore_line_is_matched_whole_not_as_a_substring\n1 failed, 5 passed, 22 deselected in 4.38s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_gitignore_line_is_matched_whole_not_as_a_substring"
+      ]
+    },
+    {
+      "id": "M8",
+      "file": "repokit/repo_manager.py",
+      "note": "an unanchored 'docs/' no longer suppresses '/docs/'",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M9",
+      "file": "repokit/repo_manager.py",
+      "note": "the substring-match bug again",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "....F.                                                                   [100%]\n================================== FAILURES ===================================\n___________ test_gitignore_line_is_matched_whole_not_as_a_substring ___________\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<user>/pytest-14820/test_gitignore_line_is_matched0')\n\n    @pytest.mark.unit\n    def test_gitignore_line_is_matched_whole_not_as_a_substring(tmp_path):\n        \"\"\"'/docs/' used to count as present inside a line like 'private/docs/'\n        (the public branches' .gitignore carries it; a layer's could too).\"\"\"\n        from types import SimpleNamespace\n        from repokit.repo_manager import RepoManager\n        (tmp_path / \".gitignore\").write_text(\"private/docs/\\n/logs/\\n\", encoding=\"utf-8\")\n        fake = SimpleNamespace(repo_root=str(tmp_path), config={\"private_dirs\": [\"docs\", \"logs\"]})\n        RepoManager._write_private_ignores(fake)\n        lines = gitignore_lines(tmp_path)\n>       assert \"/docs/\" in lines\nE       AssertionError: assert '/docs/' in {'/logs/', 'private/docs/'}\n\ntests\\test_common_guard.py:285: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_gitignore_line_is_matched_whole_not_as_a_substring\n1 failed, 5 passed, 22 deselected in 3.98s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_gitignore_line_is_matched_whole_not_as_a_substring"
+      ]
+    },
+    {
+      "id": "M10",
+      "file": "repokit/config.py",
+      "note": "the default set enters the branch",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M11",
+      "file": "repokit/config.py",
+      "note": "ignores --private-dirs: the set replaces instead of adding",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M12",
+      "file": "repokit/config.py",
+      "note": "swapped concatenation order",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M13",
+      "file": "repokit/config.py",
+      "note": "dropped de-duplication",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    }
+  ],
+  "summary": {
+    "killed": 5,
+    "survived": 8
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_common_guard.py::test_gitignore_line_is_matched_whole_not_as_a_substring": [
+        "M7",
+        "M9"
+      ],
+      "tests/test_common_guard.py::test_read_settings_falls_back_past_a_pyproject_without_the_table": [
+        "M1"
+      ],
+      "tests/test_common_guard.py::test_read_settings_prefers_pyproject": [
+        "M1",
+        "M2"
+      ],
+      "tests/test_common_guard.py::test_read_settings_skips_a_file_it_cannot_parse": [
+        "M1",
+        "M4"
+      ]
+    },
+    "identical": [],
+    "contained": [
+      [
+        "tests/test_common_guard.py::test_read_settings_falls_back_past_a_pyproject_without_the_table",
+        "tests/test_common_guard.py::test_read_settings_prefers_pyproject"
+      ],
+      [
+        "tests/test_common_guard.py::test_read_settings_falls_back_past_a_pyproject_without_the_table",
+        "tests/test_common_guard.py::test_read_settings_skips_a_file_it_cannot_parse"
+      ]
+    ],
+    "killed_without_names": []
+  }
+}

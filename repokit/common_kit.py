@@ -107,20 +107,64 @@ def install_hooks(repo_root: str) -> Optional[str]:
     return None
 
 
-def private_branch_settings(private_branch: Optional[str], private_paths: List[str]) -> Dict[str, List[str]]:
-    """Settings that make repokit-common's pre-commit guard the private-branch model.
+# Strategies whose feature branches are public: they are pushed for pull
+# requests, so private content may not be committed on them (0.10.2).
+PUBLIC_FEATURE_STRATEGIES = {"github-flow", "gitflow"}
+PUBLIC_FEATURE_PATTERNS = {"feature/*", "feat/*"}
 
-    private-patterns: the paths git-repokit's own guard protected (literal
-    prefixes; repokit-common adds them to its built-in list).
-    private-branches: only when the private branch is not one of
-    repokit-common's defaults; the setting replaces the list, so the defaults
-    are listed too.
+
+def private_branches(strategy: Optional[str], private_branch: Optional[str]) -> List[str]:
+    """The branches where private content may be committed, for a strategy.
+
+    repokit-common's defaults, minus the feature-branch patterns for the
+    strategies that push feature branches, plus the project's own private
+    branch when it has a name of its own. Both hooks use this one rule.
+    """
+    branches = [b for b in REPOKIT_COMMON_PRIVATE_BRANCHES
+                if not (strategy in PUBLIC_FEATURE_STRATEGIES and b in PUBLIC_FEATURE_PATTERNS)]
+    if private_branch and private_branch not in branches:
+        branches.append(private_branch)
+    return branches
+
+
+def read_settings(repo_root: str) -> Dict:
+    """The project's [tool.repokit-common] table: pyproject.toml's, else
+    .repokit-common.toml's, the order repokit-common reads them in; {} when
+    neither file has the table or a file cannot be parsed."""
+    try:
+        import tomllib
+    except ModuleNotFoundError:  # Python 3.10
+        import tomli as tomllib
+    for name in ("pyproject.toml", ".repokit-common.toml"):
+        path = os.path.join(repo_root, name)
+        if not os.path.isfile(path):
+            continue
+        try:
+            with open(path, "rb") as f:
+                data = tomllib.load(f)
+        except (OSError, ValueError):
+            continue
+        table = data.get("tool", {}).get("repokit-common")
+        if isinstance(table, dict):
+            return table
+    return {}
+
+
+def private_branch_settings(private_branch: Optional[str], private_paths: List[str],
+                            strategy: Optional[str] = None) -> Dict[str, List[str]]:
+    """Settings that make repokit-common's pre-commit guard this project.
+
+    Written for every project, single-branch ones included (0.10.2), so a
+    project that later gains a private branch is already guarded.
+    private-patterns: the paths kept off public branches (literal prefixes;
+    repokit-common adds them to its built-in list).
+    private-branches: where they may be committed, from the strategy
+    (private_branches); the setting replaces repokit-common's own list.
     """
     settings: Dict[str, List[str]] = {}
     if private_paths:
         settings["private-patterns"] = sorted(dict.fromkeys(private_paths))
-    if private_branch and private_branch not in REPOKIT_COMMON_PRIVATE_BRANCHES:
-        settings["private-branches"] = REPOKIT_COMMON_PRIVATE_BRANCHES + [private_branch]
+    settings["private-branches"] = private_branches(strategy, private_branch)
     return settings
 
 

@@ -1,0 +1,144 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "-m",
+      "unit",
+      "tests/test_common_guard.py"
+    ],
+    "timestamp": "2026-11-01T05:51:58-05:00"
+  },
+  "results": [
+    {
+      "id": "M3",
+      "file": "repokit/common_kit.py",
+      "note": "type check replaced by a None check",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".............F......                                                     [100%]\n================================== FAILURES ===================================\n____________ test_read_settings_skips_a_value_that_is_not_a_table _____________\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<user>/pytest-14835/test_read_settings_skips_a_val0')\n\n    @pytest.mark.unit\n    def test_read_settings_skips_a_value_that_is_not_a_table(tmp_path):\n        \"\"\"Mutation sweep M3: `repokit-common = \"x\"` is not the settings table.\"\"\"\n        (tmp_path / \"pyproject.toml\").write_text('[tool]\\nrepokit-common = \"x\"\\n', encoding=\"utf-8\")\n        (tmp_path / \".repokit-common.toml\").write_text(TABLE.format(\"b/\"), encoding=\"utf-8\")\n>       assert common_kit.read_settings(str(tmp_path))[\"private-patterns\"] == [\"b/\"]\nE       TypeError: string indices must be integers, not 'str'\n\ntests\\test_common_guard.py:280: TypeError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_read_settings_skips_a_value_that_is_not_a_table\n1 failed, 19 passed, 14 deselected in 0.34s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_read_settings_skips_a_value_that_is_not_a_table"
+      ]
+    },
+    {
+      "id": "M5",
+      "file": "repokit/repo_manager.py",
+      "note": "dropped .strip() on existing lines",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "..............F.....                                                     [100%]\n================================== FAILURES ===================================\n________ test_gitignore_line_already_there_counts_with_trailing_spaces ________\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<user>/pytest-14836/test_gitignore_line_already_th0')\n\n    @pytest.mark.unit\n    def test_gitignore_line_already_there_counts_with_trailing_spaces(tmp_path):\n        \"\"\"Mutation sweep M5.\"\"\"\n        lines = write_ignores(tmp_path, \"/logs/   \\n\", [\"logs\"])\n>       assert lines.count(\"/logs/\") == 1\nE       AssertionError: assert 2 == 1\nE        +  where 2 = <built-in method count of list object at 0x000001D78D346EC0>('/logs/')\nE        +    where <built-in method count of list object at 0x000001D78D346EC0> = ['/logs/', '', '# Private content (auto-added)', '/logs/', '**/__private__*', ''].count\n\ntests\\test_common_guard.py:297: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_gitignore_line_already_there_counts_with_trailing_spaces\n1 failed, 19 passed, 14 deselected in 0.22s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_gitignore_line_already_there_counts_with_trailing_spaces"
+      ]
+    },
+    {
+      "id": "M6",
+      "file": "repokit/repo_manager.py",
+      "note": "dropped normalisation of the folder name",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "...............F....                                                     [100%]\n================================== FAILURES ===================================\n____________ test_gitignore_folder_name_with_slashes_is_normalised ____________\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<user>/pytest-14837/test_gitignore_folder_name_wit0')\n\n    @pytest.mark.unit\n    def test_gitignore_folder_name_with_slashes_is_normalised(tmp_path):\n        \"\"\"Mutation sweep M6: --private-dirs notes/ is the folder notes.\"\"\"\n        lines = write_ignores(tmp_path, \"\", [\"notes/\", \"/drafts\"])\n>       assert \"/notes/\" in lines and \"/drafts/\" in lines\nE       AssertionError: assert ('/notes/' in ['', '# Private content (auto-added)', '/notes//', '//drafts/', '**/__private__*', ''])\n\ntests\\test_common_guard.py:304: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_gitignore_folder_name_with_slashes_is_normalised\n1 failed, 19 passed, 14 deselected in 0.22s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_gitignore_folder_name_with_slashes_is_normalised"
+      ]
+    },
+    {
+      "id": "M8",
+      "file": "repokit/repo_manager.py",
+      "note": "an unanchored 'docs/' no longer suppresses '/docs/'",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "................F...                                                     [100%]\n================================== FAILURES ===================================\n__________ test_gitignore_unanchored_line_already_covers_the_folder ___________\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<user>/pytest-14838/test_gitignore_unanchored_line0')\n\n    @pytest.mark.unit\n    def test_gitignore_unanchored_line_already_covers_the_folder(tmp_path):\n        \"\"\"Mutation sweep M8: 'notes/' already ignores the root notes/.\"\"\"\n        lines = write_ignores(tmp_path, \"notes/\\n\", [\"notes\"])\n>       assert \"/notes/\" not in lines\nE       AssertionError: assert '/notes/' not in ['notes/', '', '# Private content (auto-added)', '/notes/', '**/__private__*', '']\n\ntests\\test_common_guard.py:312: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_gitignore_unanchored_line_already_covers_the_folder\n1 failed, 19 passed, 14 deselected in 0.22s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_gitignore_unanchored_line_already_covers_the_folder"
+      ]
+    },
+    {
+      "id": "M10",
+      "file": "repokit/config.py",
+      "note": "the default set enters the branch",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "..................F.                                                     [100%]\n================================== FAILURES ===================================\n________________ test_the_standard_private_set_changes_nothing ________________\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<user>/pytest-14839/test_the_standard_private_set_0')\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000021C19096F90>\n\n    @pytest.mark.unit\n    def test_the_standard_private_set_changes_nothing(tmp_path, monkeypatch):\n        \"\"\"Mutation sweep M10: --private-dirs stays what the person named.\"\"\"\n>       assert resolved_private_dirs(tmp_path, monkeypatch, private_dirs=[\"notes\"],\n                                     private_set=\"standard\") == [\"notes\"]\nE       AssertionError: assert ['notes', 'pr...gs', 'convos'] == ['notes']\nE         \nE         Left contains 4 more items, first extra item: 'private'\nE         Use -v to get more diff\n\nC:\\code\\git-repokit\\tests\\test_common_guard.py:338: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_the_standard_private_set_changes_nothing\n1 failed, 19 passed, 14 deselected in 0.27s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_the_standard_private_set_changes_nothing"
+      ]
+    },
+    {
+      "id": "M11",
+      "file": "repokit/config.py",
+      "note": "ignores --private-dirs: the set replaces instead of adding",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".................F..                                                     [100%]\n================================== FAILURES ===================================\n_________________ test_private_set_adds_to_private_dirs_once __________________\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<user>/pytest-14840/test_private_set_adds_to_priva0')\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002BBDCF8AED0>\n\n    @pytest.mark.unit\n    def test_private_set_adds_to_private_dirs_once(tmp_path, monkeypatch):\n        \"\"\"Mutation sweep M11, M13: the set's folders join --private-dirs, each once.\"\"\"\n        dirs = resolved_private_dirs(tmp_path, monkeypatch, private_dirs=[\"notes\", \"private\"],\n                                     private_set=\"enhanced\")\n>       assert dirs[:2] == [\"notes\", \"private\"]\nE       AssertionError: assert ['private', 'revisions'] == ['notes', 'private']\nE         \nE         At index 0 diff: 'private' != 'notes'\nE         Use -v to get more diff\n\nC:\\code\\git-repokit\\tests\\test_common_guard.py:330: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_private_set_adds_to_private_dirs_once\n1 failed, 19 passed, 14 deselected in 0.25s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_private_set_adds_to_private_dirs_once"
+      ]
+    },
+    {
+      "id": "M12",
+      "file": "repokit/config.py",
+      "note": "swapped concatenation order",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".................F..                                                     [100%]\n================================== FAILURES ===================================\n_________________ test_private_set_adds_to_private_dirs_once __________________\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<user>/pytest-14841/test_private_set_adds_to_priva0')\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000202C7126F00>\n\n    @pytest.mark.unit\n    def test_private_set_adds_to_private_dirs_once(tmp_path, monkeypatch):\n        \"\"\"Mutation sweep M11, M13: the set's folders join --private-dirs, each once.\"\"\"\n        dirs = resolved_private_dirs(tmp_path, monkeypatch, private_dirs=[\"notes\", \"private\"],\n                                     private_set=\"enhanced\")\n>       assert dirs[:2] == [\"notes\", \"private\"]\nE       AssertionError: assert ['revisions', 'logs'] == ['notes', 'private']\nE         \nE         At index 0 diff: 'revisions' != 'notes'\nE         Use -v to get more diff\n\nC:\\code\\git-repokit\\tests\\test_common_guard.py:330: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_private_set_adds_to_private_dirs_once\n1 failed, 19 passed, 14 deselected in 0.36s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_private_set_adds_to_private_dirs_once"
+      ]
+    },
+    {
+      "id": "M13",
+      "file": "repokit/config.py",
+      "note": "dropped de-duplication",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".................F..                                                     [100%]\n================================== FAILURES ===================================\n_________________ test_private_set_adds_to_private_dirs_once __________________\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<user>/pytest-14842/test_private_set_adds_to_priva0')\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x0000025BC64CADB0>\n\n    @pytest.mark.unit\n    def test_private_set_adds_to_private_dirs_once(tmp_path, monkeypatch):\n        \"\"\"Mutation sweep M11, M13: the set's folders join --private-dirs, each once.\"\"\"\n        dirs = resolved_private_dirs(tmp_path, monkeypatch, private_dirs=[\"notes\", \"private\"],\n                                     private_set=\"enhanced\")\n        assert dirs[:2] == [\"notes\", \"private\"]\n        assert {\"credentials\", \"secrets\", \"local\"} <= set(dirs)\n>       assert len(dirs) == len(set(dirs))\nE       AssertionError: assert 9 == 8\nE        +  where 9 = len(['notes', 'private', 'private', 'revisions', 'logs', 'convos', ...])\nE        +  and   8 = len({'convos', 'credentials', 'local', 'logs', 'notes', 'private', ...})\nE        +    where {'convos', 'credentials', 'local', 'logs', 'notes', 'private', ...} = set(['notes', 'private', 'private', 'revisions', 'logs', 'convos', ...])\n\nC:\\code\\git-repokit\\tests\\test_common_guard.py:332: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_private_set_adds_to_private_dirs_once\n1 failed, 19 passed, 14 deselected in 0.23s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_private_set_adds_to_private_dirs_once"
+      ]
+    }
+  ],
+  "summary": {
+    "killed": 8
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_common_guard.py::test_gitignore_folder_name_with_slashes_is_normalised": [
+        "M6"
+      ],
+      "tests/test_common_guard.py::test_gitignore_line_already_there_counts_with_trailing_spaces": [
+        "M5"
+      ],
+      "tests/test_common_guard.py::test_gitignore_unanchored_line_already_covers_the_folder": [
+        "M8"
+      ],
+      "tests/test_common_guard.py::test_private_set_adds_to_private_dirs_once": [
+        "M11",
+        "M12",
+        "M13"
+      ],
+      "tests/test_common_guard.py::test_read_settings_skips_a_value_that_is_not_a_table": [
+        "M3"
+      ],
+      "tests/test_common_guard.py::test_the_standard_private_set_changes_nothing": [
+        "M10"
+      ]
+    },
+    "identical": [],
+    "contained": [],
+    "killed_without_names": []
+  }
+}

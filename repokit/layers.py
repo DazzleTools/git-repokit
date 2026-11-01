@@ -374,6 +374,8 @@ def catalogue_lines(manifest: Dict[str, Any], language: Optional[str] = None) ->
         if entry.get("pseudo"):
             continue
         head = f"{lang}:" + (f"  (planned: {entry.get('description', '')})" if entry.get("stub") else "")
+        if lines:
+            lines.append("")  # a blank line between languages (djdarcy, 2026-11-01)
         lines.append(head)
         default = entry.get("default")
         planned = []

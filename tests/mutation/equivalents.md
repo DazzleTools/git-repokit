@@ -10,3 +10,7 @@
 - `if not self.config.get("github", True):` -> `if not self.config.get("github", False):` (in `_setup_github_integration`): **equivalent**. The default is never read: `config.py:75` puts `"github": True` in every configuration before the manager sees it. 2026-10-26, mode 1.
 - `if files_to_remove_from_index and not dry_run:` -> `if files_to_remove_from_index:` (in `_cleanup_sensitive_files`): **equivalent**. The only caller (`_create_clean_public_branch`) never passes `dry_run=True`, so the flag is always false. 2026-10-26, mode 1.
 - `self.run_git(["rm", "--cached", file_to_remove], ...)` -> `self.run_git(["rm", file_to_remove], ...)` (in `_cleanup_sensitive_files`): **equivalent**, observed. The file is tracked on the private branch, so the `checkout private` that ends the public-branch loop writes it back; T7 (tracked `config/.env`) stays green under the mutant. 2026-10-26, mode 1.
+
+## repokit/common_kit.py @ ea4246ad5487
+
+- `if private_paths:` -> `if private_paths is not None:` (in `private_branch_settings`): **don't-care**. Every caller passes at least `CLAUDE.md`, so the empty list never arrives; and an empty `private-patterns` would add nothing to repokit-common's built-in list, as a missing key adds nothing. 2026-11-01, mode 1.

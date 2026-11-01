@@ -5,6 +5,27 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.2] - 2026-11-01
+
+### Changed
+- **git-repokit-common is the default for every branch strategy** - it was opt-in for the private-branch ones
+  - `--no-common` still works and now warns: the project keeps only git-repokit's basic pre-commit guard
+  - a failed or switched-off vendoring warns the same way; `repokit setup-guardrails --vendor` adds it later
+- **Every project's hook settings name its private folders and branches** - single-branch projects included, so one that later gains a private branch is already guarded
+  - `private-branches` comes from the strategy: `feature/` and `feat/` branches are public in `github-flow` and `gitflow`, which push them for pull requests
+  - settings you already have are never overwritten
+- **A refused commit says how to commit it anyway** - `.repokit-allowlist` for a file that should be public, `git commit --no-verify` for one commit; git-repokit's own hook (the `--no-common` guard) now honors `.repokit-allowlist` too
+
+### Fixed
+- **`--private-dirs` keeps its folders out of public branches** - before, only the built-in private folders were protected: a folder named only by `--private-dirs` could be committed to `main` or merged into `dev`
+  - its `.gitignore` lines survive the language templates, which used to rewrite them away
+  - git-repokit's own pre-commit hook refuses them, and `repokit safe-merge` leaves them out
+- **`--private-set enhanced` without a `--dir-profile` takes effect** - it was read only alongside a profile or groups
+- **A forced private file on a `github-flow` or `gitflow` feature branch is refused** - both hooks treated `feature/*` as private, so it could be committed and pushed
+- **`repokit --version` prints the installed version** - it said 0.9.12 at 0.10.0 and 0.10.1
+- **`repokit list-templates` runs** - it crashed on every run (`AttributeError: ... 'templates_dir'`)
+- **`repokit list` puts a blank line between languages**, and before the licenses
+
 ## [0.10.1] - 2026-10-31
 
 ### Fixed

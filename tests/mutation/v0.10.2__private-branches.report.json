@@ -1,0 +1,233 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "-m",
+      "unit",
+      "tests/test_common_guard.py"
+    ],
+    "timestamp": "2026-11-01T01:41:57-04:00"
+  },
+  "results": [
+    {
+      "id": "M1",
+      "file": "repokit/common_kit.py",
+      "note": "and->or swap: feature patterns dropped for every strategy, and every branch dropped for public strategies",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".*', 'scratch']\nE         \nE         At index 0 diff: 'scratch' != 'local'\nE         Right contains 5 more items, first extra item: 'private'\nE         Use -v to get more diff\n\ntests\\test_common_guard.py:95: AssertionError\n_______________ test_settings_always_name_the_private_branches ________________\n\n    @pytest.mark.unit\n    def test_settings_always_name_the_private_branches():\n        \"\"\"Even with no private branch (main-only): a project that later gains\n        one is already guarded.\"\"\"\n        settings = common_kit.private_branch_settings(None, [\"notes/\"], \"main-only\")\n>       assert settings == {\"private-patterns\": [\"notes/\"], \"private-branches\": DEFAULTS}\nE       AssertionError: assert {'private-bra...': ['notes/']} == {'private-bra...': ['notes/']}\nE         \nE         Omitting 1 identical items, use -vv to show\nE         Differing items:\nE         {'private-branches': ['local', 'private', 'prototype/*', 'experiment/*', 'spike/*']} != {'private-branches': ['local', 'private', 'feature/*', 'feat/*', 'prototype/*', 'experiment/*', ...]}\nE         Use -v to get more diff\n\ntests\\test_common_guard.py:103: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[main-only-expected0]\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[standard-expected1]\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[simple-expected2]\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[minimal-expected3]\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[github-flow-expected4]\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[gitflow-expected5]\nFAILED tests/test_common_guard.py::test_a_custom_private_branch_is_added - As...\nFAILED tests/test_common_guard.py::test_settings_always_name_the_private_branches\n8 failed, 8 deselected in 0.23s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_a_custom_private_branch_is_added",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[gitflow-expected5]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[github-flow-expected4]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[main-only-expected0]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[minimal-expected3]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[simple-expected2]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[standard-expected1]",
+        "tests/test_common_guard.py::test_settings_always_name_the_private_branches"
+      ]
+    },
+    {
+      "id": "M2",
+      "file": "repokit/common_kit.py",
+      "note": "strategy condition dropped: feature/* and feat/* removed even for strategies that keep feature branches private",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "flow\", NO_FEATURE),\n    ])\n    def test_private_branches_follow_the_strategy(strategy, expected):\n>       assert common_kit.private_branches(strategy, \"private\") == expected\nE       AssertionError: assert ['local', 'pr...*', 'spike/*'] == ['local', 'pr...iment/*', ...]\nE         \nE         At index 2 diff: 'prototype/*' != 'feature/*'\nE         Right contains 2 more items, first extra item: 'experiment/*'\nE         Use -v to get more diff\n\ntests\\test_common_guard.py:90: AssertionError\n_______________ test_settings_always_name_the_private_branches ________________\n\n    @pytest.mark.unit\n    def test_settings_always_name_the_private_branches():\n        \"\"\"Even with no private branch (main-only): a project that later gains\n        one is already guarded.\"\"\"\n        settings = common_kit.private_branch_settings(None, [\"notes/\"], \"main-only\")\n>       assert settings == {\"private-patterns\": [\"notes/\"], \"private-branches\": DEFAULTS}\nE       AssertionError: assert {'private-bra...': ['notes/']} == {'private-bra...': ['notes/']}\nE         \nE         Omitting 1 identical items, use -vv to show\nE         Differing items:\nE         {'private-branches': ['local', 'private', 'prototype/*', 'experiment/*', 'spike/*']} != {'private-branches': ['local', 'private', 'feature/*', 'feat/*', 'prototype/*', 'experiment/*', ...]}\nE         Use -v to get more diff\n\ntests\\test_common_guard.py:103: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[main-only-expected0]\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[standard-expected1]\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[simple-expected2]\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[minimal-expected3]\nFAILED tests/test_common_guard.py::test_settings_always_name_the_private_branches\n5 failed, 3 passed, 8 deselected in 0.23s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[main-only-expected0]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[minimal-expected3]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[simple-expected2]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[standard-expected1]",
+        "tests/test_common_guard.py::test_settings_always_name_the_private_branches"
+      ]
+    },
+    {
+      "id": "M3",
+      "file": "repokit/common_kit.py",
+      "note": "truthiness guard removed: None or empty-string private branch gets appended",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".......F                                                                 [100%]\n================================== FAILURES ===================================\n_______________ test_settings_always_name_the_private_branches ________________\n\n    @pytest.mark.unit\n    def test_settings_always_name_the_private_branches():\n        \"\"\"Even with no private branch (main-only): a project that later gains\n        one is already guarded.\"\"\"\n        settings = common_kit.private_branch_settings(None, [\"notes/\"], \"main-only\")\n>       assert settings == {\"private-patterns\": [\"notes/\"], \"private-branches\": DEFAULTS}\nE       AssertionError: assert {'private-bra...': ['notes/']} == {'private-bra...': ['notes/']}\nE         \nE         Omitting 1 identical items, use -vv to show\nE         Differing items:\nE         {'private-branches': ['local', 'private', 'feature/*', 'feat/*', 'prototype/*', 'experiment/*', ...]} != {'private-branches': ['local', 'private', 'feature/*', 'feat/*', 'prototype/*', 'experiment/*', ...]}\nE         Use -v to get more diff\n\ntests\\test_common_guard.py:103: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_settings_always_name_the_private_branches\n1 failed, 7 passed, 8 deselected in 0.18s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_settings_always_name_the_private_branches"
+      ]
+    },
+    {
+      "id": "M4",
+      "file": "repokit/common_kit.py",
+      "note": "membership guard removed: a private branch already in the defaults is duplicated",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "     (\"github-flow\", NO_FEATURE),\n        (\"gitflow\", NO_FEATURE),\n    ])\n    def test_private_branches_follow_the_strategy(strategy, expected):\n>       assert common_kit.private_branches(strategy, \"private\") == expected\nE       AssertionError: assert ['local', 'pr...*', 'private'] == ['local', 'pr...*', 'spike/*']\nE         \nE         Left contains one more item: 'private'\nE         Use -v to get more diff\n\ntests\\test_common_guard.py:90: AssertionError\n________ test_private_branches_follow_the_strategy[gitflow-expected5] _________\n\nstrategy = 'gitflow'\nexpected = ['local', 'private', 'prototype/*', 'experiment/*', 'spike/*']\n\n    @pytest.mark.unit\n    @pytest.mark.parametrize(\"strategy,expected\", [\n        (\"main-only\", DEFAULTS),\n        (\"standard\", DEFAULTS),\n        (\"simple\", DEFAULTS),\n        (\"minimal\", DEFAULTS),\n        (\"github-flow\", NO_FEATURE),\n        (\"gitflow\", NO_FEATURE),\n    ])\n    def test_private_branches_follow_the_strategy(strategy, expected):\n>       assert common_kit.private_branches(strategy, \"private\") == expected\nE       AssertionError: assert ['local', 'pr...*', 'private'] == ['local', 'pr...*', 'spike/*']\nE         \nE         Left contains one more item: 'private'\nE         Use -v to get more diff\n\ntests\\test_common_guard.py:90: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[main-only-expected0]\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[standard-expected1]\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[simple-expected2]\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[minimal-expected3]\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[github-flow-expected4]\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[gitflow-expected5]\n6 failed, 2 passed, 8 deselected in 0.20s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[gitflow-expected5]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[github-flow-expected4]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[main-only-expected0]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[minimal-expected3]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[simple-expected2]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[standard-expected1]"
+      ]
+    },
+    {
+      "id": "M5",
+      "file": "repokit/common_kit.py",
+      "note": "ordering change: project's own branch placed first instead of last",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "......F.                                                                 [100%]\n================================== FAILURES ===================================\n____________________ test_a_custom_private_branch_is_added ____________________\n\n    @pytest.mark.unit\n    def test_a_custom_private_branch_is_added():\n>       assert common_kit.private_branches(\"github-flow\", \"scratch\") == NO_FEATURE + [\"scratch\"]\nE       AssertionError: assert ['scratch', '...*', 'spike/*'] == ['local', 'pr...*', 'scratch']\nE         \nE         At index 0 diff: 'scratch' != 'local'\nE         Use -v to get more diff\n\ntests\\test_common_guard.py:95: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_a_custom_private_branch_is_added - As...\n1 failed, 7 passed, 8 deselected in 0.19s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_a_custom_private_branch_is_added"
+      ]
+    },
+    {
+      "id": "M6",
+      "file": "repokit/common_kit.py",
+      "note": "dropped normalization: patterns keep input order instead of sorted",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M7",
+      "file": "repokit/common_kit.py",
+      "note": "dropped dedupe: duplicate private paths survive",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M8",
+      "file": "repokit/common_kit.py",
+      "note": "None-vs-truthiness: an empty list now writes an empty private-patterns key",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M9",
+      "file": "repokit/common_kit.py",
+      "note": "swapped arguments: strategy and private branch exchanged",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".......F                                                                 [100%]\n================================== FAILURES ===================================\n_______________ test_settings_always_name_the_private_branches ________________\n\n    @pytest.mark.unit\n    def test_settings_always_name_the_private_branches():\n        \"\"\"Even with no private branch (main-only): a project that later gains\n        one is already guarded.\"\"\"\n        settings = common_kit.private_branch_settings(None, [\"notes/\"], \"main-only\")\n>       assert settings == {\"private-patterns\": [\"notes/\"], \"private-branches\": DEFAULTS}\nE       AssertionError: assert {'private-bra...': ['notes/']} == {'private-bra...': ['notes/']}\nE         \nE         Omitting 1 identical items, use -vv to show\nE         Differing items:\nE         {'private-branches': ['local', 'private', 'feature/*', 'feat/*', 'prototype/*', 'experiment/*', ...]} != {'private-branches': ['local', 'private', 'feature/*', 'feat/*', 'prototype/*', 'experiment/*', ...]}\nE         Use -v to get more diff\n\ntests\\test_common_guard.py:103: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_settings_always_name_the_private_branches\n1 failed, 7 passed, 8 deselected in 0.18s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_settings_always_name_the_private_branches"
+      ]
+    },
+    {
+      "id": "M10",
+      "file": "repokit/common_kit.py",
+      "note": "single-branch projects lose their guard list, contrary to 'written for every project'",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".......F                                                                 [100%]\n================================== FAILURES ===================================\n_______________ test_settings_always_name_the_private_branches ________________\n\n    @pytest.mark.unit\n    def test_settings_always_name_the_private_branches():\n        \"\"\"Even with no private branch (main-only): a project that later gains\n        one is already guarded.\"\"\"\n        settings = common_kit.private_branch_settings(None, [\"notes/\"], \"main-only\")\n>       assert settings == {\"private-patterns\": [\"notes/\"], \"private-branches\": DEFAULTS}\nE       AssertionError: assert {'private-bra...': ['notes/']} == {'private-bra...': ['notes/']}\nE         \nE         Omitting 1 identical items, use -vv to show\nE         Differing items:\nE         {'private-branches': []} != {'private-branches': ['local', 'private', 'feature/*', 'feat/*', 'prototype/*', 'experiment/*', ...]}\nE         Use -v to get more diff\n\ntests\\test_common_guard.py:103: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_settings_always_name_the_private_branches\n1 failed, 7 passed, 8 deselected in 0.17s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_settings_always_name_the_private_branches"
+      ]
+    },
+    {
+      "id": "M11",
+      "file": "repokit/common_kit.py",
+      "note": "gitflow no longer treated as pushing feature branches",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".....F..                                                                 [100%]\n================================== FAILURES ===================================\n________ test_private_branches_follow_the_strategy[gitflow-expected5] _________\n\nstrategy = 'gitflow'\nexpected = ['local', 'private', 'prototype/*', 'experiment/*', 'spike/*']\n\n    @pytest.mark.unit\n    @pytest.mark.parametrize(\"strategy,expected\", [\n        (\"main-only\", DEFAULTS),\n        (\"standard\", DEFAULTS),\n        (\"simple\", DEFAULTS),\n        (\"minimal\", DEFAULTS),\n        (\"github-flow\", NO_FEATURE),\n        (\"gitflow\", NO_FEATURE),\n    ])\n    def test_private_branches_follow_the_strategy(strategy, expected):\n>       assert common_kit.private_branches(strategy, \"private\") == expected\nE       AssertionError: assert ['local', 'pr...iment/*', ...] == ['local', 'pr...*', 'spike/*']\nE         \nE         At index 2 diff: 'feature/*' != 'prototype/*'\nE         Left contains 2 more items, first extra item: 'experiment/*'\nE         Use -v to get more diff\n\ntests\\test_common_guard.py:90: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[gitflow-expected5]\n1 failed, 7 passed, 8 deselected in 0.26s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[gitflow-expected5]"
+      ]
+    },
+    {
+      "id": "M12",
+      "file": "repokit/common_kit.py",
+      "note": "feat/* stays private under public-feature strategies",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": " index 2 diff: 'feat/*' != 'prototype/*'\nE         Left contains one more item: 'spike/*'\nE         Use -v to get more diff\n\ntests\\test_common_guard.py:90: AssertionError\n________ test_private_branches_follow_the_strategy[gitflow-expected5] _________\n\nstrategy = 'gitflow'\nexpected = ['local', 'private', 'prototype/*', 'experiment/*', 'spike/*']\n\n    @pytest.mark.unit\n    @pytest.mark.parametrize(\"strategy,expected\", [\n        (\"main-only\", DEFAULTS),\n        (\"standard\", DEFAULTS),\n        (\"simple\", DEFAULTS),\n        (\"minimal\", DEFAULTS),\n        (\"github-flow\", NO_FEATURE),\n        (\"gitflow\", NO_FEATURE),\n    ])\n    def test_private_branches_follow_the_strategy(strategy, expected):\n>       assert common_kit.private_branches(strategy, \"private\") == expected\nE       AssertionError: assert ['local', 'pr...*', 'spike/*'] == ['local', 'pr...*', 'spike/*']\nE         \nE         At index 2 diff: 'feat/*' != 'prototype/*'\nE         Left contains one more item: 'spike/*'\nE         Use -v to get more diff\n\ntests\\test_common_guard.py:90: AssertionError\n____________________ test_a_custom_private_branch_is_added ____________________\n\n    @pytest.mark.unit\n    def test_a_custom_private_branch_is_added():\n>       assert common_kit.private_branches(\"github-flow\", \"scratch\") == NO_FEATURE + [\"scratch\"]\nE       AssertionError: assert ['local', 'pr...spike/*', ...] == ['local', 'pr...*', 'scratch']\nE         \nE         At index 2 diff: 'feat/*' != 'prototype/*'\nE         Left contains one more item: 'scratch'\nE         Use -v to get more diff\n\ntests\\test_common_guard.py:95: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[github-flow-expected4]\nFAILED tests/test_common_guard.py::test_private_branches_follow_the_strategy[gitflow-expected5]\nFAILED tests/test_common_guard.py::test_a_custom_private_branch_is_added - As...\n3 failed, 5 passed, 8 deselected in 0.33s\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_a_custom_private_branch_is_added",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[gitflow-expected5]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[github-flow-expected4]"
+      ]
+    }
+  ],
+  "summary": {
+    "killed": 9,
+    "survived": 3
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_common_guard.py::test_a_custom_private_branch_is_added": [
+        "M1",
+        "M12",
+        "M5"
+      ],
+      "tests/test_common_guard.py::test_private_branches_follow_the_strategy[gitflow-expected5]": [
+        "M1",
+        "M11",
+        "M12",
+        "M4"
+      ],
+      "tests/test_common_guard.py::test_private_branches_follow_the_strategy[github-flow-expected4]": [
+        "M1",
+        "M12",
+        "M4"
+      ],
+      "tests/test_common_guard.py::test_private_branches_follow_the_strategy[main-only-expected0]": [
+        "M1",
+        "M2",
+        "M4"
+      ],
+      "tests/test_common_guard.py::test_private_branches_follow_the_strategy[minimal-expected3]": [
+        "M1",
+        "M2",
+        "M4"
+      ],
+      "tests/test_common_guard.py::test_private_branches_follow_the_strategy[simple-expected2]": [
+        "M1",
+        "M2",
+        "M4"
+      ],
+      "tests/test_common_guard.py::test_private_branches_follow_the_strategy[standard-expected1]": [
+        "M1",
+        "M2",
+        "M4"
+      ],
+      "tests/test_common_guard.py::test_settings_always_name_the_private_branches": [
+        "M1",
+        "M10",
+        "M2",
+        "M3",
+        "M9"
+      ]
+    },
+    "identical": [
+      [
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[main-only-expected0]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[minimal-expected3]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[simple-expected2]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[standard-expected1]"
+      ]
+    ],
+    "contained": [
+      [
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[github-flow-expected4]",
+        "tests/test_common_guard.py::test_private_branches_follow_the_strategy[gitflow-expected5]"
+      ]
+    ],
+    "killed_without_names": []
+  }
+}
