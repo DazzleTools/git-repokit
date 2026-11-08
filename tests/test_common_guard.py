@@ -291,7 +291,8 @@ def write_ignores(tmp_path, existing, private_dirs):
     from types import SimpleNamespace
     from repokit.repo_manager import RepoManager
     (tmp_path / ".gitignore").write_text(existing, encoding="utf-8")
-    RepoManager._write_private_ignores(SimpleNamespace(repo_root=str(tmp_path),
+    # promoted=[]: a nested-mode project (0.10.3 added the attribute)
+    RepoManager._write_private_ignores(SimpleNamespace(repo_root=str(tmp_path), promoted=[],
                                                        config={"private_dirs": private_dirs}))
     return [line.strip() for line in (tmp_path / ".gitignore").read_text(encoding="utf-8").splitlines()]
 
@@ -352,7 +353,7 @@ def test_gitignore_line_is_matched_whole_not_as_a_substring(tmp_path):
     from types import SimpleNamespace
     from repokit.repo_manager import RepoManager
     (tmp_path / ".gitignore").write_text("private/docs/\n/logs/\n", encoding="utf-8")
-    fake = SimpleNamespace(repo_root=str(tmp_path), config={"private_dirs": ["docs", "logs"]})
+    fake = SimpleNamespace(repo_root=str(tmp_path), promoted=[], config={"private_dirs": ["docs", "logs"]})
     RepoManager._write_private_ignores(fake)
     lines = gitignore_lines(tmp_path)
     assert "/docs/" in lines

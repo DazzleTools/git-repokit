@@ -178,6 +178,16 @@ repokit has two ways to keep private work private:
 - **`main-only` (the default):** the project folder is the repository, on `main`, and `private/` is its own nested git repository that the project ignores. One branch, no merging rules to learn.
 - **The private-branch model:** your working history lives on a local-only `private` branch in `<name>/local/`, and the public branches are git worktrees in sibling folders. You move finished work across with `repokit safe-merge`, which leaves the private content behind. This is the model repokit was first built for, and it suits projects with several release stages or several people.
 
+What the private branch carries is the **private mode** (`--private-mode`):
+
+| Mode | `private/` | Tracked on the private branch | Default for |
+|---|---|---|---|
+| `nested` | its own repository | nothing private | `main-only` |
+| `nested-branch` | its own repository, linked into every worktree | `convos/`, `revisions/`, `logs/` (run logs ignored) | a `create` with a private-branch strategy |
+| `branch` | on the private branch | `private/` too | `adopt`; otherwise opt-in, warned |
+
+The promoted folders never reach a public branch or a remote. The hooks refuse them on public branches, `safe-merge` leaves them out, and git-repokit-common's pre-push refuses a push that would add them. See [The vault](docs/The-Vault.md).
+
 | `--branch-strategy` | Public branches | Checked out in folders | Flow |
 |---|---|---|---|
 | `main-only` | main | the project folder itself | commit on main |

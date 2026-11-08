@@ -1,0 +1,267 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_private_modes.py",
+      "tests/test_common_guard.py"
+    ],
+    "timestamp": "2026-11-07T01:46:51-05:00"
+  },
+  "results": [
+    {
+      "id": "M1",
+      "file": "repokit/defaults.py",
+      "note": "mode_exposure: nested-branch no longer records the promoted folders as local",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "================ FAILURES ===================================\n_______ test_each_mode_records_where_private_work_sits_on_the_continuum _______\n\n    @pytest.mark.unit\n    def test_each_mode_records_where_private_work_sits_on_the_continuum():\n        for mode in defaults.PRIVATE_MODES:\n            ranks = defaults.mode_exposure(mode)\n            assert ranks[\"private/\"] == \"local\"\n            assert all(name in defaults.EXPOSURE_CONTINUUM.ranks for name in ranks.values())\n        assert \"convos/\" not in defaults.mode_exposure(\"nested\")\n>       assert defaults.mode_exposure(\"nested-branch\")[\"convos/\"] == \"local\"\nE       KeyError: 'convos/'\n\ntests\\test_private_modes.py:96: KeyError\n_____ test_nested_branch_is_recorded_and_keeps_private_its_own_repository _____\n\nsimple = (WindowsPath('<TEMP>/pytest-of-<USER>/pytest-15910/test_nested_branch_is_recorded0'), Wi...rk only and should not be pushed!\\n================================================================================\\n')\n\n    @pytest.mark.integration\n    def test_nested_branch_is_recorded_and_keeps_private_its_own_repository(simple):\n        where, local, out = simple\n        rec = record(local)\n        assert rec[\"private_mode\"] == \"nested-branch\"\n>       assert rec[\"private_exposure\"][\"convos/\"] == \"local\"\nE       KeyError: 'convos/'\n\nC:\\code\\git-repokit\\tests\\test_private_modes.py:169: KeyError\n----------------------------- Captured log setup ------------------------------\nWARNING  repokit:repo_manager.py:2891 No GitHub login known: the URLs, CODEOWNERS and FUNDING say YOUR_GITHUB_USERNAME. Use --github, or set github.username in ~/.repokit/config.json\n=========================== short test summary info ===========================\nFAILED tests/test_private_modes.py::test_each_mode_records_where_private_work_sits_on_the_continuum\nFAILED tests/test_private_modes.py::test_nested_branch_is_recorded_and_keeps_private_its_own_repository\n2 failed, 55 passed, 1 skipped in 145.86s (0:02:25)\n",
+      "killed_by": [
+        "tests/test_private_modes.py::test_each_mode_records_where_private_work_sits_on_the_continuum",
+        "tests/test_private_modes.py::test_nested_branch_is_recorded_and_keeps_private_its_own_repository"
+      ]
+    },
+    {
+      "id": "M2",
+      "file": "repokit/defaults.py",
+      "note": "logs/ is no longer a promoted record folder",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "C:\\Python312\\Lib\\pathlib.py:1014: FileNotFoundError\n----------------------------- Captured log setup ------------------------------\nWARNING  repokit:repo_manager.py:2891 No GitHub login known: the URLs, CODEOWNERS and FUNDING say YOUR_GITHUB_USERNAME. Use --github, or set github.username in ~/.repokit/config.json\n_________ test_the_private_branch_gitignore_drops_the_promoted_lines __________\n\nsimple = (WindowsPath('<TEMP>/pytest-of-<USER>/pytest-15911/test_the_private_branch_gitign0'), Wi...rk only and should not be pushed!\\n================================================================================\\n')\n\n    @pytest.mark.integration\n    def test_the_private_branch_gitignore_drops_the_promoted_lines(simple):\n        where, local, out = simple\n        ignore = {line.strip() for line in (local / \".gitignore\").read_text(encoding=\"utf-8\").splitlines()}\n        for name in PROMOTED:\n>           assert f\"/{name}/\" not in ignore and f\"{name}/\" not in ignore, name\nE           AssertionError: logs\nE           assert ('/logs/' not in {'', '!.vscode/extensions.json', '!.vscode/launch.json', '!.vscode/settings.json', '!.vscode/tasks.json', '# Add custom patterns below', ...})\n\nC:\\code\\git-repokit\\tests\\test_private_modes.py:209: AssertionError\n----------------------------- Captured log setup ------------------------------\nWARNING  repokit:repo_manager.py:2891 No GitHub login known: the URLs, CODEOWNERS and FUNDING say YOUR_GITHUB_USERNAME. Use --github, or set github.username in ~/.repokit/config.json\n=========================== short test summary info ===========================\nFAILED tests/test_private_modes.py::test_the_record_folders_are_tracked_on_private_and_on_no_public_branch\nFAILED tests/test_private_modes.py::test_a_plain_add_on_private_commits_conversations_and_revisions_but_not_run_logs\nFAILED tests/test_private_modes.py::test_the_private_branch_gitignore_drops_the_promoted_lines\n3 failed, 54 passed, 1 skipped in 126.37s (0:02:06)\n",
+      "killed_by": [
+        "tests/test_private_modes.py::test_a_plain_add_on_private_commits_conversations_and_revisions_but_not_run_logs",
+        "tests/test_private_modes.py::test_the_private_branch_gitignore_drops_the_promoted_lines",
+        "tests/test_private_modes.py::test_the_record_folders_are_tracked_on_private_and_on_no_public_branch"
+      ]
+    },
+    {
+      "id": "M3",
+      "file": "repokit/defaults.py",
+      "note": "nested-branch stops keeping private/ as its own repository",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".............F.....s......................................               [100%]\n================================== FAILURES ===================================\n_____ test_nested_branch_is_recorded_and_keeps_private_its_own_repository _____\n\nsimple = (WindowsPath('<TEMP>/pytest-of-<USER>/pytest-15912/test_nested_branch_is_recorded0'), Wi...rk only and should not be pushed!\\n================================================================================\\n')\n\n    @pytest.mark.integration\n    def test_nested_branch_is_recorded_and_keeps_private_its_own_repository(simple):\n        where, local, out = simple\n        rec = record(local)\n        assert rec[\"private_mode\"] == \"nested-branch\"\n        assert rec[\"private_exposure\"][\"convos/\"] == \"local\"\n>       assert (local / \"private\" / \".git\").exists()\nE       AssertionError: assert False\nE        +  where False = exists()\nE        +    where exists = ((WindowsPath('<TEMP>/pytest-of-<USER>/pytest-15912/test_nested_branch_is_recorded0/p/local') / 'private') / '.git').exists\n\nC:\\code\\git-repokit\\tests\\test_private_modes.py:170: AssertionError\n----------------------------- Captured log setup ------------------------------\nWARNING  repokit:repo_manager.py:2891 No GitHub login known: the URLs, CODEOWNERS and FUNDING say YOUR_GITHUB_USERNAME. Use --github, or set github.username in ~/.repokit/config.json\n=========================== short test summary info ===========================\nFAILED tests/test_private_modes.py::test_nested_branch_is_recorded_and_keeps_private_its_own_repository\n1 failed, 56 passed, 1 skipped in 133.09s (0:02:13)\n",
+      "killed_by": [
+        "tests/test_private_modes.py::test_nested_branch_is_recorded_and_keeps_private_its_own_repository"
+      ]
+    },
+    {
+      "id": "M4",
+      "file": "repokit/repo_manager.py",
+      "note": "a config with no private_branch key is treated as main-only",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M5",
+      "file": "repokit/repo_manager.py",
+      "note": "--private-mode nested-branch with no private branch is accepted",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "........F..........s......................................               [100%]\n================================== FAILURES ===================================\n_ test_a_branch_mode_without_a_private_branch_is_refused_with_the_fixes[nested-branch] _\n\nmode = 'nested-branch'\n\n    @pytest.mark.unit\n    @pytest.mark.parametrize(\"mode\", [\"nested-branch\", \"branch\"])\n    def test_a_branch_mode_without_a_private_branch_is_refused_with_the_fixes(mode):\n        found, problem = private_mode_for({\"private_branch\": None, \"private_mode\": mode})\n>       assert found is None\nE       AssertionError: assert 'nested-branch' is None\n\ntests\\test_private_modes.py:120: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_private_modes.py::test_a_branch_mode_without_a_private_branch_is_refused_with_the_fixes[nested-branch]\n1 failed, 56 passed, 1 skipped in 133.32s (0:02:13)\n",
+      "killed_by": [
+        "tests/test_private_modes.py::test_a_branch_mode_without_a_private_branch_is_refused_with_the_fixes[nested-branch]"
+      ]
+    },
+    {
+      "id": "M6",
+      "file": "repokit/repo_manager.py",
+      "note": "create and adopt defaults swapped",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "ranch-strategy\", \"simple\")\n        assert code == 0, out + caplog.text\n>       assert \"add them by hand\" in caplog.text\nE       AssertionError: assert 'add them by hand' in 'WARNING  repokit:repo_manager.py:187 --private-mode branch: private/ is tracked on the private branch, beside the pub...RLs, CODEOWNERS and FUNDING say YOUR_GITHUB_USERNAME. Use --github, or set github.username in ~/.repokit/config.json\\n'\nE        +  where 'WARNING  repokit:repo_manager.py:187 --private-mode branch: private/ is tracked on the private branch, beside the pub...RLs, CODEOWNERS and FUNDING say YOUR_GITHUB_USERNAME. Use --github, or set github.username in ~/.repokit/config.json\\n' = <_pytest.logging.LogCaptureFixture object at 0x00000292B3E9A780>.text\n\nC:\\code\\git-repokit\\tests\\test_private_modes.py:294: AssertionError\n------------------------------ Captured log call ------------------------------\nWARNING  repokit:repo_manager.py:187 --private-mode branch: private/ is tracked on the private branch, beside the public ones, and only the hooks and safe-merge keep it off them. The default, --private-mode nested-branch, keeps private/ its own repository.\nWARNING  repokit:repo_manager.py:2891 No GitHub login known: the URLs, CODEOWNERS and FUNDING say YOUR_GITHUB_USERNAME. Use --github, or set github.username in ~/.repokit/config.json\n=========================== short test summary info ===========================\nFAILED tests/test_private_modes.py::test_the_default_mode_follows_the_strategy_and_the_command[config1-nested-branch]\nFAILED tests/test_private_modes.py::test_the_default_mode_follows_the_strategy_and_the_command[config2-branch]\nFAILED tests/test_private_modes.py::test_nested_branch_is_recorded_and_keeps_private_its_own_repository\nFAILED tests/test_private_modes.py::test_the_private_branch_gitignore_drops_the_promoted_lines\nFAILED tests/test_private_modes.py::test_a_global_ignore_on_the_promoted_folders_does_not_fail_the_create\n5 failed, 52 passed, 1 skipped in 140.08s (0:02:20)\n",
+      "killed_by": [
+        "tests/test_private_modes.py::test_a_global_ignore_on_the_promoted_folders_does_not_fail_the_create",
+        "tests/test_private_modes.py::test_nested_branch_is_recorded_and_keeps_private_its_own_repository",
+        "tests/test_private_modes.py::test_the_default_mode_follows_the_strategy_and_the_command[config1-nested-branch]",
+        "tests/test_private_modes.py::test_the_default_mode_follows_the_strategy_and_the_command[config2-branch]",
+        "tests/test_private_modes.py::test_the_private_branch_gitignore_drops_the_promoted_lines"
+      ]
+    },
+    {
+      "id": "M7",
+      "file": "repokit/repo_manager.py",
+      "note": "private_dirs given as 'logs/' no longer match PROMOTED_DIRS",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M8",
+      "file": "repokit/repo_manager.py",
+      "note": "a bare 'logs' ignore line survives",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M9",
+      "file": "repokit/repo_manager.py",
+      "note": "an ignore line with trailing whitespace naming a promoted folder is kept",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M10",
+      "file": "repokit/repo_manager.py",
+      "note": "'logs/' in private_dirs re-adds the line just removed",
+      "verdict": "survived",
+      "restore_ok": true,
+      "output_tail": ""
+    },
+    {
+      "id": "M11",
+      "file": "repokit/repo_manager.py",
+      "note": "private/claude/ stays excluded in branch mode",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "== \"branch\"\n        assert not (local / \"private\" / \".git\").exists()\n        assert under(tree(local, \"private\"), \"private\")\n        # a plain add on the private branch takes a new private/ file (no -f)\n        (local / \"private\" / \"notes\").mkdir(parents=True, exist_ok=True)\n        (local / \"private\" / \"notes\" / \"new.md\").write_text(\"a note\\n\", encoding=\"utf-8\")\n        git(local, \"add\", \".\")\n>       assert \"private/notes/new.md\" in git(local, \"diff\", \"--cached\", \"--name-only\").stdout.split()\nE       AssertionError: assert 'private/notes/new.md' in []\nE        +  where [] = <built-in method split of str object at 0x00007FFAB1231D00>()\nE        +    where <built-in method split of str object at 0x00007FFAB1231D00> = ''.split\nE        +      where '' = CompletedProcess(args=['git', 'diff', '--cached', '--name-only'], returncode=0, stdout='', stderr='').stdout\nE        +        where CompletedProcess(args=['git', 'diff', '--cached', '--name-only'], returncode=0, stdout='', stderr='') = git(WindowsPath('<TEMP>/pytest-of-<USER>/pytest-15925/test_branch_mode_is_warned_rec0/p/local'), 'diff', '--cached', '--name-only')\n\nC:\\code\\git-repokit\\tests\\test_private_modes.py:314: AssertionError\n------------------------------ Captured log call ------------------------------\nWARNING  repokit:repo_manager.py:187 --private-mode branch: private/ is tracked on the private branch, beside the public ones, and only the hooks and safe-merge keep it off them. The default, --private-mode nested-branch, keeps private/ its own repository.\nWARNING  repokit:repo_manager.py:2891 No GitHub login known: the URLs, CODEOWNERS and FUNDING say YOUR_GITHUB_USERNAME. Use --github, or set github.username in ~/.repokit/config.json\n=========================== short test summary info ===========================\nFAILED tests/test_private_modes.py::test_branch_mode_is_warned_recorded_and_tracks_private_on_the_private_branch_only\n1 failed, 56 passed, 1 skipped in 130.30s (0:02:10)\n",
+      "killed_by": [
+        "tests/test_private_modes.py::test_branch_mode_is_warned_recorded_and_tracks_private_on_the_private_branch_only"
+      ]
+    },
+    {
+      "id": "M12",
+      "file": "repokit/repo_manager.py",
+      "note": "a create never commits the promoted folders; an adoption does",
+      "verdict": "apply-failed",
+      "restore_ok": true,
+      "output_tail": "M12: expected exactly 1 occurrence of the original text in repokit/repo_manager.py, found 0"
+    },
+    {
+      "id": "M13",
+      "file": "repokit/repo_manager.py",
+      "note": "an existing 'private/' line no longer stops a duplicate '/private/'",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "[\"notes\"])\n>       assert \"/notes/\" not in lines\nE       AssertionError: assert '/notes/' not in ['notes/', '', '# Private content (auto-added)', '/notes/', '**/__private__*', '']\n\ntests\\test_common_guard.py:319: AssertionError\n___________ test_gitignore_line_is_matched_whole_not_as_a_substring ___________\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<USER>/pytest-15926/test_gitignore_line_is_matched0')\n\n    @pytest.mark.unit\n    def test_gitignore_line_is_matched_whole_not_as_a_substring(tmp_path):\n        \"\"\"'/docs/' used to count as present inside a line like 'private/docs/'\n        (the public branches' .gitignore carries it; a layer's could too).\"\"\"\n        from types import SimpleNamespace\n        from repokit.repo_manager import RepoManager\n        (tmp_path / \".gitignore\").write_text(\"private/docs/\\n/logs/\\n\", encoding=\"utf-8\")\n        fake = SimpleNamespace(repo_root=str(tmp_path), promoted=[], config={\"private_dirs\": [\"docs\", \"logs\"]})\n        RepoManager._write_private_ignores(fake)\n        lines = gitignore_lines(tmp_path)\n        assert \"/docs/\" in lines\n>       assert sum(1 for line in (tmp_path / \".gitignore\").read_text(encoding=\"utf-8\").splitlines()\n                   if line.strip() == \"/logs/\") == 1, \"a line already there is not written twice\"\nE       AssertionError: a line already there is not written twice\nE       assert 2 == 1\nE        +  where 2 = sum(<generator object test_gitignore_line_is_matched_whole_not_as_a_substring.<locals>.<genexpr> at 0x0000024CCC7E4D40>)\n\ntests\\test_common_guard.py:360: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_common_guard.py::test_gitignore_line_already_there_counts_with_trailing_spaces\nFAILED tests/test_common_guard.py::test_gitignore_unanchored_line_already_covers_the_folder\nFAILED tests/test_common_guard.py::test_gitignore_line_is_matched_whole_not_as_a_substring\n3 failed, 54 passed, 1 skipped in 126.31s (0:02:06)\n",
+      "killed_by": [
+        "tests/test_common_guard.py::test_gitignore_line_already_there_counts_with_trailing_spaces",
+        "tests/test_common_guard.py::test_gitignore_line_is_matched_whole_not_as_a_substring",
+        "tests/test_common_guard.py::test_gitignore_unanchored_line_already_covers_the_folder"
+      ]
+    }
+  ],
+  "summary": {
+    "killed": 7,
+    "survived": 5,
+    "apply-failed": 1
+  },
+  "anomalies": [
+    "M12: apply failed -- M12: expected exactly 1 occurrence of the original text in repokit/repo_manager.py, found 0"
+  ],
+  "overlap": {
+    "kills": {
+      "tests/test_common_guard.py::test_gitignore_line_already_there_counts_with_trailing_spaces": [
+        "M13"
+      ],
+      "tests/test_common_guard.py::test_gitignore_line_is_matched_whole_not_as_a_substring": [
+        "M13"
+      ],
+      "tests/test_common_guard.py::test_gitignore_unanchored_line_already_covers_the_folder": [
+        "M13"
+      ],
+      "tests/test_private_modes.py::test_a_branch_mode_without_a_private_branch_is_refused_with_the_fixes[nested-branch]": [
+        "M5"
+      ],
+      "tests/test_private_modes.py::test_a_global_ignore_on_the_promoted_folders_does_not_fail_the_create": [
+        "M6"
+      ],
+      "tests/test_private_modes.py::test_a_plain_add_on_private_commits_conversations_and_revisions_but_not_run_logs": [
+        "M2"
+      ],
+      "tests/test_private_modes.py::test_branch_mode_is_warned_recorded_and_tracks_private_on_the_private_branch_only": [
+        "M11"
+      ],
+      "tests/test_private_modes.py::test_each_mode_records_where_private_work_sits_on_the_continuum": [
+        "M1"
+      ],
+      "tests/test_private_modes.py::test_nested_branch_is_recorded_and_keeps_private_its_own_repository": [
+        "M1",
+        "M3",
+        "M6"
+      ],
+      "tests/test_private_modes.py::test_the_default_mode_follows_the_strategy_and_the_command[config1-nested-branch]": [
+        "M6"
+      ],
+      "tests/test_private_modes.py::test_the_default_mode_follows_the_strategy_and_the_command[config2-branch]": [
+        "M6"
+      ],
+      "tests/test_private_modes.py::test_the_private_branch_gitignore_drops_the_promoted_lines": [
+        "M2",
+        "M6"
+      ],
+      "tests/test_private_modes.py::test_the_record_folders_are_tracked_on_private_and_on_no_public_branch": [
+        "M2"
+      ]
+    },
+    "identical": [
+      [
+        "tests/test_common_guard.py::test_gitignore_line_already_there_counts_with_trailing_spaces",
+        "tests/test_common_guard.py::test_gitignore_line_is_matched_whole_not_as_a_substring",
+        "tests/test_common_guard.py::test_gitignore_unanchored_line_already_covers_the_folder"
+      ],
+      [
+        "tests/test_private_modes.py::test_a_global_ignore_on_the_promoted_folders_does_not_fail_the_create",
+        "tests/test_private_modes.py::test_the_default_mode_follows_the_strategy_and_the_command[config1-nested-branch]",
+        "tests/test_private_modes.py::test_the_default_mode_follows_the_strategy_and_the_command[config2-branch]"
+      ],
+      [
+        "tests/test_private_modes.py::test_a_plain_add_on_private_commits_conversations_and_revisions_but_not_run_logs",
+        "tests/test_private_modes.py::test_the_record_folders_are_tracked_on_private_and_on_no_public_branch"
+      ]
+    ],
+    "contained": [
+      [
+        "tests/test_private_modes.py::test_a_global_ignore_on_the_promoted_folders_does_not_fail_the_create",
+        "tests/test_private_modes.py::test_nested_branch_is_recorded_and_keeps_private_its_own_repository"
+      ],
+      [
+        "tests/test_private_modes.py::test_a_global_ignore_on_the_promoted_folders_does_not_fail_the_create",
+        "tests/test_private_modes.py::test_the_private_branch_gitignore_drops_the_promoted_lines"
+      ],
+      [
+        "tests/test_private_modes.py::test_a_plain_add_on_private_commits_conversations_and_revisions_but_not_run_logs",
+        "tests/test_private_modes.py::test_the_private_branch_gitignore_drops_the_promoted_lines"
+      ],
+      [
+        "tests/test_private_modes.py::test_each_mode_records_where_private_work_sits_on_the_continuum",
+        "tests/test_private_modes.py::test_nested_branch_is_recorded_and_keeps_private_its_own_repository"
+      ],
+      [
+        "tests/test_private_modes.py::test_the_default_mode_follows_the_strategy_and_the_command[config1-nested-branch]",
+        "tests/test_private_modes.py::test_nested_branch_is_recorded_and_keeps_private_its_own_repository"
+      ],
+      [
+        "tests/test_private_modes.py::test_the_default_mode_follows_the_strategy_and_the_command[config1-nested-branch]",
+        "tests/test_private_modes.py::test_the_private_branch_gitignore_drops_the_promoted_lines"
+      ],
+      [
+        "tests/test_private_modes.py::test_the_default_mode_follows_the_strategy_and_the_command[config2-branch]",
+        "tests/test_private_modes.py::test_nested_branch_is_recorded_and_keeps_private_its_own_repository"
+      ],
+      [
+        "tests/test_private_modes.py::test_the_default_mode_follows_the_strategy_and_the_command[config2-branch]",
+        "tests/test_private_modes.py::test_the_private_branch_gitignore_drops_the_promoted_lines"
+      ],
+      [
+        "tests/test_private_modes.py::test_the_record_folders_are_tracked_on_private_and_on_no_public_branch",
+        "tests/test_private_modes.py::test_the_private_branch_gitignore_drops_the_promoted_lines"
+      ]
+    ],
+    "killed_without_names": []
+  }
+}

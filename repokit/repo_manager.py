@@ -18,8 +18,36 @@ from .template_engine import TemplateEngine
 from .defaults import (
     DEFAULT_PRIVATE_DIRS, DEFAULT_SENSITIVE_FILES, DEFAULT_SENSITIVE_PATTERNS,
     DEFAULT_PRIVATE_BRANCHES, DEFAULT_PUBLIC_BRANCHES, 
-    DEFAULT_PRIVATE_PATTERNS, DEFAULT_EXCLUDE_FROM_PUBLIC
+    DEFAULT_PRIVATE_PATTERNS, DEFAULT_EXCLUDE_FROM_PUBLIC,
+    PRIVATE_MODES, VAULT_MODES, BRANCH_MODES, PROMOTED_DIRS, mode_exposure, private_dir_names,
 )
+
+
+def private_mode_for(config: Dict[str, Any]) -> Tuple[Optional[str], Optional[str]]:
+    """The private mode for this configuration, and a refusal when the one
+    asked for needs a private branch the strategy does not have.
+
+    Asked for by name, it is kept. Otherwise: nested with no private branch
+    (main-only); nested-branch for a create with one (0.10.3; it was branch);
+    branch for adopt and migrate, which this release does not change.
+    """
+    private_branch = config.get("private_branch", "private")
+    asked = config.get("private_mode")
+    if asked and asked not in PRIVATE_MODES:
+        return None, f"--private-mode {asked}: not one of {', '.join(PRIVATE_MODES)}"
+    if asked in BRANCH_MODES and not private_branch:
+        return None, (
+            f"--private-mode {asked} keeps private work on a private branch, and this "
+            "branch strategy has none. Choose a private-branch strategy "
+            "(--branch-strategy simple, standard, gitflow, github-flow or minimal), "
+            "or --private-mode nested to keep private/ as its own repository."
+        )
+    if asked:
+        return asked, None
+    if not private_branch:
+        return "nested", None
+    return ("branch" if config.get("is_adoption") else "nested-branch"), None
+
 
 # What a project gives up without git-repokit-common (djdarcy, 2026-10-31:
 # "It's a core part of our system. We can LET users not include it but at this
@@ -58,12 +86,20 @@ class RepoManager:
         # Only a missing key falls back to the legacy "private".
         self.private_branch = config.get("private_branch", "private")
 
-        # How private work is kept: "nested" (private/ is its own repository)
-        # or "branch" (on the private branch only). The default follows the
-        # strategy, so a private-branch strategy alone behaves as it always did.
-        self.private_mode = config.get("private_mode") or (
-            "nested" if not self.private_branch else "branch"
-        )
+        # How private work is kept (defaults.PRIVATE_MODES; private_mode_for
+        # picks the default). vault_nested: private/ is its own repository.
+        # promoted: the folders tracked at the root on the private branch.
+        mode, problem = private_mode_for(config)
+        if problem:
+            raise ValueError(problem)
+        self.private_mode = mode
+        self.vault_nested = mode in VAULT_MODES
+        self.promoted: List[str] = []
+        if mode in BRANCH_MODES:
+            names = set(private_dir_names(config.get("private_dirs", DEFAULT_PRIVATE_DIRS)))
+            self.promoted = [d for d in PROMOTED_DIRS if d in names]
+            if mode == "branch":
+                self.promoted.append("private")
 
         # Vendor git-repokit-common (hooks and tools) into the project: on by
         # default for every strategy since 0.10.2 (it was opt-in for the
@@ -145,6 +181,15 @@ class RepoManager:
             # The extras too: an unknown name is refused before anything is written
             self.config["extras"] = self.extras_names(self.config.get("extras"))
 
+            # branch mode is opt-in: private/ lives in the project's own
+            # history, where only the hooks keep it off the public branches
+            if self.private_mode == "branch" and not self.config.get("is_adoption", False):
+                self.logger.warning(
+                    "--private-mode branch: private/ is tracked on the private branch, beside "
+                    "the public ones, and only the hooks and safe-merge keep it off them. "
+                    "The default, --private-mode nested-branch, keeps private/ its own repository."
+                )
+
             # Create project directory structure
             self._create_directory_structure()
 
@@ -167,9 +212,12 @@ class RepoManager:
             self._setup_protection()
 
             # Nested mode: private/ becomes its own repository, ignored by this one
-            if self.private_mode == "nested":
+            if self.vault_nested:
                 from .vault import init_private_repo
-                if not init_private_repo(self.repo_root, self.project_name, self.logger):
+                # nested-branch: the promoted folders live at the root, not
+                # also in the vault -- one home each
+                if not init_private_repo(self.repo_root, self.project_name, self.logger,
+                                         skip=self.promoted):
                     raise RuntimeError("could not create the private repository in private/")
 
             # Generate template files
@@ -188,7 +236,7 @@ class RepoManager:
             # The language templates rewrite .gitignore; put the private
             # folders' lines back (0.10.2), and the vault's
             self._write_private_ignores()
-            if self.private_mode == "nested":
+            if self.vault_nested:
                 from .vault import ensure_parent_ignores
                 ensure_parent_ignores(self.repo_root)
 
@@ -203,7 +251,7 @@ class RepoManager:
             # The vault's AI door (0.9.4): the oracle's first prompt, written
             # once the project's files exist to describe; left uncommitted in
             # the vault for the oracle session to read and run.
-            if self.private_mode == "nested" and not self.config.get("is_adoption", False):
+            if self.vault_nested and not self.config.get("is_adoption", False):
                 from .vault import bootstrap
                 prompt = bootstrap(self.repo_root, self.project_name, self.config.get("vault_init") or "prompt-file")
                 if prompt:
@@ -225,7 +273,7 @@ class RepoManager:
             self._setup_worktrees()
 
             # Nested mode: every worktree reaches the real private/ through a link
-            if self.private_mode == "nested":
+            if self.vault_nested:
                 self._link_private_into_worktrees()
 
             # Set up local exclude patterns for branch-conditional ignoring
@@ -1222,7 +1270,22 @@ class RepoManager:
         private_dirs = self.config.get(
             "private_dirs", DEFAULT_PRIVATE_DIRS
         )
-        
+
+        # The promoted folders (nested-branch, branch) are tracked on the
+        # private branch with a plain `git add`, so no ignore line may name
+        # them -- the template's own lines included. The public branches get
+        # theirs back when they are cut (_update_gitignore_for_public_branch),
+        # and the hooks still refuse them there (0.10.3).
+        if self.promoted:
+            drop = {form for name in self.promoted for form in (f"/{name}/", f"{name}/", f"/{name}", name)}
+            lines = existing_content.splitlines()
+            kept = [line for line in lines if line.strip() not in drop]
+            if len(kept) != len(lines):
+                existing_content = "\n".join(kept) + "\n"
+                with open(gitignore_path, "w") as f:
+                    f.write(existing_content)
+            private_dirs = [d for d in private_dirs if d.strip("/") not in self.promoted]
+
         # Only add entries that don't already exist, matched as whole lines:
         # as a substring, "/docs/" was "present" inside the template's own
         # "private/docs/", so --private-dirs docs never got its line.
@@ -1368,6 +1431,14 @@ exit 0
             "revisions/",
             "",
         ]
+        # The promoted folders must stay visible to `git add` on the private
+        # branch: this file is shared by every worktree, the private one
+        # included, so an exclude here would hide them there too (0.10.3).
+        if self.promoted:
+            exclude_patterns = [
+                p for p in exclude_patterns
+                if p.split("/", 1)[0] not in self.promoted   # comments and blanks pass too
+            ]
 
         # Read existing exclude file if it exists
         existing_content = []
@@ -1564,6 +1635,51 @@ exit 0
         self.run_git(["checkout", private_branch], cwd=self.repo_root)
         if failed:
             raise RuntimeError(f"public branches not built: {', '.join(failed)}")
+        self._promote_record_folders()
+
+    def _promote_record_folders(self) -> None:
+        """nested-branch and branch: make the promoted folders at the root and
+        commit them on the private branch (0.10.3).
+
+        Run after the public branches are cut, never before: they are cut from
+        this branch and keep its history, so a folder in the first commit
+        would travel with every public branch to its remote. logs/ gets a
+        .gitignore of its own, so run output stays out and a chosen log can
+        still be added with `git add -f`. An adoption gets the folders only;
+        its commits are the person's.
+        """
+        if not self.promoted:
+            return
+        from .vault import lay_structure
+        for name in self.promoted:
+            folder = os.path.join(self.repo_root, name)
+            os.makedirs(folder, exist_ok=True)
+            if name == "logs":
+                ignore = os.path.join(folder, ".gitignore")
+                if not os.path.exists(ignore):
+                    with open(ignore, "w", encoding="utf-8", newline="\n") as f:
+                        f.write("# Run output stays out of git; commit a chosen log with `git add -f`.\n*.log\n")
+            elif name == "private":
+                # branch mode: the vault's folders, on the private branch;
+                # the record folders are at the root, so not here as well
+                lay_structure(folder, skip=self.promoted)
+            for dirpath, dirnames, filenames in os.walk(folder):
+                if not dirnames and not filenames:
+                    open(os.path.join(dirpath, ".gitkeep"), "w").close()
+        if self.config.get("is_adoption", False):
+            return
+        # Not fatal: an ignore rule outside the project (a global excludes
+        # file) can refuse a folder; the create still succeeds and says so
+        self.run_git(["add", "--", *self.promoted], cwd=self.repo_root, check=False)
+        if not self.run_git(["diff", "--cached", "--name-only"], cwd=self.repo_root, check=False):
+            self.logger.warning(f"Nothing of {', '.join(self.promoted)} could be added on "
+                                f"{self.private_branch} (an ignore rule outside the project?); "
+                                "the folders are on disk -- add them by hand")
+            return
+        self.run_git(["commit", "-m",
+                      f"Promote {', '.join(n + '/' for n in self.promoted)} "
+                      f"(tracked on {self.private_branch} only)"], cwd=self.repo_root)
+        self.logger.info(f"Promoted to the private branch: {', '.join(self.promoted)}")
 
     def _get_working_directory_files(self) -> List[str]:
         """
@@ -2383,7 +2499,7 @@ exit 0
             # Generate CLAUDE.md. Nested mode (the default) gets a short pointer
             # to the vault's own CLAUDE.md with the project's real commands
             # (0.9.6); the long template describes the private-branch model.
-            nested = self.private_mode == "nested"
+            nested = self.vault_nested
             self.template_engine.render_template_to_file(
                 "CLAUDE-nested.md" if nested else "CLAUDE.md",
                 os.path.join(self.repo_root, "CLAUDE.md"),
@@ -2430,7 +2546,7 @@ exit 0
             # In nested mode private/ is its own repository: its files are the
             # vault's to commit, never this repository's.
             self.run_git(["add", "CLAUDE.md"], cwd=self.repo_root)
-            if self.private_mode != "nested":
+            if not self.vault_nested:
                 self.run_git(["add", "-f", "private/claude/"], cwd=self.repo_root)
 
             # Only commit if not in adoption mode (in adoption, user commits manually)
@@ -2703,6 +2819,8 @@ exit 0
             "branch_strategy": self.config.get("branch_strategy", "standard"),
             "private_branch": self.config.get("private_branch", "private"),
             "private_mode": self.private_mode,
+            # where private work sits on defaults.EXPOSURE_CONTINUUM (0.10.3)
+            "private_exposure": mode_exposure(self.promoted),
             "repokit_common": self.common_vendored,
             "license": self._license_record(),
             "extras": list(self.config.get("extras") or []),

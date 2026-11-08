@@ -22,6 +22,33 @@ _REPOKIT_EXCLUDE_LINES = {
 }
 
 
+def promoted_folders(repo_path: str) -> List[str]:
+    """The folders this project tracks on its private branch (0.10.3), from
+    its record: .repokit.json's private_mode and private_exposure. Empty for
+    a nested project or one with no record."""
+    import json
+    from .defaults import BRANCH_MODES
+    try:
+        with open(os.path.join(repo_path, ".repokit.json"), encoding="utf-8") as f:
+            record = json.load(f)
+    except (OSError, ValueError):
+        return []
+    mode = record.get("private_mode")
+    if mode not in BRANCH_MODES:
+        return []
+    folders = [k.strip("/") for k in record.get("private_exposure", {}) if k != "private/"]
+    return folders + (["private"] if mode == "branch" else [])
+
+
+def _without_promoted(excludes: List[str], promoted: List[str]) -> List[str]:
+    """.git/info/exclude is one file for every checkout of the repository --
+    a minimal project's branch switches and every worktree -- so an exclude
+    written for a public branch also hides the folder on the private branch,
+    where a plain `git add` must take it. The public branches keep their own
+    protection: their .gitignore and the hooks."""
+    return [p for p in excludes if p.split("/", 1)[0] not in promoted]
+
+
 def _write_excludes(exclude_file: str, excludes: List[str]) -> None:
     """Write RepoKit's branch excludes, keeping every line that is not RepoKit's.
 
@@ -325,7 +352,8 @@ class BranchContext:
                 "test-runs/",
                 "test_runs/",
             ]
-            
+            excludes = _without_promoted(excludes, promoted_folders(self.repo_path))
+
             _write_excludes(exclude_file, excludes)
 
             print(f"✓ Set up branch excludes for public branch '{self.current_branch}'")

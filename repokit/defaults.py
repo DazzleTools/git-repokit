@@ -6,7 +6,57 @@ This module provides centralized default values to prevent duplication
 and ensure consistency across the codebase.
 """
 
-from typing import List
+from typing import Dict, List
+
+from dazzle_lib.continuum import Continuum
+
+# How exposed a thing is: who can read it. Zero is "controlled" -- readable
+# only by people the owner chose -- and the line every private folder must
+# stay below is "shared" (a remote that could be public). Agreed with djdarcy,
+# 2026-11-01 (git-repokit's vault: notes/...__both_the-exposure-continuum.md).
+EXPOSURE_CONTINUUM = Continuum(
+    name="exposure",
+    ranks={"untracked": -2, "local": -1, "controlled": 0, "shared": 1, "public": 2},
+    invariant="who can read it",
+)
+
+# How private work is kept (--private-mode):
+#   nested         private/ is its own git repository (main-only's default)
+#   nested-branch  private/ is still its own repository, and the record
+#                  folders (PROMOTED_DIRS) are tracked on the private branch
+#                  (the private-branch strategies' default for a create)
+#   branch         private/ itself is tracked on the private branch too
+#                  (opt-in, warned; adopt's default)
+PRIVATE_MODES = ("nested", "nested-branch", "branch")
+VAULT_MODES = ("nested", "nested-branch")      # private/ is its own repository
+BRANCH_MODES = ("nested-branch", "branch")     # the private branch tracks the record folders
+
+# The record folders a private-branch project tracks at its root, on the
+# private branch only: conversations, revisions ("as easy as MOVING an old
+# file to ./revisions and it's then still git tracked"), and logs, whose run
+# output is ignored (logs/.gitignore) so chosen logs can still be committed.
+PROMOTED_DIRS = ("convos", "revisions", "logs")
+
+
+def private_dir_names(dirs) -> List[str]:
+    """Folder names from --private-dirs entries however they were written:
+    "convos/", "/revisions" and "logs" are convos, revisions and logs."""
+    return [d.strip("/") for d in dirs if d and d.strip("/")]
+
+
+def mode_exposure(promoted) -> Dict[str, str]:
+    """Where a project's private work sits on EXPOSURE_CONTINUUM, recorded in
+    .repokit.json: the vault, and each folder the mode promotes to the private
+    branch (RepoManager.promoted). Each level is checked against the
+    continuum: an unknown name raises, and none may reach "shared" -- the
+    line a private folder must stay below."""
+    ranks = {"private/": "local"}
+    ranks.update({f"{name}/": "local" for name in promoted if name != "private"})
+    for path, level in ranks.items():
+        if not EXPOSURE_CONTINUUM.is_colder(level, "shared"):
+            raise ValueError(f"{path} would be {level}: private work stays below shared")
+    return ranks
+
 
 # Default private directories that should not appear in public branches
 DEFAULT_PRIVATE_DIRS = [
@@ -180,17 +230,21 @@ def strategy_push_branches(name: str) -> List[str]:
 DEFAULT_BRANCH_STRATEGIES = {name: strategy_branch_list(name) for name in BRANCH_STRATEGIES}
 
 # Default directory profiles - centralized from directory_profiles.py
-# convos/, revisions/ and logs/ are made inside private/ (vault.PRIVATE_STRUCTURE)
-# since 0.10.0, never at the project root; DEFAULT_PRIVATE_DIRS still names
-# them, so a root folder an older project has stays out of public history.
+# The text is 0.9.12's again (0.10.3). A profile entry in the private set
+# (logs, private, convos, revisions) goes to private_dirs, the protection
+# list, never to the folders created -- so this text never changed a layout.
+# Where convos/, revisions/ and logs/ are made follows the private mode:
+# inside the vault in nested, promoted to the root on the private branch in
+# nested-branch and branch (PROMOTED_DIRS).
 DEFAULT_DIRECTORY_PROFILES = {
     "minimal": ["src", "tests", "docs"],
     "standard": [
-        "src", "tests", "docs", "scripts", "config", "private"
+        "src", "tests", "docs", "scripts", "config",
+        "logs", "private", "convos", "revisions"
     ],
     "complete": [
-        "src", "tests", "docs", "scripts", "config",
-        "private", "data", "examples",
+        "src", "tests", "docs", "scripts", "config", "logs",
+        "private", "convos", "revisions", "data", "examples",
         "tools", "resources", "assets"
     ]
 }

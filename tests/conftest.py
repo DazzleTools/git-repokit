@@ -90,6 +90,11 @@ def pytest_configure(config):
     # the tests of the refusal itself remove this variable.
     _set("REPOKIT_LICENSE", "mit")
 
+    # git-repokit-common 0.4.4's hooks ask at a terminal when they refuse a
+    # private file. A created project's hooks run inside these tests; from a
+    # person's own terminal one could open it and wait. None may prompt here.
+    _set("REPOKIT_INTERACTIVE", "0")
+
     if not live_github_enabled():
         for name in TOKEN_VARS:
             _set(name, "")

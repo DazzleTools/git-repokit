@@ -41,6 +41,14 @@ The strategies below keep your working history on a local-only `private` branch 
 
 This is a valid workflow, and it is what RepoKit was first built for. It is also the more involved one: keeping private material off public branches takes care, which is why RepoKit installs hooks that refuse private files on public branches. If you only need private notes, main-only with `private/` kept out of git is simpler and recommended; choose a strategy below when you want private work in git history on its own branch. Choose one with `--branch-strategy` on `create` or `adopt` (`adopt` uses `standard` when you give none). `standard`, which this guide does not describe separately, is `private`, `main`, `dev`, `staging`, `test` and `live`, with worktrees for `private`, `main` and `dev`; see [Workflow-Guide.md](./Workflow-Guide.md).
 
+**What the private branch carries** (`--private-mode`, see [The vault](The-Vault.md)):
+
+- **`nested-branch` (the default for a create):** `private/` stays its own repository, linked into every worktree, and the private branch tracks `convos/`, `revisions/` and `logs/` at the root (run logs ignored). These folders never reach a public branch or a remote. The hooks refuse them, `safe-merge` leaves them out, and git-repokit-common's pre-push refuses a push that adds them.
+- **`branch` (opt-in, and `adopt`'s default):** `private/` itself is tracked on the private branch too.
+- **`nested`:** the private branch exists but carries nothing private; everything private is in the vault.
+
+With `minimal`, checking out `main` takes the promoted folders off the disk until you switch back. The vault stays.
+
 ## 🤔 Understanding Branch Strategies
 
 A branch strategy defines how you organize your code development using Git branches. Think of branches as parallel universes for your code:

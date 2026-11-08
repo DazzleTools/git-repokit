@@ -5,6 +5,28 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.3] - 2026-11-07
+
+### Added
+- **`--private-mode nested-branch`** - the private-branch strategies' new default for `create`
+  - `private/` stays its own repository, linked into every worktree, as with `main-only`
+  - `convos/`, `revisions/` and `logs/` are tracked at the root on the private branch: a plain `git add .` takes them, and an old file moved to `revisions/` stays in history
+  - `logs/` ignores its run output (`*.log`); commit a chosen log with `git add -f`
+  - the folders are committed after the public branches are cut, so no public branch's history holds them
+  - each has one home: at the root, not also inside the vault (the vault keeps its other folders)
+  - `repokit setup-guardrails` run on a public branch no longer hides them on the private branch (one exclude file serves every checkout, which `minimal` switches in place)
+- **`.repokit.json` records where private work sits** - `private_exposure`, on a scale from `untracked` to `public`; the vault and the promoted folders are `local`
+- **dazzle-lib and dazzle-loglib are dependencies** - `dazzle-lib>=0.8.2` names the exposure scale; `dazzle-loglib>=0.3.3` is the logging library ahead
+
+### Changed
+- **`--private-mode branch` is opt-in and warned** - it tracks `private/` itself on the private branch; it was the private-branch strategies' default, and stays `adopt`'s
+- **A branch mode without a private branch is refused before anything is written** - `--private-mode nested-branch` or `branch` with `main-only` names the two fixes: a private-branch strategy, or `--private-mode nested`
+- **The directory profiles list `logs`, `convos` and `revisions` again** - their 0.9.12 text; a profile's private folders are protected, never created at the root, so no layout changes
+
+### Notes
+- Pushing a private branch that carries these folders is refused by git-repokit-common 0.4.4's pre-push hook; `REPOKIT_ALLOW_PRIVATE_PUSH=1` allows one push to a remote that is itself private
+- With `minimal` (one checkout), checking out `main` takes the promoted folders off the disk until you switch back; the vault stays
+
 ## [0.10.2] - 2026-11-01
 
 ### Changed

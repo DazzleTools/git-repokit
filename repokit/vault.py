@@ -17,7 +17,7 @@ any path containing "private" as private content and would refuse or cut it.)
 import os
 import subprocess
 import sys
-from typing import List, Optional, Tuple
+from typing import Iterable, List, Optional, Tuple
 
 # The vault's standard folders (private_init.PRIVATE_STRUCTURE)
 PRIVATE_STRUCTURE = [
@@ -170,12 +170,28 @@ def bootstrap(repo_root: str, project_name: str, mode: str = "prompt-file") -> O
     return final
 
 
-def init_private_repo(repo_root: str, project_name: str, logger=None) -> bool:
+def lay_structure(private_path: str, skip: Iterable[str] = ()) -> None:
+    """The vault's standard folders (PRIVATE_STRUCTURE) under private_path,
+    with a .gitkeep in each that is empty. A folder named in skip, and its
+    subfolders, is left out: in nested-branch the record folders live at the
+    project root instead, so each has one home (0.10.3)."""
+    skipped = {s.strip("/") for s in skip}
+    for sub in PRIVATE_STRUCTURE:
+        if sub.split("/", 1)[0] in skipped:
+            continue
+        folder = os.path.join(private_path, sub)
+        os.makedirs(folder, exist_ok=True)
+        if not os.listdir(folder):
+            open(os.path.join(folder, ".gitkeep"), "w").close()
+
+
+def init_private_repo(repo_root: str, project_name: str, logger=None, skip: Iterable[str] = ()) -> bool:
     """Create private/ as its own git repository with a first commit.
 
     Refuses an existing private repository (never re-initialises). Signing is
     turned off inside the vault, as dz private-init does: it is local-only.
-    Returns True when the vault exists afterwards.
+    skip: standard folders not to lay (lay_structure). Returns True when the
+    vault exists afterwards.
     """
     log = logger.info if logger else (lambda msg: None)
     private_path = os.path.join(repo_root, "private")
@@ -208,11 +224,7 @@ def init_private_repo(repo_root: str, project_name: str, logger=None) -> bool:
         # The skeleton /obsidian-init laid by hand (0.9.4), before the
         # folders' gitkeeps so a folder with a file needs none.
         write_skeleton(private_path, project_name)
-        for sub in PRIVATE_STRUCTURE:
-            folder = os.path.join(private_path, sub)
-            os.makedirs(folder, exist_ok=True)
-            if not os.listdir(folder):
-                open(os.path.join(folder, ".gitkeep"), "w").close()
+        lay_structure(private_path, skip)
 
     _git(["add", "-A"], private_path)
     message = (f"init: adopt existing private content for {project_name}" if existing_content

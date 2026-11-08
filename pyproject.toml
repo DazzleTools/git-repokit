@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 # PyPI's trusted publisher is registered for this name (DazzleTools/git-repokit,
 # publish.yml, environment pypi); the command stays `repokit`
 name = "git-repokit"
-version = "0.10.2"
+version = "0.10.3"
 description = "Create standardized Git repositories: language presets, licenses, GitHub setup, and a private notes vault"
 readme = "README.md"
 license = "MIT"
@@ -37,6 +37,12 @@ dependencies = [
   "requests>=2.25.0",
   # tomllib is 3.11+; the layer engine reads TOML (layers.py falls back to tomli)
   "tomli>=1.1; python_version < '3.11'",
+  # the DazzleLib stack: dazzle_lib.continuum names how exposed private work
+  # is (defaults.EXPOSURE_CONTINUUM); pure Python, no dependencies of its own
+  "dazzle-lib>=0.8.2",
+  # logging with channels, for the verbosity work ahead; explicit now
+  # (djdarcy, 2026-11-06: "there's no reason not to")
+  "dazzle-loglib>=0.3.3",
 ]
 
 [project.urls]

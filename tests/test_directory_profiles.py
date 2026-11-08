@@ -312,9 +312,12 @@ class TestConfigManagerDirectoryProfiles(unittest.TestCase):
             self.assertIn(d, dirs)
         for d in ("convos", "logs", "revisions"):
             self.assertNotIn(d, dirs)
+        # 0.10.3: the profiles' text is 0.9.12's again. Their private entries
+        # go to private_dirs (protection), never to the folders created, so the
+        # text never changed a layout (design B, G8)
         for profile in ("standard", "complete"):
             listed = DirectoryProfileManager().profiles[profile]
-            self.assertFalse({"convos", "logs", "revisions"} & set(listed), profile)
+            self.assertTrue({"convos", "logs", "revisions"} <= set(listed), profile)
         # still protected: an older project's root folders stay out of public history
         self.assertTrue({"convos", "logs", "revisions"} <= set(manager.config["private_dirs"]))
 

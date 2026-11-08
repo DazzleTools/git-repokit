@@ -1,0 +1,123 @@
+{
+  "harness": {
+    "name": "mutation_sweep.py",
+    "version": "0.2.0"
+  },
+  "environment": {
+    "python": "3.12.0",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "root": ".",
+    "test_command": [
+      "python",
+      "-m",
+      "pytest",
+      "-q",
+      "-p",
+      "no:cacheprovider",
+      "tests/test_private_modes.py"
+    ],
+    "timestamp": "2026-11-07T01:54:37-05:00"
+  },
+  "results": [
+    {
+      "id": "M4",
+      "file": "repokit/repo_manager.py",
+      "note": "a config with no private_branch key is treated as main-only",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "..F...................s..                                                [100%]\n================================== FAILURES ===================================\n_ test_the_default_mode_follows_the_strategy_and_the_command[config0-nested-branch] _\n\nconfig = {}, expected = 'nested-branch'\n\n    @pytest.mark.unit\n    @pytest.mark.parametrize(\"config,expected\", [\n        ({}, \"nested-branch\"),  # a missing key is the legacy \"private\" branch (mutation M4)\n        ({\"private_branch\": None}, \"nested\"),\n        ({\"private_branch\": \"private\"}, \"nested-branch\"),\n        ({\"private_branch\": \"private\", \"is_adoption\": True}, \"branch\"),\n        ({\"private_branch\": \"private\", \"private_mode\": \"nested\"}, \"nested\"),\n        ({\"private_branch\": \"private\", \"private_mode\": \"branch\"}, \"branch\"),\n        ({\"private_branch\": None, \"private_mode\": \"nested\"}, \"nested\"),\n    ])\n    def test_the_default_mode_follows_the_strategy_and_the_command(config, expected):\n        \"\"\"A create with a private branch gets nested-branch; adopt keeps branch; asked-for wins.\"\"\"\n        mode, problem = private_mode_for(config)\n>       assert (mode, problem) == (expected, None)\nE       AssertionError: assert ('nested', None) == ('nested-branch', None)\nE         \nE         At index 0 diff: 'nested' != 'nested-branch'\nE         Use -v to get more diff\n\ntests\\test_private_modes.py:114: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_private_modes.py::test_the_default_mode_follows_the_strategy_and_the_command[config0-nested-branch]\n1 failed, 23 passed, 1 skipped in 54.15s\n",
+      "killed_by": [
+        "tests/test_private_modes.py::test_the_default_mode_follows_the_strategy_and_the_command[config0-nested-branch]"
+      ]
+    },
+    {
+      "id": "M7",
+      "file": "repokit/repo_manager.py",
+      "note": "private_dirs given as 'logs/' no longer match PROMOTED_DIRS",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "............F.........s..                                                [100%]\n================================== FAILURES ===================================\n____ test_private_dirs_are_matched_by_folder_name_however_they_are_written ____\n\n    @pytest.mark.unit\n    def test_private_dirs_are_matched_by_folder_name_however_they_are_written():\n        \"\"\"--private-dirs convos/ or /revisions names the same folder (mutation M7).\"\"\"\n        manager = RepoManager({\"name\": \"p\", \"private_branch\": \"private\",\n                               \"private_dirs\": [\"convos/\", \"/revisions\", \"logs\", \"notes\"]})\n>       assert manager.promoted == [\"convos\", \"revisions\", \"logs\"]\nE       AssertionError: assert ['logs'] == ['convos', 'r...ions', 'logs']\nE         \nE         At index 0 diff: 'logs' != 'convos'\nE         Right contains 2 more items, first extra item: 'revisions'\nE         Use -v to get more diff\n\ntests\\test_private_modes.py:136: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_private_modes.py::test_private_dirs_are_matched_by_folder_name_however_they_are_written\n1 failed, 23 passed, 1 skipped in 51.91s\n",
+      "killed_by": [
+        "tests/test_private_modes.py::test_private_dirs_are_matched_by_folder_name_however_they_are_written"
+      ]
+    },
+    {
+      "id": "M8",
+      "file": "repokit/repo_manager.py",
+      "note": "a bare 'logs' ignore line survives",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".............F........s..                                                [100%]\n================================== FAILURES ===================================\n______ test_every_form_of_a_promoted_line_is_dropped_and_none_comes_back ______\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<USER>/pytest-15936/test_every_form_of_a_promoted_0')\n\n    @pytest.mark.unit\n    def test_every_form_of_a_promoted_line_is_dropped_and_none_comes_back(tmp_path):\n        \"\"\"The template's /logs/, a bare logs, a line with trailing spaces, and a\n        private_dirs entry written logs/ (mutations M8, M9, M10).\"\"\"\n        from types import SimpleNamespace\n        (tmp_path / \".gitignore\").write_text(\"/convos/   \\nlogs\\nrevisions/\\n/private/\\n\", encoding=\"utf-8\")\n        fake = SimpleNamespace(repo_root=str(tmp_path), promoted=[\"convos\", \"revisions\", \"logs\"],\n                               config={\"private_dirs\": [\"private\", \"convos\", \"revisions/\", \"logs/\"]})\n        RepoManager._write_private_ignores(fake)\n        lines = [line.strip() for line in (tmp_path / \".gitignore\").read_text(encoding=\"utf-8\").splitlines()]\n        for name in PROMOTED:\n>           assert not {f\"/{name}/\", f\"{name}/\", f\"/{name}\", name} & set(lines), (name, lines)\nE           AssertionError: ('logs', ['logs', '/private/'])\nE           assert not ({'/logs', '/logs/', 'logs', 'logs/'} & {'/private/', 'logs'})\nE            +  where {'/private/', 'logs'} = set(['logs', '/private/'])\n\ntests\\test_private_modes.py:150: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_private_modes.py::test_every_form_of_a_promoted_line_is_dropped_and_none_comes_back\n1 failed, 23 passed, 1 skipped in 50.43s\n",
+      "killed_by": [
+        "tests/test_private_modes.py::test_every_form_of_a_promoted_line_is_dropped_and_none_comes_back"
+      ]
+    },
+    {
+      "id": "M9",
+      "file": "repokit/repo_manager.py",
+      "note": "an ignore line with trailing whitespace naming a promoted folder is kept",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": ".............F........s..                                                [100%]\n================================== FAILURES ===================================\n______ test_every_form_of_a_promoted_line_is_dropped_and_none_comes_back ______\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<USER>/pytest-15937/test_every_form_of_a_promoted_0')\n\n    @pytest.mark.unit\n    def test_every_form_of_a_promoted_line_is_dropped_and_none_comes_back(tmp_path):\n        \"\"\"The template's /logs/, a bare logs, a line with trailing spaces, and a\n        private_dirs entry written logs/ (mutations M8, M9, M10).\"\"\"\n        from types import SimpleNamespace\n        (tmp_path / \".gitignore\").write_text(\"/convos/   \\nlogs\\nrevisions/\\n/private/\\n\", encoding=\"utf-8\")\n        fake = SimpleNamespace(repo_root=str(tmp_path), promoted=[\"convos\", \"revisions\", \"logs\"],\n                               config={\"private_dirs\": [\"private\", \"convos\", \"revisions/\", \"logs/\"]})\n        RepoManager._write_private_ignores(fake)\n        lines = [line.strip() for line in (tmp_path / \".gitignore\").read_text(encoding=\"utf-8\").splitlines()]\n        for name in PROMOTED:\n>           assert not {f\"/{name}/\", f\"{name}/\", f\"/{name}\", name} & set(lines), (name, lines)\nE           AssertionError: ('convos', ['/convos/', '/private/'])\nE           assert not ({'/convos', '/convos/', 'convos', 'convos/'} & {'/convos/', '/private/'})\nE            +  where {'/convos/', '/private/'} = set(['/convos/', '/private/'])\n\ntests\\test_private_modes.py:150: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_private_modes.py::test_every_form_of_a_promoted_line_is_dropped_and_none_comes_back\n1 failed, 23 passed, 1 skipped in 57.05s\n",
+      "killed_by": [
+        "tests/test_private_modes.py::test_every_form_of_a_promoted_line_is_dropped_and_none_comes_back"
+      ]
+    },
+    {
+      "id": "M10",
+      "file": "repokit/repo_manager.py",
+      "note": "'logs/' in private_dirs re-adds the line just removed",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "================================ FAILURES ===================================\n______ test_every_form_of_a_promoted_line_is_dropped_and_none_comes_back ______\n\ntmp_path = WindowsPath('<TEMP>/pytest-of-<USER>/pytest-15938/test_every_form_of_a_promoted_0')\n\n    @pytest.mark.unit\n    def test_every_form_of_a_promoted_line_is_dropped_and_none_comes_back(tmp_path):\n        \"\"\"The template's /logs/, a bare logs, a line with trailing spaces, and a\n        private_dirs entry written logs/ (mutations M8, M9, M10).\"\"\"\n        from types import SimpleNamespace\n        (tmp_path / \".gitignore\").write_text(\"/convos/   \\nlogs\\nrevisions/\\n/private/\\n\", encoding=\"utf-8\")\n        fake = SimpleNamespace(repo_root=str(tmp_path), promoted=[\"convos\", \"revisions\", \"logs\"],\n                               config={\"private_dirs\": [\"private\", \"convos\", \"revisions/\", \"logs/\"]})\n        RepoManager._write_private_ignores(fake)\n        lines = [line.strip() for line in (tmp_path / \".gitignore\").read_text(encoding=\"utf-8\").splitlines()]\n        for name in PROMOTED:\n>           assert not {f\"/{name}/\", f\"{name}/\", f\"/{name}\", name} & set(lines), (name, lines)\nE           AssertionError: ('revisions', ['/private/', '', '# Private content (auto-added)', '/revisions/', '/logs/', '**/__private__*', ...])\nE           assert not ({'/revisions', '/revisions/', 'revisions', 'revisions/'} & {'', '# Private content (auto-added)', '**/__private__*', '/logs/', '/private/', '/revisions/'})\nE            +  where {'', '# Private content (auto-added)', '**/__private__*', '/logs/', '/private/', '/revisions/'} = set(['/private/', '', '# Private content (auto-added)', '/revisions/', '/logs/', '**/__private__*', ...])\n\ntests\\test_private_modes.py:150: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_private_modes.py::test_every_form_of_a_promoted_line_is_dropped_and_none_comes_back\n1 failed, 23 passed, 1 skipped in 50.74s\n",
+      "killed_by": [
+        "tests/test_private_modes.py::test_every_form_of_a_promoted_line_is_dropped_and_none_comes_back"
+      ]
+    },
+    {
+      "id": "M12",
+      "file": "repokit/repo_manager.py",
+      "note": "a create never commits the promoted folders; an adoption does (anchor corrected: round 1's excerpt lacked the comment lines)",
+      "verdict": "killed",
+      "restore_ok": true,
+      "output_tail": "create(tmp_path, monkeypatch, capfd, caplog):\n        \"\"\"An ignore rule outside the project (core.excludesFile, given through the\n        environment for this test only) refuses the folders: the create still\n        succeeds, and says what to do.\"\"\"\n        excludes = tmp_path / \"global-excludes\"\n        excludes.write_text(\"convos/\\nrevisions/\\nlogs/\\n\", encoding=\"utf-8\")\n        n = int(os.environ.get(\"GIT_CONFIG_COUNT\", \"0\"))\n        monkeypatch.setenv(\"GIT_CONFIG_COUNT\", str(n + 1))\n        monkeypatch.setenv(f\"GIT_CONFIG_KEY_{n}\", \"core.excludesFile\")\n        monkeypatch.setenv(f\"GIT_CONFIG_VALUE_{n}\", str(excludes))\n        code, out = create(tmp_path / \"w\", monkeypatch, capfd, \"--branch-strategy\", \"simple\")\n        assert code == 0, out + caplog.text\n>       assert \"add them by hand\" in caplog.text\nE       AssertionError: assert 'add them by hand' in 'WARNING  repokit:repo_manager.py:2891 No GitHub login known: the URLs, CODEOWNERS and FUNDING say YOUR_GITHUB_USERNAME. Use --github, or set github.username in ~/.repokit/config.json\\n'\nE        +  where 'WARNING  repokit:repo_manager.py:2891 No GitHub login known: the URLs, CODEOWNERS and FUNDING say YOUR_GITHUB_USERNAME. Use --github, or set github.username in ~/.repokit/config.json\\n' = <_pytest.logging.LogCaptureFixture object at 0x00000131808B8680>.text\n\nC:\\code\\git-repokit\\tests\\test_private_modes.py:318: AssertionError\n------------------------------ Captured log call ------------------------------\nWARNING  repokit:repo_manager.py:2891 No GitHub login known: the URLs, CODEOWNERS and FUNDING say YOUR_GITHUB_USERNAME. Use --github, or set github.username in ~/.repokit/config.json\n=========================== short test summary info ===========================\nFAILED tests/test_private_modes.py::test_the_record_folders_are_tracked_on_private_and_on_no_public_branch\nFAILED tests/test_private_modes.py::test_a_global_ignore_on_the_promoted_folders_does_not_fail_the_create\n2 failed, 22 passed, 1 skipped in 49.80s\n",
+      "killed_by": [
+        "tests/test_private_modes.py::test_a_global_ignore_on_the_promoted_folders_does_not_fail_the_create",
+        "tests/test_private_modes.py::test_the_record_folders_are_tracked_on_private_and_on_no_public_branch"
+      ]
+    }
+  ],
+  "summary": {
+    "killed": 6
+  },
+  "anomalies": [],
+  "overlap": {
+    "kills": {
+      "tests/test_private_modes.py::test_a_global_ignore_on_the_promoted_folders_does_not_fail_the_create": [
+        "M12"
+      ],
+      "tests/test_private_modes.py::test_every_form_of_a_promoted_line_is_dropped_and_none_comes_back": [
+        "M10",
+        "M8",
+        "M9"
+      ],
+      "tests/test_private_modes.py::test_private_dirs_are_matched_by_folder_name_however_they_are_written": [
+        "M7"
+      ],
+      "tests/test_private_modes.py::test_the_default_mode_follows_the_strategy_and_the_command[config0-nested-branch]": [
+        "M4"
+      ],
+      "tests/test_private_modes.py::test_the_record_folders_are_tracked_on_private_and_on_no_public_branch": [
+        "M12"
+      ]
+    },
+    "identical": [
+      [
+        "tests/test_private_modes.py::test_a_global_ignore_on_the_promoted_folders_does_not_fail_the_create",
+        "tests/test_private_modes.py::test_the_record_folders_are_tracked_on_private_and_on_no_public_branch"
+      ]
+    ],
+    "contained": [],
+    "killed_without_names": []
+  }
+}

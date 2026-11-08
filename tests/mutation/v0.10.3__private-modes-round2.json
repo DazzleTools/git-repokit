@@ -1,0 +1,11 @@
+{
+  "test_command": ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider", "tests/test_private_modes.py"],
+  "mutations": [
+    {"id": "M4", "file": "repokit/repo_manager.py", "original": "    private_branch = config.get(\"private_branch\", \"private\")", "mutated": "    private_branch = config.get(\"private_branch\")", "note": "a config with no private_branch key is treated as main-only"},
+    {"id": "M7", "file": "repokit/repo_manager.py", "original": "            names = {d.strip(\"/\") for d in config.get(\"private_dirs\", DEFAULT_PRIVATE_DIRS)}", "mutated": "            names = {d for d in config.get(\"private_dirs\", DEFAULT_PRIVATE_DIRS)}", "note": "private_dirs given as 'logs/' no longer match PROMOTED_DIRS"},
+    {"id": "M8", "file": "repokit/repo_manager.py", "original": "for form in (f\"/{name}/\", f\"{name}/\", f\"/{name}\", name)}", "mutated": "for form in (f\"/{name}/\", f\"{name}/\", f\"/{name}\")}", "note": "a bare 'logs' ignore line survives"},
+    {"id": "M9", "file": "repokit/repo_manager.py", "original": "            kept = [line for line in lines if line.strip() not in drop]", "mutated": "            kept = [line for line in lines if line not in drop]", "note": "an ignore line with trailing whitespace naming a promoted folder is kept"},
+    {"id": "M10", "file": "repokit/repo_manager.py", "original": "            private_dirs = [d for d in private_dirs if d.strip(\"/\") not in self.promoted]", "mutated": "            private_dirs = [d for d in private_dirs if d not in self.promoted]", "note": "'logs/' in private_dirs re-adds the line just removed"},
+    {"id": "M12", "file": "repokit/repo_manager.py", "original": "        if self.config.get(\"is_adoption\", False):\n            return\n        # Not fatal", "mutated": "        if not self.config.get(\"is_adoption\", False):\n            return\n        # Not fatal", "note": "a create never commits the promoted folders; an adoption does (anchor corrected: round 1's excerpt lacked the comment lines)"}
+  ]
+}

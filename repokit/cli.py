@@ -14,7 +14,7 @@ import subprocess
 from typing import Dict, Any, Optional
 
 from .config import ConfigManager
-from .defaults import BRANCH_STRATEGIES, DEFAULT_ADOPT_STRATEGY, PRIVATE_BRANCH_STRATEGIES
+from .defaults import BRANCH_STRATEGIES, DEFAULT_ADOPT_STRATEGY, PRIVATE_BRANCH_STRATEGIES, PRIVATE_MODES
 from .repo_manager import RepoManager
 from .template_engine import TemplateEngine
 from .directory_analyzer import (
@@ -320,10 +320,12 @@ Recipe: Microservice
 
     branch_group.add_argument(
         "--private-mode",
-        choices=["nested", "branch"],
+        choices=list(PRIVATE_MODES),
         help="How private work is kept: 'nested' makes private/ its own git repository "
-             "(linked into every worktree); 'branch' keeps it on the private branch only. "
-             "Default: nested for main-only, branch for the private-branch strategies"
+             "(linked into every worktree); 'nested-branch' keeps that, and tracks "
+             "convos/, revisions/ and logs/ on the private branch; 'branch' tracks "
+             "private/ itself on the private branch too (opt-in). Default: nested for "
+             "main-only, nested-branch for the private-branch strategies (branch for adopt)"
     )
 
     common_group = branch_group.add_mutually_exclusive_group()
@@ -2854,6 +2856,14 @@ def main() -> int:
                 raise _layers.LayerError("no code-type layers found with the templates, so --with cannot be used")
         except _layers.LayerError as e:
             logger.error(str(e))
+            return 1
+
+        # A private mode the strategy cannot carry (a branch mode with no
+        # private branch) is refused before anything is written (0.10.3)
+        from .repo_manager import private_mode_for
+        _mode, problem = private_mode_for(config)
+        if problem:
+            logger.error(problem)
             return 1
 
         # The GitHub login, before any file is written: the files' URLs,

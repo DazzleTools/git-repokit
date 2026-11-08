@@ -126,8 +126,12 @@ class TestPrivateBranchModelWithCommon(RepoKitTestCase):
         self.assertNotEqual(refused.returncode, 0, refused.stdout + refused.stderr)
 
     def test_a_custom_private_branch_is_written_to_the_settings(self):
+        # --private-mode branch: private/ on the private branch, the case this
+        # pins (since 0.10.3 the default, nested-branch, keeps private/ its own
+        # repository, which git cannot add into)
         self.assert_repokit_success(["create", "demo", "--branch-strategy", "simple",
-                                     "--private-branch", "scratch", "--with-common", "--no-push"])
+                                     "--private-branch", "scratch", "--private-mode", "branch",
+                                     "--with-common", "--no-push"])
         local = os.path.join(self.test_dir, "demo", "local")
         settings = Path(local, ".repokit-common.toml").read_text(encoding="utf-8")
         self.assertIn("private-branches", settings)
@@ -139,12 +143,14 @@ class TestPrivateBranchModelWithCommon(RepoKitTestCase):
 class TestDefaultsAndFallback(RepoKitTestCase):
 
     @needs_common
-    def test_standard_alone_makes_no_vault_and_vendors_common(self):
+    def test_standard_alone_makes_a_vault_and_vendors_common(self):
         """0.10.2: git-repokit-common is the default for every strategy (it was
-        opt-in for the private-branch ones); the vault stays nested-mode only."""
+        opt-in for the private-branch ones). 0.10.3: the private-branch
+        strategies default to nested-branch, so private/ is its own repository
+        there too (it was the private branch's, mode branch)."""
         self.assert_repokit_success(["create", "demo", "--branch-strategy", "standard", "--no-push"])
         local = os.path.join(self.test_dir, "demo", "local")
-        self.assertFalse(os.path.exists(os.path.join(local, "private", ".git")))
+        self.assertTrue(os.path.exists(os.path.join(local, "private", ".git")))
         self.assertTrue(os.path.exists(os.path.join(local, "scripts", "repokit-common")))
 
     def test_no_common_keeps_git_repokits_own_guard(self):

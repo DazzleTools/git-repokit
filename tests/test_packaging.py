@@ -83,6 +83,14 @@ def alias_pyproject():
     return tomllib.loads(path.read_text(encoding="utf-8"))
 
 
+def test_the_dazzlelib_stack_is_a_declared_dependency():
+    """0.10.3: dazzle-lib (the exposure continuum) and dazzle-loglib, at the
+    versions that carry what repokit uses."""
+    deps = pyproject()["project"]["dependencies"]
+    assert "dazzle-lib>=0.8.2" in deps
+    assert "dazzle-loglib>=0.3.3" in deps
+
+
 def test_repokit_version_matches_the_distribution():
     """`repokit --version` printed 0.9.12 at 0.10.0 and 0.10.1: __version__.py
     is set by hand and the version sync is off for it."""
