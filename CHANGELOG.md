@@ -5,6 +5,23 @@ All notable changes to RepoKit will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.4] - 2026-11-18
+
+### Added
+- **The GitHub setup runs wherever repokit publishes** - `publish`, `adopt` and `create` with `--publish-to github` now run the `github_setup` steps, as `create --github` did
+  - labels, the Roadmap and Quick Notes issues and the pins go in after the repository is made and before the first push, so they are #1 and #2; Discussions and topics come after
+  - each step prints a `GitHub:` line
+  - `--github-setup`, `--topics` and `--no-github-setup` on all three commands
+  - when `gh` is missing, logged out or on another account, the publish still completes and says how to finish the setup
+- **`publish` brings a project already on GitHub up to date** - when `origin` points at an existing GitHub repository, nothing is created: the branches are pushed (unless `--no-push`) and the setup runs
+- **`create` records `--topics` in `.repokit.json`**, for a later publish
+
+### Changed
+- **The #1 and #2 check counts pull requests** - they share the issues' numbers; a pull request at #1 was missed before
+  - at a terminal you are asked to continue, skip or abort; in CI, under an AI agent, or with `REPOKIT_INTERACTIVE=0` the step is skipped with a line saying why
+  - a repository with only the Roadmap at #1 gets Quick Notes at #2
+- **Unknown `--github-setup` steps are refused before `create` writes anything**
+
 ## [0.10.3] - 2026-11-07
 
 ### Added

@@ -39,7 +39,12 @@ Name the steps, or `all`, on the command line or as `github_setup` in the config
 
 Labels, issues and pins go in **before the first push**. The first push lets Dependabot open pull requests, and a pull request would take number 1. Discussions, topics and the `pypi` environment come after the push.
 
-The `issues` step refuses to run on a repository that already has issues, because Roadmap and Quick Notes would not get #1 and #2. It says so, and creates nothing.
+Issues and pull requests share one number sequence, so the `issues` step counts both. When something else already holds #1 or #2, Roadmap and Quick Notes would not get those numbers:
+
+- **At a terminal,** you are asked: continue anyway (they take the next numbers), skip this step, or abort the rest. Aborting during a first publish stops before the push; running the publish again finishes it.
+- **Otherwise** (CI, an AI agent, or `REPOKIT_INTERACTIVE=0`), the step is skipped with a line saying why. Nothing waits for an answer.
+
+A repository that has only the Roadmap at #1 gets Quick Notes at #2 without a question.
 
 ## What is still done by hand
 
@@ -54,8 +59,16 @@ GitHub has no API for some settings, and some steps need you. The create prints 
 
 ## The older REST path
 
-`--publish-to github` (or `gitlab`) creates the repository through the REST API with a token instead of `gh`. It is public unless `--private-repo`, and it does not run the `--github-setup` steps. Tokens are covered in the [Auth guide](Auth-Guide.md). For GitHub, `--github` is the simpler path.
+`--publish-to github` (or `gitlab`) creates the repository through the REST API with a token instead of `gh`. It is public unless `--private-repo`. Tokens are covered in the [Auth guide](Auth-Guide.md); `--token-command "gh auth token"` reuses your `gh` login. For GitHub, `--github` is the simpler path.
 
-## An existing repository
+`create`, `adopt` and `publish` with `--publish-to github` run the same `--github-setup` steps, in the same order: labels, issues and pins after the repository is made and before the first push, the rest after it. The steps themselves go through `gh`, so `gh` must be installed and logged into the same account. If it is not, the publish still completes and prints how to finish the setup later. `--no-github-setup` skips the steps whatever the config says. With `--publish-to gitlab`, `--github-setup` is refused.
 
-`repokit publish <path> --publish-to github` publishes a repository that already exists locally. The setup steps are part of `create --github` only.
+## A project already on GitHub
+
+`repokit publish <path> --publish-to github` on a project whose `origin` already points at a GitHub repository creates nothing. It pushes the public branches (unless `--no-push`) and runs the setup steps, so a project made before its owner turned the setup on can be brought up to date:
+
+```bash
+repokit publish . --publish-to github --no-push --github-setup labels,issues,pin
+```
+
+`adopt` always creates a new repository; only `publish` updates an existing one.

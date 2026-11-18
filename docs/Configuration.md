@@ -100,7 +100,7 @@ Badges always come out in one order, with Platform last. A template keeps the or
 |---|---|---|---|
 | `github.username` | none | the `gh` login | Your GitHub login. With `--github`, repokit reads the login from `gh` and refuses if it differs from this one, so a create never lands in the wrong account |
 | `github.organization`, `organization` | `--org`, `--organization` | none | Create the repository under this organization; its URLs use the organization, while CODEOWNERS and FUNDING keep your login |
-| `github_setup` | `--github-setup` | none | What to set up on the new repository: `labels`, `issues`, `pin`, `discussions`, `topics`, `pypi-environment`, `traffic`, or `all` |
+| `github_setup` | `--github-setup`, `--no-github-setup` | none | What to set up on GitHub when `--github` or `--publish-to github` makes the repository, or when `publish` updates one already there: `labels`, `issues`, `pin`, `discussions`, `topics`, `pypi-environment`, `traffic`, or `all` |
 | `private_repo` | `--private-repo` | false | For `--publish-to`: make the repository private (with `--github` it is private unless `--public`) |
 
 The setup steps are described in [GitHub setup](GitHub-Setup.md). Without `--github`, and without a `github.username`, the files say `YOUR_GITHUB_USERNAME` where the owner goes, and the create warns once.

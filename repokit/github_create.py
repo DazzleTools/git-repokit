@@ -13,10 +13,11 @@ explicitly.
 """
 
 import os
+import re
 import shutil
 import subprocess
 import sys
-from typing import List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 from .defaults import strategy_push_branches
 
@@ -48,15 +49,89 @@ def gh_login(cwd: str) -> Optional[str]:
     gh = gh_command()
     if gh is None:
         return None
+    return _read_login(gh, cwd)[0]
+
+
+def _read_login(gh: List[str], cwd: str) -> Tuple[Optional[str], str]:
+    """(the account gh is logged into or None, gh's raw answer)."""
     rc, out = _run(gh + ["api", "user", "-q", ".login"], cwd)
     login = out.splitlines()[-1].strip() if rc == 0 and out else ""
-    return login or None
+    return login or None, out
 
 
 def branches_to_push(config: dict, private_branch: Optional[str], existing: List[str]) -> List[str]:
     """The strategy's public branches that exist locally; never the private branch."""
     wanted = strategy_push_branches(config.get("branch_strategy", "main-only")) or ["main"]
     return [b for b in wanted if b in existing and b != private_branch]
+
+
+def gh_ready(repo_root: str, config: dict,
+             organization: Optional[str] = None) -> Tuple[Optional[List[str]], Optional[str], Optional[str]]:
+    """(gh, login, problem): gh is installed, logged in, and logged into the
+    account the config names (0.9.3: refuse on another account)."""
+    gh = gh_command()
+    if gh is None:
+        return None, None, "gh (the GitHub CLI) is not installed; see https://cli.github.com"
+    rc, out = _run(gh + ["auth", "status"], repo_root)
+    if rc != 0:
+        return gh, None, f"gh is not logged in (run `gh auth login`): {out}"
+    login, out = _read_login(gh, repo_root)
+    if not organization and not login:
+        return gh, None, f"could not read the GitHub user from gh: {out}"
+    github_cfg = config.get("github") if isinstance(config.get("github"), dict) else {}
+    configured = (github_cfg or {}).get("username")
+    if configured and login and configured.lower() != login.lower():
+        return gh, login, (f"gh is logged into {login!r} but the config's github.username is {configured!r}; "
+                           "switch with `gh auth switch` or fix the config")
+    return gh, login, None
+
+
+_GITHUB_URL = re.compile(r"github\.com[:/]+([^/\s]+)/([^/\s]+?)(?:\.git)?/?$")
+
+
+def github_repo_of(url: Optional[str]) -> Optional[str]:
+    """'owner/name' from a GitHub https or ssh URL, else None."""
+    m = _GITHUB_URL.search((url or "").strip())
+    return f"{m.group(1)}/{m.group(2)}" if m else None
+
+
+def publish_hooks(repo_root: str, config: dict, steps: List[str], report: List[str],
+                  ask=None) -> Tuple[Callable[[str], bool], Callable[[str], None]]:
+    """The GitHub setup for the token route (`--publish-to github`): the first
+    hook runs in the window between the repository's creation and its first
+    push, the second after the push. Both take the repository's URL. When gh
+    cannot act (absent, logged out, another account) the setup is skipped with
+    one line saying how to run it later, and the publish goes on. The first
+    hook returns False when the person aborted at a conflict: stop before the
+    push."""
+    from . import github_setup
+    state: dict = {}
+    project = config.get("project_name") or config.get("name") or os.path.basename(repo_root)
+
+    def after_create(url: str) -> bool:
+        repo = github_repo_of(url)
+        if not steps or not repo:
+            return True
+        gh, _login, problem = gh_ready(repo_root, config, organization=repo.split("/")[0])
+        if problem:
+            report.append(f"setup not run: {problem}. Once gh is ready: "
+                          f"`repokit publish {repo_root} --publish-to github` finishes it")
+            return True
+        setup = github_setup.GhSetup(gh, repo, lambda cmd: _run(cmd, repo_root),
+                                     ask=ask or github_setup.ask_conflict)
+        state["setup"] = setup
+        try:
+            report.extend(github_setup.run_before_push(setup, steps, project, repo_root))
+        except github_setup.SetupAborted as stop:
+            report.append(f"stopped before the push: {stop}")
+            return False
+        return True
+
+    def after_push(url: str) -> None:
+        if state.get("setup"):
+            report.extend(github_setup.run_after_push(state["setup"], steps, config, project))
+
+    return after_create, after_push
 
 
 def create_on_github(repo_root: str, name: str, config: dict, private_branch: Optional[str],
@@ -73,25 +148,9 @@ def create_on_github(repo_root: str, name: str, config: dict, private_branch: Op
     steps = github_setup.setup_names(config.get("github_setup"))
     report = report if report is not None else []
 
-    gh = gh_command()
-    if gh is None:
-        return "gh (the GitHub CLI) is not installed; see https://cli.github.com"
-
-    rc, out = _run(gh + ["auth", "status"], repo_root)
-    if rc != 0:
-        return f"gh is not logged in (run `gh auth login`): {out}"
-
-    rc, out = _run(gh + ["api", "user", "-q", ".login"], repo_root)
-    login = out.splitlines()[-1].strip() if rc == 0 and out else None
-    if not organization and not login:
-        return f"could not read the GitHub user from gh: {out}"
-    # Refuse on another account: the config names the person's handle, and gh
-    # is logged into someone else (0.9.3).
-    github_cfg = config.get("github") if isinstance(config.get("github"), dict) else {}
-    configured = (github_cfg or {}).get("username")
-    if configured and login and configured.lower() != login.lower():
-        return (f"gh is logged into {login!r} but the config's github.username is {configured!r}; "
-                "switch with `gh auth switch` or fix the config")
+    gh, login, problem = gh_ready(repo_root, config, organization)
+    if problem:
+        return problem
     owner = organization or login
 
     create = gh + ["repo", "create", f"{owner}/{name}",
@@ -107,15 +166,14 @@ def create_on_github(repo_root: str, name: str, config: dict, private_branch: Op
         logger.info(f"Created {owner}/{name} on GitHub ({'public' if public else 'private'})")
 
     # Before the first push: the labels and the two issues, so they are #1 and #2.
-    setup = github_setup.GhSetup(gh, f"{owner}/{name}", lambda cmd: _run(cmd, repo_root))
+    setup = github_setup.GhSetup(gh, f"{owner}/{name}", lambda cmd: _run(cmd, repo_root),
+                                 ask=github_setup.ask_conflict)
     project = config.get("name") or name
-    if "labels" in steps:
-        report += setup.labels(github_setup.referenced_labels(repo_root))
-    if "issues" in steps:
-        drafts = os.path.join(repo_root, "private", "claude", "issues")
-        report += setup.issues(project, drafts if os.path.isdir(drafts) else None)
-    if "pin" in steps:
-        report += setup.pin()
+    try:
+        report += github_setup.run_before_push(setup, steps, project, repo_root)
+    except github_setup.SetupAborted as stop:
+        return (f"stopped before the push: {stop}. {owner}/{name} exists on GitHub; "
+                "`repokit publish <path> --publish-to github` pushes and finishes the setup")
 
     rc, out = _run(["git", "for-each-ref", "--format=%(refname:short)", "refs/heads"], repo_root)
     existing = out.split()
@@ -129,14 +187,5 @@ def create_on_github(repo_root: str, name: str, config: dict, private_branch: Op
         logger.info(f"Pushed: {', '.join(pushed) or 'nothing'}")
 
     # After the push: the settings that need the repository's content or no ordering.
-    if "discussions" in steps:
-        report += setup.discussions()
-    if "topics" in steps:
-        report += setup.topics(list(config.get("topics") or []))
-    if "pypi-environment" in steps:
-        report += setup.pypi_environment(config.get("archetype"))
-    if "traffic" in steps:
-        report += setup.traffic(project)
-    if steps:
-        report += github_setup.reminders(f"{owner}/{name}", list(config.get("extras") or []))
+    report += github_setup.run_after_push(setup, steps, config, project)
     return None

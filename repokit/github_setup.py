@@ -19,11 +19,38 @@ import json
 import os
 import re
 import string
+import sys
 import tempfile
 from pathlib import Path
 from typing import Callable, List, Optional, Tuple
 
 STEPS = ("labels", "issues", "pin", "discussions", "topics", "pypi-environment", "traffic")
+
+
+class SetupAborted(Exception):
+    """The person chose to stop the rest of the setup at a conflict."""
+
+
+def interactive() -> bool:
+    """Ask only a person at a terminal: never under CI, an agent (CLAUDECODE)
+    or REPOKIT_INTERACTIVE=0 -- the rule git-repokit-common 0.4.4's hooks use."""
+    if os.environ.get("REPOKIT_INTERACTIVE") == "0" or os.environ.get("CI") or os.environ.get("CLAUDECODE"):
+        return False
+    try:
+        return sys.stdin.isatty()
+    except (AttributeError, ValueError):
+        return False
+
+
+def ask_conflict(message: str) -> str:
+    """'continue', 'skip' or 'abort'. Not interactive: 'skip', never a hang."""
+    if not interactive():
+        return "skip"
+    try:
+        answer = input(f"{message}\n  [c]ontinue anyway, [s]kip this step, [a]bort the rest? [s] ")
+    except EOFError:
+        return "skip"
+    return {"c": "continue", "a": "abort"}.get(answer.strip().lower()[:1], "skip")
 
 # /github-issues-setup, Step 1 (names, colors, descriptions as the skill has them)
 LABELS = [
@@ -115,8 +142,9 @@ def render_issue(template: str, project_name: str) -> str:
 class GhSetup:
     """The steps for one repository. Each method returns report lines."""
 
-    def __init__(self, gh: List[str], repo: str, run: Runner):
+    def __init__(self, gh: List[str], repo: str, run: Runner, ask: Optional[Callable[[str], str]] = None):
         self.gh, self.repo, self.run = gh, repo, run
+        self.ask = ask or (lambda message: "skip")
 
     def _gh(self, *args: str) -> Tuple[int, str]:
         return self.run(self.gh + list(args))
@@ -146,9 +174,14 @@ class GhSetup:
             have.add(name)
         return [f"labels: created {', '.join(made)}" if made else "labels: all already there"]
 
-    def _issues(self) -> Optional[list]:
-        rc, out = self._gh("issue", "list", "--repo", self.repo, "--state", "all", "--limit", "100", "--json", "number,title")
+    def _numbered(self, kind: str) -> Optional[list]:
+        """Every issue (kind 'issue') or pull request ('pr'), open or closed, as
+        number and title; None when gh cannot list them."""
+        rc, out = self._gh(kind, "list", "--repo", self.repo, "--state", "all", "--limit", "100", "--json", "number,title")
         return json.loads(out or "[]") if rc == 0 else None
+
+    def _issues(self) -> Optional[list]:
+        return self._numbered("issue")
 
     def issues(self, project_name: str, drafts_dir: Optional[str] = None) -> List[str]:
         existing = self._issues()
@@ -157,12 +190,40 @@ class GhSetup:
         titles = {i["title"] for i in existing}
         if all(t in titles for t, _, _ in ISSUES):
             return ["issues: Roadmap and Quick Notes already there"]
-        if existing:
-            # They would not be #1 and #2: refuse rather than take later numbers.
-            return [f"issues: the repository already has {len(existing)} issue(s); Roadmap and Quick Notes "
-                    "were not created, because they would not be #1 and #2"]
+        # Issues and pull requests share one number sequence, and `gh issue
+        # list` shows no pull requests: count both, or a Dependabot pull
+        # request at #1 would let the Roadmap become #2 unnoticed.
+        pulls = self._numbered("pr")
+        if pulls is None:
+            return ["issues: could not list the pull requests, so #1 and #2 cannot be checked; not created"]
+        # Where each would land: the ones present keep their numbers, the
+        # missing ones take the next numbers in order.
+        everything = existing + pulls
+        next_number = max([i["number"] for i in everything] or [0]) + 1
+        landing = {}
+        for title, _, _ in ISSUES:
+            found = next((i["number"] for i in existing if i["title"] == title), None)
+            landing[title] = found if found is not None else next_number
+            next_number += found is None
+        if [landing[t] for t, _, _ in ISSUES] != [1, 2]:
+            ours = {t for t, _, _ in ISSUES}
+            foreign = sorted((i for i in everything if i["title"] not in ours), key=lambda i: i["number"])
+            if foreign:
+                first = foreign[0]
+                kind = "pull request" if first in pulls else "issue"
+                held = f"#{first['number']} is already {kind} {first['title']!r}"
+            else:
+                held = ", ".join(f"{t} would be #{n}" for t, n in landing.items())
+            message = f"issues: {held}, so Roadmap and Quick Notes would not be #1 and #2"
+            choice = self.ask(message)
+            if choice == "abort":
+                raise SetupAborted(message)
+            if choice != "continue":
+                return [message + "; not created"]
         report = []
         for title, labels, template in ISSUES:
+            if title in titles:
+                continue
             body = render_issue(template, project_name)
             if drafts_dir and os.path.isdir(drafts_dir):
                 Path(drafts_dir, "issue_" + template.replace(".md.template", ".md")).write_text(body, encoding="utf-8")
@@ -246,3 +307,34 @@ def reminders(repo: str, extras: List[str]) -> List[str]:
         out.append("Sponsorships: Settings > General > Features > Sponsorships (FUNDING.yml is in .github/)")
     out.append("Pages, if the project serves docs/: Settings > Pages > main, /docs")
     return out
+
+
+def run_before_push(setup: GhSetup, steps: List[str], project: str, repo_root: str) -> List[str]:
+    """The labels, the two issues and the pins: in the window before the first
+    push, so the issues are #1 and #2. May raise SetupAborted."""
+    report: List[str] = []
+    if "labels" in steps:
+        report += setup.labels(referenced_labels(repo_root))
+    if "issues" in steps:
+        drafts = os.path.join(repo_root, "private", "claude", "issues")
+        report += setup.issues(project, drafts if os.path.isdir(drafts) else None)
+    if "pin" in steps:
+        report += setup.pin()
+    return report
+
+
+def run_after_push(setup: GhSetup, steps: List[str], config: dict, project: str) -> List[str]:
+    """The settings that need the repository's content or no ordering, then the
+    reminders for what has no API."""
+    report: List[str] = []
+    if "discussions" in steps:
+        report += setup.discussions()
+    if "topics" in steps:
+        report += setup.topics(list(config.get("topics") or []))
+    if "pypi-environment" in steps:
+        report += setup.pypi_environment(config.get("archetype"))
+    if "traffic" in steps:
+        report += setup.traffic(project)
+    if steps:
+        report += reminders(setup.repo, list(config.get("extras") or []))
+    return report

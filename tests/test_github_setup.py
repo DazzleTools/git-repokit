@@ -87,10 +87,14 @@ def test_issues_are_refused_when_the_repository_already_has_one():
 
 
 def test_only_one_of_the_two_issues_present_is_not_both():
-    """Mutation G2 (0.9.3) survived without this."""
+    """Mutation G2 (0.9.3) survived without this. Since 2026-11-17 the missing
+    one is created when it still lands on its number (Roadmap #1 -> Quick
+    Notes #2); "already there" needs both."""
     fake = FakeGh(issues=[{"number": 1, "title": "Roadmap"}])
-    assert "would not be #1 and #2" in _setup(fake).issues("demo")[0]
-    assert all(c[:2] != ["issue", "create"] for c in fake.calls)
+    report = _setup(fake).issues("demo")
+    assert report == ["issues: #2 Quick Notes -- Bugs, Features, Ideas"]
+    assert [c[c.index("--title") + 1] for c in fake.calls if c[:2] == ["issue", "create"]] == \
+        ["Quick Notes -- Bugs, Features, Ideas"]
 
 
 def test_no_topics_named_edits_nothing():
@@ -174,6 +178,8 @@ STUB = textwrap.dedent('''
         state["labels"].append(args[2])
     elif args[:2] == ["issue", "list"]:
         out = json.dumps(state["issues"])
+    elif args[:2] == ["pr", "list"]:
+        out = "[]"
     elif args[:2] == ["issue", "create"]:
         n = len(state["issues"]) + 1
         state["issues"].append({"number": n, "title": args[args.index("--title") + 1]})

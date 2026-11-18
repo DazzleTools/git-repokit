@@ -10,7 +10,7 @@ import logging
 import json
 import subprocess
 import requests
-from typing import Dict, Any, Optional, List, Union, Tuple
+from typing import Callable, Dict, Any, Optional, List, Union, Tuple
 
 from .auth_integration import AuthenticationHandler
 from .defaults import strategy_push_branches
@@ -525,6 +525,9 @@ class RemoteIntegration:
         token_command: Optional[str] = None,
         include_branches: Optional[List[str]] = None,
         exclude_branches: Optional[List[str]] = None,
+        update_existing: bool = False,
+        after_create: Optional[Callable[[str], bool]] = None,
+        after_push: Optional[Callable[[str], None]] = None,
     ) -> bool:
         """
         Create a remote repository and push local branches.
@@ -538,10 +541,24 @@ class RemoteIntegration:
             token_command: Command to retrieve token (optional)
             include_branches: Specific branches to push (overrides strategy defaults)
             exclude_branches: Additional branches to exclude (beyond private)
+            update_existing: When the remote already names a GitHub
+                repository, update it (publish's path): nothing is created,
+                the remote is left as it is, the push and the hooks still run
+            after_create: Called with the URL between the creation and the
+                first push (the GitHub setup's window); False stops before
+                the push
+            after_push: Called with the URL after the push
 
         Returns:
             True if successful, False otherwise
         """
+        if update_existing and service.lower() == "github":
+            from .github_create import github_repo_of
+            existing_url = (self.repo_manager.run_git(["remote", "get-url", remote_name], check=False) or "").strip()
+            if github_repo_of(existing_url):
+                self.logger.info(f"{existing_url} already exists: pushing and updating, nothing created")
+                return self._finish(existing_url, remote_name, push_branches, include_branches,
+                                    exclude_branches, after_create, after_push)
         repo_name = self.repo_manager.project_name
         description = self.repo_manager.config.get("description", "")
 
@@ -565,6 +582,16 @@ class RemoteIntegration:
         # Add the remote
         remote_url = result
         if not self.add_remote(remote_url, remote_name):
+            return False
+        return self._finish(remote_url, remote_name, push_branches, include_branches,
+                            exclude_branches, after_create, after_push)
+
+    def _finish(self, remote_url, remote_name, push_branches, include_branches,
+                exclude_branches, after_create, after_push) -> bool:
+        """The window hook, the push, the after-push hook."""
+        if after_create and not after_create(remote_url):
+            self.logger.error(f"Stopped before the push; {remote_url} exists. "
+                              "Run publish again to push and finish.")
             return False
 
         # Push branches if requested
@@ -600,6 +627,8 @@ class RemoteIntegration:
                 )
                 return False
 
+        if after_push:
+            after_push(remote_url)
         self.logger.info(f"Successfully set up remote repository at {remote_url}")
         return True
 

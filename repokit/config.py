@@ -14,6 +14,18 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List, Union
 
 from .directory_profiles import DirectoryProfileManager
+
+
+def read_project_record(repo_root: str) -> Dict[str, Any]:
+    """A project's own .repokit.json, read from its root (not the current
+    directory, which is what ConfigManager reads), or {} when absent or
+    unreadable."""
+    try:
+        with open(os.path.join(repo_root, ".repokit.json"), encoding="utf-8") as f:
+            record = json.load(f)
+    except (OSError, ValueError):
+        return {}
+    return record if isinstance(record, dict) else {}
 from .defaults import (
     DEFAULT_PRIVATE_DIRS,
     DEFAULT_PRIVATE_DIR_SETS,

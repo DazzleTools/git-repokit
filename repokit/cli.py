@@ -11,7 +11,7 @@ import json
 import argparse
 import logging
 import subprocess
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional, Tuple
 
 from .config import ConfigManager
 from .defaults import BRANCH_STRATEGIES, DEFAULT_ADOPT_STRATEGY, PRIVATE_BRANCH_STRATEGIES, PRIVATE_MODES
@@ -213,21 +213,7 @@ Recipe: Microservice
         help="Write none of the extras, whatever the global config says"
     )
 
-    create_parser.add_argument(
-        "--github-setup",
-        dest="github_setup",
-        action="append",
-        metavar="STEP[,STEP...]",
-        help="With --github, what to set up on the new repository: labels, issues (the Roadmap and "
-             "Quick Notes as #1 and #2, before the first push), pin, discussions, topics, "
-             "pypi-environment, traffic (prints ghtraf's commands), or all. Off unless named here "
-             "or in the global config's `github_setup` list."
-    )
-    create_parser.add_argument(
-        "--topics",
-        metavar="TOPIC[,TOPIC...]",
-        help="Repository topics for --github-setup topics"
-    )
+    _add_github_setup_args(create_parser)
     create_parser.add_argument(
         "--badges",
         metavar="TEMPLATE|BADGE[,BADGE...]",
@@ -921,6 +907,7 @@ For more detailed documentation, see: docs/Adoption-Guide.md
         action="store_true",
         help="Don't push branches after creating remote repository"
     )
+    _add_github_setup_args(adopt_remote_group)
     
     # Authentication
     adopt_auth_group = adopt_parser.add_argument_group("Authentication")
@@ -1058,6 +1045,7 @@ Examples:
         nargs="+",
         help="Exclude these branches from publishing (in addition to private)"
     )
+    _add_github_setup_args(publish_parser)
 
     # BOOTSTRAP command
     bootstrap_parser = subparsers.add_parser(
@@ -1637,6 +1625,67 @@ def _known_language_names():
         return ["generic"]
 
 
+
+def _add_github_setup_args(parser) -> None:
+    """--github-setup, --topics and --no-github-setup (create, adopt, publish)."""
+    parser.add_argument(
+        "--github-setup", dest="github_setup", action="append", metavar="STEP[,STEP...]",
+        help="With --github or --publish-to github, what to set up on the repository: labels, issues "
+             "(the Roadmap and Quick Notes as #1 and #2, before the first push), pin, discussions, "
+             "topics, pypi-environment, traffic (prints ghtraf's commands), or all. Default: the "
+             "global config's `github_setup` list; none when it names none."
+    )
+    parser.add_argument("--topics", metavar="TOPIC[,TOPIC...]", help="Repository topics for --github-setup topics")
+    parser.add_argument(
+        "--no-github-setup", action="store_true",
+        help="Set nothing up on GitHub, whatever the config's `github_setup` says"
+    )
+
+
+def _publish_setup(args, config: Dict[str, Any], repo_root: str, service: str,
+                   report: List[str]) -> Tuple[Dict[str, Any], Optional[str]]:
+    """The GitHub setup for a --publish-to run: the hooks to hand
+    setup_remote_repository, or what is wrong. Steps come from --github-setup,
+    else the config's `github_setup`; --no-github-setup empties them. The
+    project's own .repokit.json supplies its name, extras, archetype and topics."""
+    if service != "github":
+        if getattr(args, "github_setup", None):
+            return {}, "--github-setup works with --publish-to github only"
+        return {}, None
+    from . import github_setup
+    from .config import read_project_record
+    from .github_create import publish_hooks
+    try:
+        steps = github_setup.setup_names(config.get("github_setup"))
+    except ValueError as e:
+        return {}, str(e)
+    if not steps:
+        return {}, None
+    facts = read_project_record(repo_root)
+    setup_config = dict(config)
+    for key in ("project_name", "extras", "archetype"):
+        if facts.get(key):
+            setup_config[key] = facts[key]
+    if not setup_config.get("topics") and facts.get("topics"):
+        setup_config["topics"] = facts["topics"]
+    after_create, after_push = publish_hooks(repo_root, setup_config, steps, report)
+    return {"after_create": after_create, "after_push": after_push}, None
+
+
+def _publish_with_setup(args, config: Dict[str, Any], repo_root: str, service: str,
+                        remote_integration, **remote) -> bool:
+    """setup_remote_repository with the GitHub setup's hooks, the setup's
+    report printed afterwards. False on a refused setup or a failed publish."""
+    report: List[str] = []
+    hooks, problem = _publish_setup(args, config, repo_root, service, report)
+    if problem:
+        logging.getLogger("repokit").error(problem)
+        return False
+    ok = remote_integration.setup_remote_repository(service=service, **remote, **hooks)
+    for line in report:
+        print(f"GitHub: {line}")
+    return ok
+
 def args_to_config(args: argparse.Namespace) -> Dict[str, Any]:
     """
     Convert command-line arguments to configuration dictionary.
@@ -1680,8 +1729,11 @@ def args_to_config(args: argparse.Namespace) -> Dict[str, Any]:
     if getattr(args, "github_setup", None):
         from .layers import parse_languages as _split_steps
         cli_config["github_setup"] = _split_steps(args.github_setup)
+    if getattr(args, "no_github_setup", False):
+        cli_config["github_setup"] = []
     if getattr(args, "topics", None):
-        cli_config["topics"] = [t.strip() for t in args.topics.split(",") if t.strip()]
+        from .layers import parse_languages as _split_topics
+        cli_config["topics"] = _split_topics(args.topics)
     if getattr(args, "badges", None):
         cli_config["badges"] = args.badges.strip()
     if getattr(args, "no_extras", False):
@@ -2795,8 +2847,8 @@ def main() -> int:
                 if hasattr(args, 'token') and args.token and not token_cmd:
                     token_cmd = f"echo {args.token}"
 
-                publish_success = remote_integration.setup_remote_repository(
-                    service=publish_to,
+                publish_success = _publish_with_setup(
+                    args, adopt_config, dir_path, publish_to, remote_integration,
                     remote_name=getattr(args, 'remote_name', None) or adopt_config.get('remote_name', 'origin'),
                     private=getattr(args, 'private_repo', None) or adopt_config.get('private_repo', False),
                     push_branches=not getattr(args, 'no_push', False),
@@ -2865,6 +2917,13 @@ def main() -> int:
         if problem:
             logger.error(problem)
             return 1
+        # Unknown --github-setup steps, likewise
+        from .github_setup import setup_names
+        try:
+            setup_names(config.get("github_setup"))
+        except ValueError as e:
+            logger.error(str(e))
+            return 1
 
         # The GitHub login, before any file is written: the files' URLs,
         # CODEOWNERS and FUNDING name it (0.9.6; before, they carried the
@@ -2922,8 +2981,8 @@ def main() -> int:
                     verbose=args.verbose,
                 )
 
-                publish_success = remote_integration.setup_remote_repository(
-                    service=args.publish_to,
+                publish_success = _publish_with_setup(
+                    args, repo_manager.config, repo_manager.repo_root, args.publish_to, remote_integration,
                     remote_name=args.remote_name,
                     private=args.private_repo,
                     push_branches=not args.no_push,
@@ -2989,8 +3048,11 @@ def main() -> int:
             if args.token and not token_cmd:
                 token_cmd = f"echo {args.token}"
             
-            publish_success = remote_integration.setup_remote_repository(
-                service=args.publish_to,
+            # update_existing: a project already on GitHub is pushed and set
+            # up, nothing created (publish only; adopt still creates)
+            publish_success = _publish_with_setup(
+                args, config, repo_path, args.publish_to, remote_integration,
+                update_existing=True,
                 remote_name=args.remote_name,
                 private=args.private_repo,
                 push_branches=not args.no_push,

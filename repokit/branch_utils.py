@@ -26,13 +26,9 @@ def promoted_folders(repo_path: str) -> List[str]:
     """The folders this project tracks on its private branch (0.10.3), from
     its record: .repokit.json's private_mode and private_exposure. Empty for
     a nested project or one with no record."""
-    import json
+    from .config import read_project_record
     from .defaults import BRANCH_MODES
-    try:
-        with open(os.path.join(repo_path, ".repokit.json"), encoding="utf-8") as f:
-            record = json.load(f)
-    except (OSError, ValueError):
-        return []
+    record = read_project_record(repo_path)
     mode = record.get("private_mode")
     if mode not in BRANCH_MODES:
         return []

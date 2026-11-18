@@ -2825,6 +2825,9 @@ exit 0
             "license": self._license_record(),
             "extras": list(self.config.get("extras") or []),
         }
+        if self.config.get("topics"):
+            # read back by a later publish's GitHub setup (the topics step)
+            repokit_config["topics"] = list(self.config["topics"])
         
         # Add additional config if available
         if self.config.get("description"):
